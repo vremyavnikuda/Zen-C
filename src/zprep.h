@@ -8,6 +8,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+// **ZEN VERSION**
+#define ZEN_VERSION "0.1.0"
+
 // ** ANSI COLORS **
 #define COLOR_RESET "\033[0m"
 #define COLOR_RED "\033[1;31m"

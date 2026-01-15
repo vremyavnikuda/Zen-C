@@ -21,6 +21,11 @@ void print_search_paths()
     printf("  /usr/share/zenc\n");
 }
 
+void print_version()
+{
+    printf("Zen C version %s\n", ZEN_VERSION);
+}
+
 void print_usage()
 {
     printf("Usage: zc [command] [options] <file.zc>\n");
@@ -32,6 +37,7 @@ void print_usage()
     printf("  transpile Transpile to C code only (no compilation)\n");
     printf("  lsp     Start Language Server\n");
     printf("Options:\n");
+    printf("  --version       Print version information");
     printf("  -o <file>       Output executable name\n");
     printf("  --emit-c        Keep generated C file (out.c)\n");
     printf("  --freestanding  Freestanding mode (no stdlib)\n");
@@ -118,6 +124,11 @@ int main(int argc, char **argv)
         if (strcmp(arg, "--emit-c") == 0)
         {
             g_config.emit_c = 1;
+        }
+        else if (strcmp(arg, "--version") == 0|| strcmp(arg, "-V") == 0)
+        {
+            print_version();
+            return 0;
         }
         else if (strcmp(arg, "--verbose") == 0 || strcmp(arg, "-v") == 0)
         {
