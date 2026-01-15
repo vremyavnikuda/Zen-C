@@ -1,5 +1,6 @@
 
 #include "../codegen/codegen.h"
+#include "../plugins/plugin_manager.h"
 #include "parser.h"
 #include <ctype.h>
 #include <stdio.h>
@@ -2581,8 +2582,40 @@ char *find_similar_symbol(ParserContext *ctx, const char *name)
 
 void register_plugin(ParserContext *ctx, const char *name, const char *alias)
 {
+    // Try to find existing (built-in) or already loaded plugin
+    ZPlugin *plugin = zptr_find_plugin(name);
+
+    // If not found, try to load it dynamically
+    if (!plugin)
+    {
+        plugin = zptr_load_plugin(name);
+
+        if (!plugin)
+        {
+            char path[1024];
+            snprintf(path, sizeof(path), "%s.so", name);
+            plugin = zptr_load_plugin(path);
+        }
+
+        if (!plugin && !strchr(name, '/'))
+        {
+            char path[1024];
+            snprintf(path, sizeof(path), "./%s.so", name);
+            plugin = zptr_load_plugin(path);
+        }
+    }
+
+    if (!plugin)
+    {
+        fprintf(stderr,
+                COLOR_RED "Error:" COLOR_RESET " Could not load plugin '%s'\n"
+                          "       Tried built-ins and dynamic loading (.so)\n",
+                name);
+        exit(1);
+    }
+
     ImportedPlugin *p = xmalloc(sizeof(ImportedPlugin));
-    p->name = xstrdup(name);
+    p->name = xstrdup(plugin->name); // Use the plugin's internal name
     p->alias = alias ? xstrdup(alias) : NULL;
     p->next = ctx->imported_plugins;
     ctx->imported_plugins = p;

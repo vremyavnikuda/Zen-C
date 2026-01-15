@@ -39,13 +39,12 @@ void zptr_register_plugin(ZPlugin *plugin)
     head = node;
 }
 
-int zptr_load_plugin(const char *path)
+ZPlugin *zptr_load_plugin(const char *path)
 {
     void *handle = dlopen(path, RTLD_LAZY);
     if (!handle)
     {
-        fprintf(stderr, "Failed to load plugin '%s': %s\n", path, dlerror());
-        return 0;
+        return NULL;
     }
 
     ZPluginInitFn init_fn = (ZPluginInitFn)dlsym(handle, "z_plugin_init");
@@ -53,7 +52,7 @@ int zptr_load_plugin(const char *path)
     {
         fprintf(stderr, "Plugin '%s' missing 'z_plugin_init' symbol\n", path);
         dlclose(handle);
-        return 0;
+        return NULL;
     }
 
     ZPlugin *plugin = init_fn();
@@ -61,7 +60,7 @@ int zptr_load_plugin(const char *path)
     {
         fprintf(stderr, "Plugin '%s' init returned NULL\n", path);
         dlclose(handle);
-        return 0;
+        return NULL;
     }
 
     // Register
@@ -71,7 +70,7 @@ int zptr_load_plugin(const char *path)
     node->next = head;
     head = node;
 
-    return 1;
+    return plugin;
 }
 
 ZPlugin *zptr_find_plugin(const char *name)

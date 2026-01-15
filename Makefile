@@ -27,13 +27,7 @@ SRCS = src/main.c \
        src/lsp/lsp_index.c \
        src/zen/zen_facts.c \
        src/repl/repl.c \
-       src/plugins/plugin_manager.c \
-       plugins/befunge.c \
-       plugins/brainfuck.c \
-       plugins/forth.c \
-       plugins/lisp.c \
-       plugins/regex.c \
-       plugins/sql.c
+       src/plugins/plugin_manager.c
 
 OBJ_DIR = obj
 OBJS = $(patsubst %.c, $(OBJ_DIR)/%.o, $(SRCS))
@@ -43,9 +37,16 @@ PREFIX ?= /usr/local
 BINDIR = $(PREFIX)/bin
 MANDIR = $(PREFIX)/share/man
 SHAREDIR = $(PREFIX)/share/zenc
+INCLUDEDIR = $(PREFIX)/include/zenc
+
+PLUGINS = plugins/befunge.so plugins/brainfuck.so plugins/forth.so plugins/lisp.so plugins/regex.so plugins/sql.so
 
 # Default target
-all: $(TARGET)
+all: $(TARGET) $(PLUGINS)
+
+# Build plugins
+plugins/%.so: plugins/%.c
+	$(CC) $(CFLAGS) -shared -fPIC -o $@ $<
 
 # Link
 $(TARGET): $(OBJS)
@@ -72,6 +73,10 @@ install: $(TARGET)
 	# Install standard library
 	install -d $(SHAREDIR)
 	cp -r std $(SHAREDIR)/
+	
+	# Install plugin headers
+	install -d $(INCLUDEDIR)
+	install -m 644 plugins/zprep_plugin.h $(INCLUDEDIR)/zprep_plugin.h
 	@echo "=> Installed to $(BINDIR)/$(TARGET)"
 	@echo "=> Man pages installed to $(MANDIR)"
 	@echo "=> Standard library installed to $(SHAREDIR)/std"
@@ -89,7 +94,7 @@ uninstall:
 
 # Clean
 clean:
-	rm -rf $(OBJ_DIR) $(TARGET) out.c
+	rm -rf $(OBJ_DIR) $(TARGET) out.c plugins/*.so
 	@echo "=> Clean complete!"
 
 # Test

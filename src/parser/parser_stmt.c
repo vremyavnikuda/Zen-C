@@ -3551,6 +3551,22 @@ ASTNode *parse_import(ParserContext *ctx, Lexer *l)
         strncpy(plugin_name, plugin_tok.start + 1, name_len);
         plugin_name[name_len] = '\0';
 
+        if (plugin_name[0] == '.' &&
+            (plugin_name[1] == '/' || (plugin_name[1] == '.' && plugin_name[2] == '/')))
+        {
+            char *current_dir = xstrdup(g_current_filename);
+            char *last_slash = strrchr(current_dir, '/');
+            if (last_slash)
+            {
+                *last_slash = 0;
+                char resolved_path[1024];
+                snprintf(resolved_path, sizeof(resolved_path), "%s/%s", current_dir, plugin_name);
+                free(plugin_name);
+                plugin_name = xstrdup(resolved_path);
+            }
+            free(current_dir);
+        }
+
         // Check for optional "as alias"
         char *alias = NULL;
         Token as_tok = lexer_peek(l);

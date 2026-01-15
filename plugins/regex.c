@@ -224,3 +224,8 @@ static void emit_match_logic(const char *pattern, FILE *out)
 }
 
 ZPlugin regex_plugin = {.name = "regex", .fn = regex_transpile};
+
+ZPlugin *z_plugin_init(void)
+{
+    return &regex_plugin;
+}

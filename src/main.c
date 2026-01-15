@@ -125,7 +125,7 @@ int main(int argc, char **argv)
         {
             g_config.emit_c = 1;
         }
-        else if (strcmp(arg, "--version") == 0|| strcmp(arg, "-V") == 0)
+        else if (strcmp(arg, "--version") == 0 || strcmp(arg, "-V") == 0)
         {
             print_version();
             return 0;
@@ -227,21 +227,6 @@ int main(int argc, char **argv)
 
     // Scan for build directives (e.g. //> link: -lm)
     scan_build_directives(&ctx, src);
-
-    // Register built-in plugins
-    extern ZPlugin brainfuck_plugin;
-    extern ZPlugin befunge_plugin;
-    extern ZPlugin lisp_plugin;
-    extern ZPlugin forth_plugin;
-    extern ZPlugin regex_plugin;
-    extern ZPlugin sql_plugin;
-
-    zptr_register_plugin(&brainfuck_plugin);
-    zptr_register_plugin(&befunge_plugin);
-    zptr_register_plugin(&lisp_plugin);
-    zptr_register_plugin(&forth_plugin);
-    zptr_register_plugin(&regex_plugin);
-    zptr_register_plugin(&sql_plugin);
 
     Lexer l;
     lexer_init(&l, src);
