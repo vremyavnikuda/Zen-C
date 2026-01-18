@@ -52,6 +52,7 @@ typedef enum
     TOK_OP,
     TOK_AT,
     TOK_DOTDOT,
+    TOK_DOTDOT_EQ,
     TOK_ARROW,
     TOK_PIPE,
     TOK_TEST,

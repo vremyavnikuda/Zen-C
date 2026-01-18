@@ -1555,9 +1555,20 @@ ASTNode *parse_for(ParserContext *ctx, Lexer *l)
         if (in_tok.type == TOK_IDENT && strncmp(in_tok.start, "in", 2) == 0)
         {
             ASTNode *start_expr = parse_expression(ctx, l);
+            int is_inclusive = 0;
             if (lexer_peek(l).type == TOK_DOTDOT)
             {
                 lexer_next(l); // consume ..
+            }
+
+            else if (lexer_peek(l).type == TOK_DOTDOT_EQ)
+            {
+                is_inclusive = 1;
+                lexer_next(l); // consume ..=
+            }
+
+            if (1) // Block to keep scope for variables
+            {
                 ASTNode *end_expr = parse_expression(ctx, l);
 
                 ASTNode *n = ast_create(NODE_FOR_RANGE);
@@ -1566,6 +1577,7 @@ ASTNode *parse_for(ParserContext *ctx, Lexer *l)
                 n->for_range.var_name[var.len] = 0;
                 n->for_range.start = start_expr;
                 n->for_range.end = end_expr;
+                n->for_range.is_inclusive = is_inclusive;
 
                 if (lexer_peek(l).type == TOK_IDENT && strncmp(lexer_peek(l).start, "step", 4) == 0)
                 {

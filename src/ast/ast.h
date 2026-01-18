@@ -248,6 +248,7 @@ struct ASTNode
             ASTNode *start;
             ASTNode *end;
             char *step;
+            int is_inclusive;
             ASTNode *body;
         } for_range;
 

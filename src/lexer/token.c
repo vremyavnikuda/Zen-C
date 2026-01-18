@@ -356,8 +356,16 @@ Token lexer_next(Lexer *l)
     }
     else if (s[0] == '.' && s[1] == '.')
     {
-        len = 2;
-        type = TOK_DOTDOT;
+        if (s[2] == '=')
+        {
+            len = 3;
+            type = TOK_DOTDOT_EQ;
+        }
+        else
+        {
+            len = 2;
+            type = TOK_DOTDOT;
+        }
     }
     else if ((s[0] == '-' && s[1] == '>') || (s[0] == '=' && s[1] == '>'))
     {

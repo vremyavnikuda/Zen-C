@@ -206,7 +206,8 @@ match shape {
 #### Loops
 ```zc
 // Range
-for i in 0..10 { ... }
+for i in 0..10 { ... }      // Exclusive (0 to 9)
+for i in 0..=10 { ... }     // Inclusive (0 to 10)
 for i in 0..10 step 2 { ... }
 
 // Iterator/Collection
