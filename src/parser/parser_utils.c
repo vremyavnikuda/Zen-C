@@ -1518,6 +1518,11 @@ ASTNode *copy_ast_replacing(ASTNode *n, const char *p, const char *c, const char
         new_node->impl.struct_name = replace_type_str(n->impl.struct_name, p, c, os, ns);
         new_node->impl.methods = copy_ast_replacing(n->impl.methods, p, c, os, ns);
         break;
+    case NODE_IMPL_TRAIT:
+        new_node->impl_trait.trait_name = xstrdup(n->impl_trait.trait_name);
+        new_node->impl_trait.target_type = replace_type_str(n->impl_trait.target_type, p, c, os, ns);
+        new_node->impl_trait.methods = copy_ast_replacing(n->impl_trait.methods, p, c, os, ns);
+        break;
     default:
         break;
     }
@@ -1879,8 +1884,17 @@ void instantiate_methods(ParserContext *ctx, GenericImplTemplate *it,
                                            it->struct_name, mangled_struct_name);
     it->impl_node->next = backup_next; // Restore
 
-    new_impl->impl.struct_name = xstrdup(mangled_struct_name);
-    ASTNode *meth = new_impl->impl.methods;
+    
+    ASTNode *meth = NULL;
+
+    if (new_impl->type == NODE_IMPL) {
+        new_impl->impl.struct_name = xstrdup(mangled_struct_name);
+        meth = new_impl->impl.methods;
+    } else if (new_impl->type == NODE_IMPL_TRAIT) {
+        new_impl->impl_trait.target_type = xstrdup(mangled_struct_name);
+        meth = new_impl->impl_trait.methods;
+    }
+
     while (meth)
     {
         char *suffix = meth->func.name + strlen(it->struct_name);
@@ -1995,6 +2009,16 @@ void instantiate_generic(ParserContext *ctx, const char *tpl, const char *arg,
         ASTNode *i = ast_create(NODE_STRUCT);
         i->strct.name = xstrdup(m);
         i->strct.is_template = 0;
+        
+        // Copy type attributes (e.g. has_drop)
+        i->type_info = type_new(TYPE_STRUCT);
+        i->type_info->name = xstrdup(m);
+        if (t->struct_node->type_info)
+        {
+            i->type_info->traits = t->struct_node->type_info->traits;
+            i->type_info->is_restrict = t->struct_node->type_info->is_restrict;
+        }
+
         // Use first generic param for substitution (single-param backward compat)
         const char *gp = (t->struct_node->strct.generic_param_count > 0)
                              ? t->struct_node->strct.generic_params[0]
@@ -2009,6 +2033,15 @@ void instantiate_generic(ParserContext *ctx, const char *tpl, const char *arg,
         ASTNode *i = ast_create(NODE_ENUM);
         i->enm.name = xstrdup(m);
         i->enm.is_template = 0;
+        
+        // Copy type attributes (e.g. has_drop)
+        i->type_info = type_new(TYPE_ENUM);
+        i->type_info->name = xstrdup(m);
+        if (t->struct_node->type_info)
+        {
+            i->type_info->traits = t->struct_node->type_info->traits;
+        }
+
         ASTNode *h = 0, *tl = 0;
         ASTNode *v = t->struct_node->enm.variants;
         while (v)

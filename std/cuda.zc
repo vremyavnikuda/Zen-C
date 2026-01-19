@@ -1,5 +1,7 @@
 
 include <cuda_runtime.h>
+import "./string.zc"
+import "./mem.zc"
 
 // Memory Management.
 
@@ -96,4 +98,87 @@ fn cuda_last_error() -> int {
 /// Check if last CUDA operation succeeded.
 fn cuda_ok() -> bool {
     return cuda_last_error() == 0;
+}
+
+
+raw {
+    void _z_cuda_get_props(int dev, char* name, size_t* total_mem, int* sm_count, int* major, int* minor, int* max_threads, int* warp_size) {
+        struct cudaDeviceProp prop;
+        if (cudaGetDeviceProperties(&prop, dev) == 0) {
+            strcpy(name, prop.name);
+            *total_mem = prop.totalGlobalMem;
+            *sm_count = prop.multiProcessorCount;
+            *major = prop.major;
+            *minor = prop.minor;
+            *max_threads = prop.maxThreadsPerBlock;
+            *warp_size = prop.warpSize;
+        }
+    }
+}
+
+extern fn _z_cuda_get_props(dev: int, name: char*, mem: usize*, sm: int*, maj: int*, min: int*, max_t: int*, warp: int*);
+
+struct CudaDeviceProp {
+    name: String;
+    total_global_mem: usize;
+    multi_processor_count: int;
+    major: int;
+    minor: int;
+    max_threads_per_block: int;
+    warp_size: int;
+}
+
+struct CudaMemInfo {
+    free: usize;
+    total: usize;
+}
+
+fn cuda_device_properties(device_id: int) -> CudaDeviceProp {
+    var mem: usize = 0;
+    var sm: int = 0;
+    var maj: int = 0;
+    var min: int = 0;
+    var max_t: int = 0;
+    var warp: int = 0;
+    
+    var name_ptr = alloc_n<char>(256);
+    name_ptr[0] = 0;
+    
+    _z_cuda_get_props(device_id, name_ptr, &mem, &sm, &maj, &min, &max_t, &warp);
+    
+    var s = String::new(name_ptr);
+    free(name_ptr);
+    
+    return CudaDeviceProp {
+        name: s,
+        total_global_mem: mem,
+        multi_processor_count: sm,
+        major: maj,
+        minor: min,
+        max_threads_per_block: max_t,
+        warp_size: warp
+    };
+}
+
+fn cuda_driver_version() -> int {
+    var d: int = 0;
+    cudaDriverGetVersion(&d);
+    return d;
+}
+
+fn cuda_runtime_version() -> int {
+    var r: int = 0;
+    cudaRuntimeGetVersion(&r);
+    return r;
+}
+
+fn cuda_mem_info() -> CudaMemInfo {
+    var f: usize = 0;
+    var t: usize = 0;
+    cudaMemGetInfo(&f, &t);
+    return CudaMemInfo { free: f, total: t };
+}
+
+fn cuda_device_reset() {
+    cudaDeviceReset();
 }

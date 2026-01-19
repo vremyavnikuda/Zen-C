@@ -1665,17 +1665,26 @@ ASTNode *parse_for(ParserContext *ctx, Lexer *l)
                 var_name[var.len] = 0;
 
                 ASTNode *obj_expr = start_expr;
+                char *iter_method = "iterator";
+
+                // Check for reference iteration: for x in &vec
+                if (obj_expr->type == NODE_EXPR_UNARY && 
+                    obj_expr->unary.op && strcmp(obj_expr->unary.op, "&") == 0)
+                {
+                    obj_expr = obj_expr->unary.operand;
+                    iter_method = "iter_ref";
+                }
 
                 // var __it = obj.iterator();
                 ASTNode *it_decl = ast_create(NODE_VAR_DECL);
                 it_decl->var_decl.name = xstrdup("__it");
                 it_decl->var_decl.type_str = NULL; // inferred
 
-                // obj.iterator()
+                // obj.iterator() or obj.iter_ref()
                 ASTNode *call_iter = ast_create(NODE_EXPR_CALL);
                 ASTNode *memb_iter = ast_create(NODE_EXPR_MEMBER);
                 memb_iter->member.target = obj_expr;
-                memb_iter->member.field = xstrdup("iterator");
+                memb_iter->member.field = xstrdup(iter_method);
                 call_iter->call.callee = memb_iter;
                 call_iter->call.args = NULL;
                 call_iter->call.arg_count = 0;
@@ -3391,6 +3400,19 @@ ASTNode *parse_impl(ParserContext *ctx, Lexer *l)
         n->impl_trait.target_type = name2;
         n->impl_trait.methods = h;
         add_to_impl_list(ctx, n);
+
+        // If target struct is generic, register this impl as a template
+        ASTNode *def = find_struct_def(ctx, name2);
+        if (def && ((def->type == NODE_STRUCT && def->strct.is_template) || 
+                    (def->type == NODE_ENUM && def->enm.is_template)))
+        {
+             const char *gp = "T";
+             if (def->type == NODE_STRUCT && def->strct.generic_param_count > 0) 
+                 gp = def->strct.generic_params[0];
+             // TODO: Enum generic params support if needed
+             register_impl_template(ctx, name2, gp, n);
+        }
+
         return n;
     }
     else

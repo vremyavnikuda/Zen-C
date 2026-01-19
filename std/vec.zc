@@ -14,6 +14,30 @@ struct VecIter<T> {
     idx: usize;
 }
 
+struct VecIterResult<T> {
+    ptr: T*;
+}
+
+impl VecIterResult<T> {
+    fn is_none(self) -> bool {
+        return self.ptr == 0;
+    }
+    
+    fn unwrap(self) -> T* {
+        if (self.ptr == 0) {
+            !"Panic: unwrap called on null VecIterResult";
+            exit(1);
+        }
+        return self.ptr;
+    }
+}
+
+struct VecIterRef<T> {
+    data: T*;
+    count: usize;
+    idx: usize;
+}
+
 impl VecIter<T> {
     fn next(self) -> Option<T> {
         if (self.idx < self.count) {
@@ -23,11 +47,47 @@ impl VecIter<T> {
         }
         return Option<T>::None();
     }
+    
+    fn iterator(self) -> VecIter<T> {
+         return *self;
+    }
+}
+
+impl VecIterRef<T> {
+    fn next(self) -> VecIterResult<T> {
+        if (self.idx < self.count) {
+            var item = &self.data[self.idx];
+            self.idx = self.idx + 1;
+            return VecIterResult<T> { ptr: item };
+        }
+        return VecIterResult<T> { ptr: 0 };
+    }
+    
+    fn iterator(self) -> VecIterRef<T> {
+        return *self;
+    }
 }
 
 impl Vec<T> {
     fn new() -> Vec<T> {
         return Vec<T> { data: 0, len: 0, cap: 0 };
+    }
+
+    fn with_capacity(cap: usize) -> Vec<T> {
+        if (cap == 0) {
+            return Vec<T> { data: 0, len: 0, cap: 0 };
+        }
+        return Vec<T> {
+            data: (T*)malloc(cap * sizeof(T)),
+            len: 0,
+            cap: cap
+        };
+    }
+
+    fn grow(self) {
+        if (self.cap == 0) { self.cap = 8; }
+        else { self.cap = self.cap * 2; }
+        self.data = (T*)realloc(self.data, self.cap * sizeof(T));
     }
 
     fn iterator(self) -> VecIter<T> {
@@ -37,15 +97,20 @@ impl Vec<T> {
             idx: 0
         };
     }
+
+    fn iter_ref(self) -> VecIterRef<T> {
+        return VecIterRef<T> {
+            data: self.data,
+            count: self.len,
+            idx: 0
+        };
+    }
     
     fn push(self, item: T) {
         if (self.len >= self.cap) {
-            if (self.cap == 0) { self.cap = 8;
-            }
-            else { self.cap = self.cap * 2;
-            }
-            self.data = realloc(self.data, self.cap * sizeof(T));
+            self.grow();
         }
+        self.data[self.len] = item;
         self.data[self.len] = item;
         self.len = self.len + 1;
     }
@@ -56,11 +121,7 @@ impl Vec<T> {
             exit(1);
         }
         if (self.len >= self.cap) {
-            if (self.cap == 0) { self.cap = 8;
-            }
-            else { self.cap = self.cap * 2;
-            }
-            self.data = realloc(self.data, self.cap * sizeof(T));
+            self.grow();
         }
         // Shift elements right
         if (idx < self.len) {
@@ -77,6 +138,14 @@ impl Vec<T> {
         }
         self.len = self.len - 1;
         return self.data[self.len];
+    }
+
+    fn pop_opt(self) -> Option<T> {
+        if (self.len == 0) {
+            return Option<T>::None();
+        }
+        self.len = self.len - 1;
+        return Option<T>::Some(self.data[self.len]);
     }
 
     fn remove(self, idx: usize) -> T {
@@ -176,12 +245,26 @@ impl Vec<T> {
     }
 
     fn clone(self) -> Vec<T> {
-        var new_vec: Vec<T> = Vec<T>::new();
+        if (self.len == 0) {
+            return Vec<T> { data: 0, len: 0, cap: 0 };
+        }
+        var new_data = (T*)malloc(self.len * sizeof(T));
         var i: usize = 0;
         while i < self.len {
-            new_vec.push(self.data[i]);
+            new_data[i] = self.data[i];
             i = i + 1;
         }
-        return new_vec;
+        return Vec<T> {
+            data: new_data,
+            len: self.len,
+            cap: self.len // Set capacity to exact length
+        };
+        // No local Vec variable means no Drop is called here.
+    }
+}
+
+impl Drop for Vec {
+    fn drop(self) {
+        self.free();
     }
 }
