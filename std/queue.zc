@@ -38,8 +38,6 @@ impl Queue<T> {
       self.cap = self.cap * 2;
       self.data = realloc(self.data, sizeof(T) * self.cap);
     }
-
-    // Assigns it at the back of 
     self.data[self.len] = value;
     self.len = self.len + 1;
   }
@@ -55,6 +53,18 @@ impl Queue<T> {
       return Option<T>::Some(value);
     }
     return Option<T>::None();
+  }
+
+  fn length(self) -> usize {
+    return self.len;
+  }
+
+  fn clear(self) {
+    self.len = 0;
+  }
+
+  fn is_empty(self) -> bool {
+    return self.len == 0;
   }
 }
 

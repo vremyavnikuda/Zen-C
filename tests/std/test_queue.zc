@@ -28,6 +28,20 @@ test "Queue Push/Pop" {
   assert(v.is_none(), "v should not have a valid value");
 }
 
+test "Queue Length and Clear" {
+  print "Testing Queue clear";
+  var queue = Queue<i32>::new();
+  defer queue.free();
+
+  assert(queue.is_empty() && queue.length() == 0, "queue should be empty");
+
+  queue.push(123);
+  assert(!queue.is_empty() && queue.length() == 1, "queue should have 1 value");
+
+  queue.clear();
+  assert(queue.is_empty() && queue.length() == 0, "queue should be empty");
+}
+
 test "Queue Clone" {
   print "Testing Queue Cloning";
   var queue = Queue<i32>::new();

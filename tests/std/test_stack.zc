@@ -28,6 +28,20 @@ test "Stack Push/Pop" {
   assert(v.is_none(), "v should not have a valid value");
 }
 
+test "Stack Length and Clear" {
+  print "Testing Stack clear";
+  var stack = Stack<i32>::new();
+  defer stack.free();
+
+  assert(stack.is_empty() && stack.length() == 0, "Stack should be empty");
+
+  stack.push(123);
+  assert(!stack.is_empty() && stack.length() == 1, "Stack should have 1 value");
+
+  stack.clear();
+  assert(stack.is_empty() && stack.length() == 0, "Stack should be empty");
+}
+
 test "Stack Clone" {
   print "Testing Stack Cloning";
   var stack = Stack<i32>::new();
