@@ -706,3 +706,84 @@ void emit_func_signature(FILE *out, ASTNode *func, const char *name_override)
     }
     fprintf(out, ")");
 }
+
+// Invalidate a moved-from variable by zeroing it out to prevent double-free
+int emit_move_invalidation(ParserContext *ctx, ASTNode *node, FILE *out)
+{
+    if (!node)
+    {
+        return 0;
+    }
+
+    // Check if it's a valid l-value we can memset
+    if (node->type != NODE_EXPR_VAR && node->type != NODE_EXPR_MEMBER)
+    {
+        return 0;
+    }
+
+    // Common logic to find type and check Drop
+    char *type_name = infer_type(ctx, node);
+    ASTNode *def = NULL;
+    if (type_name)
+    {
+        char *clean_type = type_name;
+        if (strncmp(clean_type, "struct ", 7) == 0)
+        {
+            clean_type += 7;
+        }
+        def = find_struct_def(ctx, clean_type);
+    }
+
+    if (def && def->type_info && def->type_info->traits.has_drop)
+    {
+        if (node->type == NODE_EXPR_VAR)
+        {
+            fprintf(out, "memset(&%s, 0, sizeof(%s))", node->var_ref.name, node->var_ref.name);
+            return 1;
+        }
+        else if (node->type == NODE_EXPR_MEMBER)
+        {
+            // For members: memset(&foo.bar, 0, sizeof(foo.bar))
+            fprintf(out, "memset(&");
+            codegen_expression(ctx, node, out);
+            fprintf(out, ", 0, sizeof(");
+            codegen_expression(ctx, node, out);
+            fprintf(out, "))");
+            return 1;
+        }
+    }
+    return 0;
+}
+
+// Emits expression, wrapping it in a move-invalidation block if it's a consuming variable usage
+void codegen_expression_with_move(ParserContext *ctx, ASTNode *node, FILE *out)
+{
+    if (node && (node->type == NODE_EXPR_VAR || node->type == NODE_EXPR_MEMBER))
+    {
+        // Re-use infer logic to see if we need invalidation
+        char *type_name = infer_type(ctx, node);
+        ASTNode *def = NULL;
+        if (type_name)
+        {
+            char *clean_type = type_name;
+            if (strncmp(clean_type, "struct ", 7) == 0)
+            {
+                clean_type += 7;
+            }
+            def = find_struct_def(ctx, clean_type);
+        }
+
+        if (def && def->type_info && def->type_info->traits.has_drop)
+        {
+            fprintf(out, "({ __typeof__(");
+            codegen_expression(ctx, node, out);
+            fprintf(out, ") _mv = ");
+            codegen_expression(ctx, node, out);
+            fprintf(out, "; ");
+            emit_move_invalidation(ctx, node, out);
+            fprintf(out, "; _mv; })");
+            return;
+        }
+    }
+    codegen_expression(ctx, node, out);
+}

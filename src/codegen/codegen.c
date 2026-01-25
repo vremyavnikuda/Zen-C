@@ -289,9 +289,23 @@ void codegen_expression(ParserContext *ctx, ASTNode *node, FILE *out)
         else
         {
             fprintf(out, "(");
-            codegen_expression(ctx, node->binary.left, out);
+            // Left side: Only move if NOT an assignment target
+            int is_assignment =
+                (node->binary.op[strlen(node->binary.op) - 1] == '=' &&
+                 strcmp(node->binary.op, "==") != 0 && strcmp(node->binary.op, "!=") != 0 &&
+                 strcmp(node->binary.op, "<=") != 0 && strcmp(node->binary.op, ">=") != 0);
+
+            if (is_assignment)
+            {
+                codegen_expression(ctx, node->binary.left, out);
+            }
+            else
+            {
+                codegen_expression_with_move(ctx, node->binary.left, out);
+            }
+
             fprintf(out, " %s ", node->binary.op);
-            codegen_expression(ctx, node->binary.right, out);
+            codegen_expression_with_move(ctx, node->binary.right, out);
             fprintf(out, ")");
         }
         break;
@@ -408,7 +422,7 @@ void codegen_expression(ParserContext *ctx, ASTNode *node, FILE *out)
                     while (arg)
                     {
                         fprintf(out, ", ");
-                        codegen_expression(ctx, arg, out);
+                        codegen_expression_with_move(ctx, arg, out);
                         arg = arg->next;
                     }
                     fprintf(out, "); })");
@@ -491,7 +505,7 @@ void codegen_expression(ParserContext *ctx, ASTNode *node, FILE *out)
                     while (arg)
                     {
                         fprintf(out, ", ");
-                        codegen_expression(ctx, arg, out);
+                        codegen_expression_with_move(ctx, arg, out);
                         arg = arg->next;
                     }
                     fprintf(out, ")");
@@ -541,7 +555,7 @@ void codegen_expression(ParserContext *ctx, ASTNode *node, FILE *out)
             while (arg)
             {
                 fprintf(out, ", ");
-                codegen_expression(ctx, arg, out);
+                codegen_expression_with_move(ctx, arg, out);
                 arg = arg->next;
             }
             fprintf(out, "); })");
@@ -583,7 +597,7 @@ void codegen_expression(ParserContext *ctx, ASTNode *node, FILE *out)
                     fprintf(out, ", ");
                 }
                 first = 0;
-                codegen_expression(ctx, arg, out);
+                codegen_expression_with_move(ctx, arg, out);
                 arg = arg->next;
             }
         }
@@ -634,7 +648,7 @@ void codegen_expression(ParserContext *ctx, ASTNode *node, FILE *out)
                                 fprintf(out, ", ");
                             }
                             first_field = 0;
-                            codegen_expression(ctx, curr, out);
+                            codegen_expression_with_move(ctx, curr, out);
                             curr = curr->next;
                         }
                         fprintf(out, "}");
@@ -654,7 +668,7 @@ void codegen_expression(ParserContext *ctx, ASTNode *node, FILE *out)
                 }
                 else
                 {
-                    codegen_expression(ctx, arg, out);
+                    codegen_expression_with_move(ctx, arg, out);
                 }
 
                 if (arg && arg->next)

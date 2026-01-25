@@ -4884,8 +4884,6 @@ ASTNode *parse_expr_prec(ParserContext *ctx, Lexer *l, Precedence min_prec)
             bin->binary.op = token_strdup(op);
         }
 
-        fprintf(stderr, "DEBUG: Binary Loop Op: %s\n", bin->binary.op);
-
         if (strcmp(bin->binary.op, "/") == 0 || strcmp(bin->binary.op, "%") == 0)
         {
             if (rhs->type == NODE_EXPR_LITERAL && rhs->literal.type_kind == LITERAL_INT &&
@@ -5285,8 +5283,6 @@ ASTNode *parse_expr_prec(ParserContext *ctx, Lexer *l, Precedence min_prec)
             }
         }
 
-        fprintf(stderr, "DEBUG: Past Method Check Op=%s\n", bin->binary.op);
-
         // Standard Type Checking (if no overload found)
         if (lhs->type_info && rhs->type_info)
         {
@@ -5577,7 +5573,7 @@ ASTNode *parse_arrow_lambda_single(ParserContext *ctx, Lexer *l, char *param_nam
         {
             if (param_name[0] == 'x')
             {
-                fprintf(stderr, "DEBUG: Updating return type to %d\n", ret_val->type_info->kind);
+                // fprintf(stderr, "DEBUG: Updating return type to %d\n", ret_val->type_info->kind);
             }
             // Update return type
             if (t->inner)
@@ -5606,11 +5602,6 @@ ASTNode *parse_arrow_lambda_single(ParserContext *ctx, Lexer *l, char *param_nam
     }
     else
     {
-        if (param_name[0] == 'x')
-        {
-            fprintf(stderr, "DEBUG: Fallback! sym=%p kind=%d\n", sym,
-                    sym && sym->type_info ? sym->type_info->kind : -1);
-        }
         // Fallback to int if still unknown
         if (lambda->lambda.param_types[0])
         {

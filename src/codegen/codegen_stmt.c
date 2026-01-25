@@ -901,6 +901,11 @@ void codegen_node_single(ParserContext *ctx, ASTNode *node, FILE *out)
                     codegen_expression(ctx, node->var_decl.init_expr, out);
                 }
                 fprintf(out, ";\n");
+                if (node->var_decl.init_expr &&
+                    emit_move_invalidation(ctx, node->var_decl.init_expr, out))
+                {
+                    fprintf(out, ";\n");
+                }
 
                 if (node->type_info)
                 {
@@ -935,6 +940,11 @@ void codegen_node_single(ParserContext *ctx, ASTNode *node, FILE *out)
                     fprintf(out, " = ");
                     codegen_expression(ctx, node->var_decl.init_expr, out);
                     fprintf(out, ";\n");
+                    if (node->var_decl.init_expr &&
+                        emit_move_invalidation(ctx, node->var_decl.init_expr, out))
+                    {
+                        fprintf(out, ";\n");
+                    }
                 }
                 else
                 {
@@ -949,6 +959,11 @@ void codegen_node_single(ParserContext *ctx, ASTNode *node, FILE *out)
                     fprintf(out, " = ");
                     codegen_expression(ctx, node->var_decl.init_expr, out);
                     fprintf(out, ";\n");
+                    if (node->var_decl.init_expr &&
+                        emit_move_invalidation(ctx, node->var_decl.init_expr, out))
+                    {
+                        fprintf(out, ";\n");
+                    }
                 }
             }
         }

@@ -1,0 +1,87 @@
+import "../../std/mem.zc"
+
+// Global counters to track drop calls
+var DROP_COUNT = 0;
+var DROP_NULL_COUNT = 0;
+
+struct Resource {
+    data: int*;
+    id: int;
+}
+
+impl Drop for Resource {
+    fn drop(self) {
+        if (self.data != NULL) {
+            DROP_COUNT = DROP_COUNT + 1;
+            free(self.data);
+            self.data = NULL; // Prevent double free logic if called again, though generated code should zero
+        } else {
+            DROP_NULL_COUNT = DROP_NULL_COUNT + 1;
+        }
+    }
+}
+
+struct Container {
+    res: Resource;
+}
+
+// No explicit Drop for Container, relies on compiler generating one
+
+test "move_variable" {
+    DROP_COUNT = 0;
+    DROP_NULL_COUNT = 0;
+    
+    {
+        var r1 = Resource { data: malloc(10), id: 1 };
+        var r2 = r1; // Move
+        
+        // r1 should be nullified
+        // r2 owns data
+    }
+
+    assert(DROP_COUNT == 1, "Should drop exactly once (r2)");
+    assert(DROP_NULL_COUNT == 1, "Should see one null drop (r1)");
+}
+
+fn pass_through(r: Resource) -> Resource {
+    return r; // Move return
+}
+
+test "move_function" {
+    DROP_COUNT = 0;
+    DROP_NULL_COUNT = 0;
+
+    {
+        var r1 = Resource { data: malloc(10), id: 2 };
+        var r2 = pass_through(r1); 
+        // r1 moved to arg -> moved to return -> moved to r2
+    }
+    
+    // r1: null drop
+    // arg: null drop (moved to return)
+    // return temp: null drop (moved to r2)
+    // r2: valid drop
+    
+    assert(DROP_COUNT == 1, "Should drop exactly once (final r2)");
+    // We expect multiple null drops due to intermediate moves
+    assert(DROP_NULL_COUNT >= 1, "Should see at least one null drop"); 
+}
+
+test "partial_move_member" {
+    DROP_COUNT = 0;
+    DROP_NULL_COUNT = 0;
+
+    {
+        var c = Container { res: Resource { data: malloc(10), id: 3 } };
+        var r = c.res; // Partial move
+        
+        // c.res should be nullified
+        // r owns data
+    }
+    
+    // r drops valid
+    // c drops, checks res -> null drop
+    
+    assert(DROP_COUNT == 1, "Should drop exactly once (r)");
+    assert(DROP_NULL_COUNT == 1, "Should see null drop (c.res)");
+}
