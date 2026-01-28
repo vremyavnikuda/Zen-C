@@ -652,7 +652,7 @@ ASTNode *parse_impl(ParserContext *ctx, Lexer *l)
     }
 }
 
-ASTNode *parse_struct(ParserContext *ctx, Lexer *l, int is_union)
+ASTNode *parse_struct(ParserContext *ctx, Lexer *l, int is_union, int is_opaque)
 {
 
     lexer_next(l); // eat struct or union
@@ -705,6 +705,7 @@ ASTNode *parse_struct(ParserContext *ctx, Lexer *l, int is_union)
         n->strct.is_union = is_union;
         n->strct.fields = NULL;
         n->strct.is_incomplete = 1;
+        n->strct.is_opaque = is_opaque;
 
         return n;
     }
@@ -800,10 +801,6 @@ ASTNode *parse_struct(ParserContext *ctx, Lexer *l, int is_union)
                     ASTNode *nf = ast_create(NODE_FIELD);
                     nf->field.name = xstrdup(f->field.name);
                     nf->field.type = xstrdup(f->field.type);
-                    // Copy type info? Ideally deep copy or ref
-                    // For now, we leave it NULL or shallow copy if needed, but mixins usually
-                    // aren't generic params themselves in the same way.
-                    // Let's shallow copy for safety if it exists.
                     nf->type_info = f->type_info;
 
                     if (!h)
@@ -829,7 +826,6 @@ ASTNode *parse_struct(ParserContext *ctx, Lexer *l, int is_union)
             free(use_name);
             continue;
         }
-        // ---------------------------------------
 
         if (t.type == TOK_IDENT)
         {
@@ -904,8 +900,10 @@ ASTNode *parse_struct(ParserContext *ctx, Lexer *l, int is_union)
     node->strct.generic_params = gps;
     node->strct.generic_param_count = gp_count;
     node->strct.is_union = is_union;
+    node->strct.is_opaque = is_opaque;
     node->strct.used_structs = temp_used_structs;
     node->strct.used_struct_count = temp_used_count;
+    node->strct.defined_in_file = g_current_filename ? xstrdup(g_current_filename) : NULL;
 
     if (gp_count > 0)
     {
@@ -1102,7 +1100,7 @@ ASTNode *parse_enum(ParserContext *ctx, Lexer *l)
     node->enm.name = ename;
 
     node->enm.variants = h;
-    node->enm.generic_param = gp; // 3. Store generic param
+    node->enm.generic_param = gp; // Store generic param
 
     if (gp)
     {

@@ -338,7 +338,7 @@ ASTNode *parse_program_nodes(ParserContext *ctx, Lexer *l)
             }
             else if (0 == strncmp(t.start, "struct", 6) && 6 == t.len)
             {
-                s = parse_struct(ctx, l, 0);
+                s = parse_struct(ctx, l, 0, 0);
                 if (s && s->type == NODE_STRUCT)
                 {
                     s->strct.is_packed = attr_packed;
@@ -436,7 +436,7 @@ ASTNode *parse_program_nodes(ParserContext *ctx, Lexer *l)
             }
             else if (0 == strncmp(t.start, "type", 4) && 4 == t.len)
             {
-                s = parse_type_alias(ctx, l);
+                s = parse_type_alias(ctx, l, 0);
             }
             else if (0 == strncmp(t.start, "raw", 3) && 3 == t.len)
             {
@@ -482,9 +482,31 @@ ASTNode *parse_program_nodes(ParserContext *ctx, Lexer *l)
                 lexer_next(l);
             }
         }
+        else if (t.type == TOK_OPAQUE)
+        {
+            lexer_next(l); // eat opaque
+            Token next = lexer_peek(l);
+            if (0 == strncmp(next.start, "struct", 6) && 6 == next.len)
+            {
+                s = parse_struct(ctx, l, 0, 1);
+                if (s && s->type == NODE_STRUCT)
+                {
+                    s->strct.is_packed = attr_packed;
+                    s->strct.align = attr_align;
+                }
+            }
+            else if (next.type == TOK_ALIAS)
+            {
+                s = parse_type_alias(ctx, l, 1);
+            }
+            else
+            {
+                zpanic_at(next, "Expected 'struct' or 'alias' after 'opaque'");
+            }
+        }
         else if (t.type == TOK_ALIAS)
         {
-            s = parse_type_alias(ctx, l);
+            s = parse_type_alias(ctx, l, 0);
         }
         else if (t.type == TOK_ASYNC)
         {
@@ -506,7 +528,7 @@ ASTNode *parse_program_nodes(ParserContext *ctx, Lexer *l)
 
         else if (t.type == TOK_UNION)
         {
-            s = parse_struct(ctx, l, 1);
+            s = parse_struct(ctx, l, 1, 0);
         }
         else if (t.type == TOK_TRAIT)
         {

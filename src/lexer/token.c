@@ -201,6 +201,10 @@ Token lexer_next(Lexer *l)
         {
             return (Token){TOK_OR, s, 2, start_line, start_col};
         }
+        if (len == 6 && strncmp(s, "opaque", 6) == 0)
+        {
+            return (Token){TOK_OPAQUE, s, 6, start_line, start_col};
+        }
 
         // F-Strings
         if (len == 1 && s[0] == 'f' && s[1] == '"')

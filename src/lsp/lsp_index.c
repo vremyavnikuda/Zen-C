@@ -151,7 +151,32 @@ void lsp_walk_node(LSPIndex *idx, ASTNode *node)
     else if (node->type == NODE_STRUCT)
     {
         char hover[256];
-        sprintf(hover, "struct %s", node->strct.name);
+        if (node->strct.is_opaque)
+        {
+            sprintf(hover, "opaque struct %s", node->strct.name);
+        }
+        else
+        {
+            sprintf(hover, "struct %s", node->strct.name);
+        }
+        lsp_index_add_def(idx, node->token, hover, node);
+    }
+    else if (node->type == NODE_ENUM)
+    {
+        char hover[256];
+        sprintf(hover, "enum %s", node->enm.name);
+        lsp_index_add_def(idx, node->token, hover, node);
+    }
+    else if (node->type == NODE_TYPE_ALIAS)
+    {
+        char hover[256];
+        sprintf(hover, "alias %s = %s", node->type_alias.alias, node->type_alias.original_type);
+        lsp_index_add_def(idx, node->token, hover, node);
+    }
+    else if (node->type == NODE_TRAIT)
+    {
+        char hover[256];
+        sprintf(hover, "trait %s", node->trait.name);
         lsp_index_add_def(idx, node->token, hover, node);
     }
 
@@ -195,6 +220,31 @@ void lsp_walk_node(LSPIndex *idx, ASTNode *node)
     case NODE_EXPR_CALL:
         lsp_walk_node(idx, node->call.callee);
         lsp_walk_node(idx, node->call.args);
+        break;
+    case NODE_MATCH:
+        lsp_walk_node(idx, node->match_stmt.expr);
+        lsp_walk_node(idx, node->match_stmt.cases);
+        break;
+    case NODE_MATCH_CASE:
+        lsp_walk_node(idx, node->match_case.guard);
+        lsp_walk_node(idx, node->match_case.body);
+        break;
+    case NODE_FOR:
+        lsp_walk_node(idx, node->for_stmt.init);
+        lsp_walk_node(idx, node->for_stmt.condition);
+        lsp_walk_node(idx, node->for_stmt.step);
+        lsp_walk_node(idx, node->for_stmt.body);
+        break;
+    case NODE_FOR_RANGE:
+        lsp_walk_node(idx, node->for_range.start);
+        lsp_walk_node(idx, node->for_range.end);
+        lsp_walk_node(idx, node->for_range.body);
+        break;
+    case NODE_LOOP:
+        lsp_walk_node(idx, node->loop_stmt.body);
+        break;
+    case NODE_DEFER:
+        lsp_walk_node(idx, node->defer_stmt.stmt);
         break;
     default:
         break;

@@ -168,6 +168,18 @@ int type_eq(Type *a, Type *b)
     {
         return 0 == strcmp(a->name, b->name);
     }
+    if (a->kind == TYPE_ALIAS)
+    {
+        if (a->alias.is_opaque_alias)
+        {
+            if (b->kind != TYPE_ALIAS || !b->alias.is_opaque_alias)
+            {
+                return 0;
+            }
+            return 0 == strcmp(a->name, b->name);
+        }
+        return type_eq(a->inner, b);
+    }
     if (a->kind == TYPE_POINTER || a->kind == TYPE_ARRAY)
     {
         return type_eq(a->inner, b->inner);
@@ -340,6 +352,8 @@ static char *type_to_string_impl(Type *t)
         }
         return xstrdup(t->name);
     }
+    case TYPE_ALIAS:
+        return xstrdup(t->name);
 
     default:
         return xstrdup("unknown");
@@ -523,6 +537,9 @@ static char *type_to_c_string_impl(Type *t)
 
     case TYPE_GENERIC:
         return xstrdup(t->name);
+
+    case TYPE_ALIAS:
+        return type_to_c_string(t->inner);
 
     case TYPE_ENUM:
         return xstrdup(t->name);

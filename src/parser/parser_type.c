@@ -33,12 +33,25 @@ Type *parse_type_base(ParserContext *ctx, Lexer *l)
         char *name = token_strdup(t);
 
         // Check for alias
-        const char *aliased = find_type_alias(ctx, name);
-        if (aliased)
+        TypeAlias *alias_node = find_type_alias_node(ctx, name);
+        if (alias_node)
         {
             free(name);
             Lexer tmp;
-            lexer_init(&tmp, aliased);
+            lexer_init(&tmp, alias_node->original_type);
+
+            if (alias_node->is_opaque)
+            {
+                Type *underlying = parse_type_formal(ctx, &tmp);
+                Type *wrapper = type_new(TYPE_ALIAS);
+                wrapper->name = xstrdup(alias_node->alias);
+                wrapper->inner = underlying;
+                wrapper->alias.is_opaque_alias = 1;
+                wrapper->alias.alias_defined_in_file =
+                    alias_node->defined_in_file ? xstrdup(alias_node->defined_in_file) : NULL;
+                return wrapper;
+            }
+
             return parse_type_formal(ctx, &tmp);
         }
 

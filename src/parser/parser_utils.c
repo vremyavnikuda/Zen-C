@@ -402,23 +402,33 @@ void add_to_struct_list(ParserContext *ctx, ASTNode *node)
     ctx->parsed_structs_list = r;
 }
 
-void register_type_alias(ParserContext *ctx, const char *alias, const char *original)
+void register_type_alias(ParserContext *ctx, const char *alias, const char *original, int is_opaque,
+                         const char *defined_in_file)
 {
     TypeAlias *ta = xmalloc(sizeof(TypeAlias));
     ta->alias = xstrdup(alias);
     ta->original_type = xstrdup(original);
+    ta->is_opaque = is_opaque;
+    ta->defined_in_file = defined_in_file ? xstrdup(defined_in_file) : NULL;
     ta->next = ctx->type_aliases;
     ctx->type_aliases = ta;
 }
 
 const char *find_type_alias(ParserContext *ctx, const char *alias)
 {
+    TypeAlias *ta = find_type_alias_node(ctx, alias);
+    return ta ? ta->original_type : NULL;
+}
+
+TypeAlias *find_type_alias_node(ParserContext *ctx, const char *alias)
+{
     TypeAlias *ta = ctx->type_aliases;
     while (ta)
     {
         if (strcmp(ta->alias, alias) == 0)
         {
-            return ta->original_type;
+            // printf("DEBUG: Found Alias '%s' (Opaque: %d)\n", alias, ta->is_opaque);
+            return ta;
         }
         ta = ta->next;
     }

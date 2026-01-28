@@ -108,6 +108,7 @@ typedef enum
     TOK_PREPROC,   ///< Preprocessor directive (#...).
     TOK_ALIAS,     ///< 'alias' keyword.
     TOK_COMMENT,   ///< Comment (usually skipped).
+    TOK_OPAQUE,    ///< 'opaque' keyword.
     TOK_UNKNOWN    ///< Unknown token.
 } TokenType;
 

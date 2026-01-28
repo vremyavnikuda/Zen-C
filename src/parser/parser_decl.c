@@ -579,6 +579,10 @@ ASTNode *parse_var_decl(ParserContext *ctx, Lexer *l)
                 {
                     type_obj->inner = init->type_info->inner; // Shallow copy for inner
                 }
+                if (init->type_info->kind == TYPE_ALIAS)
+                {
+                    type_obj->alias = init->type_info->alias;
+                }
                 // Copy function type args for lambda/closure support
                 if (init->type_info->args && init->type_info->arg_count > 0)
                 {
@@ -630,6 +634,59 @@ ASTNode *parse_var_decl(ParserContext *ctx, Lexer *l)
 
     // Register in symbol table with actual token
     add_symbol_with_token(ctx, name, type, type_obj, name_tok);
+
+    if (init && type_obj)
+    {
+        Type *t = init->type_info;
+        if (!t && init->type == NODE_EXPR_VAR)
+        {
+            t = find_symbol_type_info(ctx, init->var_ref.name);
+        }
+
+        // Literal type construction for validation
+        Type *temp_literal_type = NULL;
+        if (!t && init->type == NODE_EXPR_LITERAL)
+        {
+            if (init->literal.type_kind == LITERAL_INT)
+            {
+                temp_literal_type = type_new(TYPE_INT);
+            }
+            else if (init->literal.type_kind == LITERAL_FLOAT)
+            {
+                temp_literal_type = type_new(TYPE_FLOAT);
+            }
+            else if (init->literal.type_kind == LITERAL_STRING)
+            {
+                temp_literal_type = type_new(TYPE_STRING);
+            }
+            else if (init->literal.type_kind == LITERAL_CHAR)
+            {
+                temp_literal_type = type_new(TYPE_CHAR);
+            }
+            t = temp_literal_type;
+        }
+
+        // Special case for literals: if implicit conversion works
+        if (t && !type_eq(type_obj, t))
+        {
+            // Allow integer compatibility if types are roughly ints (lax check in type_eq handles
+            // most, but let's be safe)
+            if (!check_opaque_alias_compat(ctx, type_obj, t))
+            {
+                char *expected = type_to_string(type_obj);
+                char *got = type_to_string(t);
+                zpanic_at(init->token, "Type validation failed. Expected '%s', but got '%s'",
+                          expected, got);
+                free(expected);
+                free(got);
+            }
+        }
+
+        if (temp_literal_type)
+        {
+            free(temp_literal_type); // Simple free, shallow
+        }
+    }
 
     // NEW: Capture Const Integer Values
     if (init && init->type == NODE_EXPR_LITERAL && init->literal.type_kind == LITERAL_INT)
@@ -839,7 +896,7 @@ ASTNode *parse_def(ParserContext *ctx, Lexer *l)
     return o;
 }
 
-ASTNode *parse_type_alias(ParserContext *ctx, Lexer *l)
+ASTNode *parse_type_alias(ParserContext *ctx, Lexer *l, int is_opaque)
 {
     lexer_next(l); // consume 'type' or 'alias'
     Token n = lexer_next(l);
@@ -859,8 +916,11 @@ ASTNode *parse_type_alias(ParserContext *ctx, Lexer *l)
     strncpy(node->type_alias.alias, n.start, n.len);
     node->type_alias.alias[n.len] = 0;
     node->type_alias.original_type = o;
+    node->type_alias.is_opaque = is_opaque;
+    node->type_alias.defined_in_file = g_current_filename ? xstrdup(g_current_filename) : NULL;
 
-    register_type_alias(ctx, node->type_alias.alias, o);
+    register_type_alias(ctx, node->type_alias.alias, o, is_opaque,
+                        node->type_alias.defined_in_file);
 
     return node;
 }

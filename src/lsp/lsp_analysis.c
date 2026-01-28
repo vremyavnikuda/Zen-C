@@ -454,10 +454,79 @@ void lsp_completion(const char *uri, int line, int col, int id)
             cJSON_AddStringToObject(item, "label", s->name);
             cJSON_AddNumberToObject(item, "kind", 22); // Struct
             char detail[256];
-            sprintf(detail, "struct %s", s->name);
+            sprintf(detail, "%sstruct %s",
+                    (s->node && s->node->type == NODE_STRUCT && s->node->strct.is_opaque)
+                        ? "opaque "
+                        : "",
+                    s->name);
             cJSON_AddStringToObject(item, "detail", detail);
             cJSON_AddItemToArray(items, item);
             s = s->next;
+        }
+
+        // Globals and Constants
+        StructRef *g = g_project->ctx->parsed_globals_list;
+        while (g)
+        {
+            if (g->node)
+            {
+                cJSON *item = cJSON_CreateObject();
+                char *name =
+                    (g->node->type == NODE_CONST) ? g->node->var_decl.name : g->node->var_decl.name;
+                cJSON_AddStringToObject(item, "label", name);
+                cJSON_AddNumberToObject(item, "kind", 21); // Constant/Variable
+                char detail[256];
+                sprintf(detail, "%s %s", (g->node->type == NODE_CONST) ? "const" : "var", name);
+                cJSON_AddStringToObject(item, "detail", detail);
+                cJSON_AddItemToArray(items, item);
+            }
+            g = g->next;
+        }
+
+        // Enums
+        StructRef *e = g_project->ctx->parsed_enums_list;
+        while (e)
+        {
+            if (e->node)
+            {
+                cJSON *item = cJSON_CreateObject();
+                cJSON_AddStringToObject(item, "label", e->node->enm.name);
+                cJSON_AddNumberToObject(item, "kind", 13); // Enum
+                char detail[256];
+                sprintf(detail, "enum %s", e->node->enm.name);
+                cJSON_AddStringToObject(item, "detail", detail);
+                cJSON_AddItemToArray(items, item);
+            }
+            e = e->next;
+        }
+
+        // Type Aliases
+        TypeAlias *ta = g_project->ctx->type_aliases;
+        while (ta)
+        {
+            cJSON *item = cJSON_CreateObject();
+            cJSON_AddStringToObject(item, "label", ta->alias);
+            cJSON_AddNumberToObject(item, "kind", 8); // Interface/Reference
+            char detail[256];
+            sprintf(detail, "alias %s = %s", ta->alias, ta->original_type);
+            cJSON_AddStringToObject(item, "detail", detail);
+            cJSON_AddItemToArray(items, item);
+            ta = ta->next;
+        }
+
+        // Keywords
+        const char *keywords[] = {
+            "fn",     "struct",   "enum", "alias",  "return", "if",     "else",   "for",    "while",
+            "break",  "continue", "true", "false",  "int",    "char",   "bool",   "string", "void",
+            "import", "module",   "test", "assert", "defer",  "sizeof", "opaque", "unsafe", "asm",
+            "trait",  "impl",     "u8",   "u16",    "u32",    "u64",    "i8",     "i16",    "i32",
+            "i64",    "f32",      "f64",  "usize",  "isize",  "const",  "var",    NULL};
+        for (int i = 0; keywords[i]; i++)
+        {
+            cJSON *item = cJSON_CreateObject();
+            cJSON_AddStringToObject(item, "label", keywords[i]);
+            cJSON_AddNumberToObject(item, "kind", 14); // Keyword
+            cJSON_AddItemToArray(items, item);
         }
     }
 
