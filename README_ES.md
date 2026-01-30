@@ -606,7 +606,7 @@ Zen C soporta una abreviatura para solicitar entrada al usuario usando el prefij
 - `? "Ingresa la edad: " (edad)`: Imprime el prompt y escanea la entrada en la variable `edad`.
     - Los especificadores de formato se infieren automáticamente según el tipo de variable.
 
-```c
+```zc
 let edad: int;
 ? "¿Cuántos años tienes? " (edad);
 println "Tienes {edad} años.";
