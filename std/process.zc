@@ -1,0 +1,133 @@
+
+import "./core.zc";
+import "./vec.zc";
+import "./mem.zc";
+import "./string.zc";
+import "./option.zc";
+
+raw {    
+    void *_z_popen(char *command, char *type) {
+        return (void *)popen(command, type);
+    }
+    
+    int _z_pclose(void *stream) {
+        return pclose((FILE *)stream);
+    }
+    
+    char *_z_fgets(char *s, int size, void *stream) {
+        return fgets(s, size, (FILE *)stream);
+    }
+
+    int _z_system(char *command) {
+        return system(command);
+    }
+}
+
+extern fn _z_popen(command: char*, type: char*) -> void*;
+extern fn _z_pclose(stream: void*) -> int;
+extern fn _z_fgets(s: char*, size: int, stream: void*) -> char*;
+extern fn _z_system(command: char*) -> int;
+
+struct Output {
+    stdout: String;
+    exit_code: int;
+}
+
+struct Command {
+    program: String;
+    args: Vec<String>;
+}
+
+impl Command {
+    fn new(program: char*) -> Command {
+        return Command {
+            program: String::from(program),
+            args: Vec<String>::new()
+        };
+    }
+    
+    fn arg(self, arg: char*) -> Command* {
+        self.args.push(String::from(arg));
+        return self;
+    }
+    
+    fn _build_cmd(self) -> String {
+        let cmd_str = self.program.substring(0, self.program.length());
+        
+        for arg in &self.args {
+            let space = String::from(" ");
+            cmd_str.append(&space);
+            space.free();
+            
+            cmd_str.append(arg);
+        }
+        
+        return cmd_str;
+    }
+    
+    fn output(self) -> Output {
+        let cmd_str = self._build_cmd();
+        let cmd_c = cmd_str.c_str();
+        
+        let fp = _z_popen(cmd_c, "r");
+        
+        if (fp == 0) {
+            cmd_str.free();
+            // TODO: Better error handling...
+            return Output { 
+                stdout: String::from(""), 
+                exit_code: -1 
+            };
+        }
+        
+        let out = String::from("");
+        let buf_size: usize = 1024;
+        let buf = (char*)malloc(buf_size);
+        
+        while (true) {
+            let res = _z_fgets(buf, (int)buf_size, fp);
+            if (res == 0) break;
+            
+            let chunk = String::from(buf);
+            out.append(&chunk);
+            chunk.free();
+        }
+        
+        let code = _z_pclose(fp);
+        free(buf);
+        cmd_str.free();
+        
+        return Output {
+            stdout: out,
+            exit_code: code
+        };
+    }
+    
+    fn status(self) -> int {
+        let cmd_str = self._build_cmd();
+        let code = _z_system(cmd_str.c_str());
+        cmd_str.free();
+        return code;
+    }
+
+    fn free(self) {
+        self.program.free();
+        
+        for s in &self.args {
+            s.free();
+        }
+        self.args.free();
+    }
+}
+
+impl Drop for Command {
+    fn drop(self) {
+        self.free();
+    }
+}
+
+impl Drop for Output {
+    fn drop(self) {
+        self.stdout.free();
+    }
+}

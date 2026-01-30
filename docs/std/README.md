@@ -8,6 +8,7 @@
 - [Networking (Net)](./net.md) - TCP networking.
 - [Option](./option.md) - Optional values (Some/None).
 - [Path](./path.md) - File path manipulation.
+- [Process](./process.md) - Process execution and management.
 - [Result](./result.md) - Error handling (Ok/Err).
 - [Queue](./queue.md) - FIFO queue (Ring Buffer).
 - [Set](./set.md) - Hash set implementation.

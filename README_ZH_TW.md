@@ -1106,6 +1106,7 @@ Zen C 包含一個涵蓋基本功能的標準庫 (`std`)。
 | **`std/json.zc`** | JSON 解析與序列化。 | [文檔](docs/std/json.md) |
 | **`std/stack.zc`** | 後進先出棧 `Stack<T>`。 | [文檔](docs/std/stack.md) |
 | **`std/set.zc`** | 泛型哈希集合 `Set<T>`。 | [文檔](docs/std/set.md) |
+| **`std/process.zc`** | 進程執行與管理。 | [文檔](docs/std/process.md) |
 
 ---
 

@@ -18,4 +18,5 @@ import "./std/stack.zc"
 import "./std/queue.zc"
 import "./std/env.zc"
 import "./std/slice.zc"
+import "./std/process.zc"
 
