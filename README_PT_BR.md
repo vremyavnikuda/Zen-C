@@ -12,7 +12,7 @@
 
 [![Status do Build](https://img.shields.io/badge/build-passing-brightgreen)]()
 [![Licença](https://img.shields.io/badge/license-MIT-blue)]()
-[![Versão](https://img.shields.io/badge/version-0.1.0-orange)]()
+[![Versão](https://img.shields.io/github/v/release/z-libs/Zen-C?label=versão&color=orange)]()
 [![Plataforma](https://img.shields.io/badge/platform-linux-lightgrey)]()
 
 *Programe como linguagem de alto nível, execute como C.*
@@ -625,7 +625,7 @@ println "Value: {x}, Name: {name}";
 
 Zen C suporta uma abreviação para solicitar entrada do usuário usando o prefixo `?`.
 
-- `? "Promt text"`: Imprime o prompt (sem newline) e aguarda entrada (lê uma linha).
+- `? "Prompt text"`: Imprime o prompt (sem newline) e aguarda entrada (lê uma linha).
 - `? "Enter age: " (age)`: Imprime prompt e escaneia entrada para a variável `age`.
     - Especificadores de formato são automaticamente inferidos com base no tipo da variável.
 
@@ -1108,11 +1108,11 @@ Os seguintes identificadores são reservados porque são palavras-chave em C11:
 
 ### 17. Interoperabilidade com C
 
-Zen C oferece duas formas  de interagir com código C: **Trusted Imports** (Forma conveniente) e **Explicit F11** (Forma segura/precisa).
+Zen C oferece duas formas  de interagir com código C: **Trusted Imports** (Forma conveniente) e **Explicit FFI** (Forma segura/precisa).
 
 #### Método 1: Trusted Imports (Conveniente)
 
-Você pode importar um header C diretamente utilizando a palavra-chave `import` com a extensão `.h`. Isso trata o headeer como um módulo e assume que todos os símbolos acessados através dele existem.
+Você pode importar um header C diretamente utilizando a palavra-chave `import` com a extensão `.h`. Isso trata o header como um módulo e assume que todos os símbolos acessados através dele existem.
 
 ```zc
 //> link: -lm
