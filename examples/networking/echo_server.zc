@@ -1,5 +1,5 @@
 
-import "std/net.zc"
+import "std/net/tcp.zc"
 
 def SIZE = 1024;
 
@@ -38,7 +38,7 @@ fn main() {
                     break;
                 }
                 
-                let write_res = stream.write(&buf[0], bytes);
+                let write_res = stream.write((u8*)&buf[0], bytes);
                  if write_res.is_err() {
                     !"Write error: {write_res.err}";
                     break;
