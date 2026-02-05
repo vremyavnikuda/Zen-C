@@ -187,16 +187,6 @@ void *xcalloc(size_t n, size_t size);
 char *xstrdup(const char *s);
 
 /**
- * @brief Error reporting.
- */
-void zpanic(const char *fmt, ...);
-
-/**
- * @brief Error reporting with token location.
- */
-void zpanic_at(Token t, const char *fmt, ...);
-
-/**
  * @brief Load a file.
  */
 char *load_file(const char *filename);
@@ -223,122 +213,8 @@ void scan_build_directives(struct ParserContext *ctx, const char *src);
  */
 int levenshtein(const char *s1, const char *s2);
 
-/**
- * @brief Error reporting with suggestion.
- */
-void zpanic_with_suggestion(Token t, const char *msg, const char *suggestion);
-
-// Specific error types.
-
-/**
- * @brief Error reporting for undefined function.
- */
-void error_undefined_function(Token t, const char *func_name, const char *suggestion);
-
-/**
- * @brief Error reporting for wrong argument count.
- */
-void error_wrong_arg_count(Token t, const char *func_name, int expected, int got);
-
-/**
- * @brief Error reporting for undefined field.
- */
-void error_undefined_field(Token t, const char *struct_name, const char *field_name,
-                           const char *suggestion);
-
-/**
- * @brief Error reporting for type expected.
- */
-void error_type_expected(Token t, const char *expected, const char *got);
-
-/**
- * @brief Error reporting for cannot index.
- */
-void error_cannot_index(Token t, const char *type_name);
-
-// Warning system.
-
-/**
- * @brief Warning reporting.
- */
-void zwarn(const char *fmt, ...);
-
-/**
- * @brief Warning reporting with token location.
- */
-void zwarn_at(Token t, const char *fmt, ...);
-
-// Specific warnings.
-
-/**
- * @brief Warning reporting for unused variable.
- */
-void warn_unused_variable(Token t, const char *var_name);
-
-/**
- * @brief Warning reporting for unused parameter.
- */
-void warn_unused_parameter(Token t, const char *param_name, const char *func_name);
-
-/**
- * @brief Warning reporting for shadowing.
- */
-void warn_shadowing(Token t, const char *var_name);
-
-/**
- * @brief Warning reporting for unreachable code.
- */
-void warn_unreachable_code(Token t);
-
-/**
- * @brief Warning reporting for implicit conversion.
- */
-void warn_implicit_conversion(Token t, const char *from_type, const char *to_type);
-
-/**
- * @brief Warning reporting for narrowing conversion.
- */
-void warn_narrowing_conversion(Token t, const char *from_type, const char *to_type);
-
-/**
- * @brief Warning reporting for missing return.
- */
-void warn_missing_return(Token t, const char *func_name);
-
-/**
- * @brief Warning reporting for comparison always true.
- */
-void warn_comparison_always_true(Token t, const char *reason);
-
-/**
- * @brief Warning reporting for comparison always false.
- */
-void warn_comparison_always_false(Token t, const char *reason);
-
-/**
- * @brief Warning reporting for division by zero.
- */
-void warn_division_by_zero(Token t);
-
-/**
- * @brief Warning reporting for integer overflow.
- */
-void warn_integer_overflow(Token t, const char *type_name, long long value);
-
-/**
- * @brief Warning reporting for array bounds.
- */
-void warn_array_bounds(Token t, int index, int size);
-
-/**
- * @brief Warning reporting for format string.
- */
-void warn_format_string(Token t, int arg_num, const char *expected, const char *got);
-
-/**
- * @brief Warning reporting for null pointer.
- */
-void warn_null_pointer(Token t, const char *expr);
+// Diagnostics (errors and warnings) are in diagnostics/diagnostics.h
+#include "diagnostics/diagnostics.h"
 
 /**
  * @brief Compiler configuration and flags.

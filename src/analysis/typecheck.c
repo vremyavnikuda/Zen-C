@@ -1,5 +1,6 @@
 
 #include "typecheck.h"
+#include "diagnostics/diagnostics.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -8,7 +9,7 @@
 
 static void tc_error(TypeChecker *tc, Token t, const char *msg)
 {
-    fprintf(stderr, "Type Error at %s:%d:%d: %s\n", g_current_filename, t.line, t.col, msg);
+    zerror_at(t, "%s", msg);
     tc->error_count++;
 }
 
@@ -174,9 +175,8 @@ static void check_expr_call(TypeChecker *tc, ASTNode *node)
             ZenSymbol *global_sym = find_symbol_in_all(tc->pctx, func_name);
             if (!global_sym)
             {
-                char msg[256];
-                snprintf(msg, 255, "Undefined function '%s'", func_name);
-                tc_error(tc, node->call.callee->token, msg);
+                error_undefined_function(node->call.callee->token, func_name, NULL);
+                tc->error_count++;
             }
         }
     }
@@ -246,9 +246,8 @@ static int check_type_compatibility(TypeChecker *tc, Type *target, Type *value, 
 
         char *t_str = type_to_string(target);
         char *v_str = type_to_string(value);
-        char msg[256];
-        snprintf(msg, 255, "Type mismatch: expected '%s', got '%s'", t_str, v_str);
-        tc_error(tc, t, msg);
+        error_type_expected(t, t_str, v_str);
+        tc->error_count++;
         free(t_str);
         free(v_str);
         return 0;

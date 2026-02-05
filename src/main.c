@@ -4,6 +4,7 @@
 #include "repl/repl.h"
 #include "zen/zen_facts.h"
 #include "zprep.h"
+#include "analysis/typecheck.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -293,6 +294,12 @@ int main(int argc, char **argv)
     if (!validate_types(&ctx))
     {
         // Type validation failed
+        return 1;
+    }
+
+    // Run Semantic Analysis
+    if (check_program(&ctx, root) != 0)
+    {
         return 1;
     }
 
