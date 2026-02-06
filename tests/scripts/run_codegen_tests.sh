@@ -2,7 +2,7 @@
 
 # Codegen Verification Test Runner
 ZC="./zc"
-TEST_DIR="tests/codegen"
+TEST_DIR="tests/compiler/codegen"
 PASSED=0
 FAILED=0
 

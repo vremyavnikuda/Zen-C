@@ -196,15 +196,15 @@ clean:
 
 # Test
 test: $(TARGET) $(PLUGINS)
-	./tests/run_tests.sh
-	./tests/run_codegen_tests.sh
-	./tests/run_example_transpile.sh
+	./tests/scripts/run_tests.sh
+	./tests/scripts/run_codegen_tests.sh
+	./tests/scripts/run_example_transpile.sh
 
 test-lsp: $(TARGET)
 	@echo "=> Building LSP Test Runner"
-	$(CC) $(CFLAGS) tests/lsp/lsp_test_runner.c src/lsp/cJSON.c -o tests/lsp/test_runner
+	$(CC) $(CFLAGS) tests/compiler/lsp/lsp_test_runner.c src/lsp/cJSON.c -o tests/compiler/lsp/test_runner
 	@echo "=> Running LSP Tests"
-	./tests/lsp/test_runner
+	./tests/compiler/lsp/test_runner
 
 # Build with alternative compilers
 zig:
