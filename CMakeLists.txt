@@ -84,7 +84,6 @@ set(PLATFORM_LIBS Threads::Threads)
 if(WIN32)
     # Winsock 2 for Networking, ws2_32 is required for our socket abstraction
     list(APPEND PLATFORM_LIBS ws2_32)
-    add_definitions(-D_CRT_SECURE_NO_WARNINGS)
     set(PLUGIN_EXT ".dll")
     set(BINARY_EXT ".exe")
     set(SHARED_FLAGS "")
