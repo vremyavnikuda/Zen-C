@@ -92,5 +92,6 @@ void warn_integer_overflow(Token t, const char *type_name, long long value);
 void warn_array_bounds(Token t, int index, int size);
 void warn_format_string(Token t, int arg_num, const char *expected, const char *got);
 void warn_null_pointer(Token t, const char *expr);
+void warn_void_main(Token t);
 
 #endif

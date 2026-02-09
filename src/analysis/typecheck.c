@@ -835,6 +835,11 @@ static void check_function(TypeChecker *tc, ASTNode *node)
     // Special case: 'main' is allowed to fall off the end (C99 implicit return 0)
     int is_main = node->func.name && strcmp(node->func.name, "main") == 0;
 
+    if (is_main && is_void)
+    {
+        warn_void_main(node->token);
+    }
+
     if (!is_void && !is_main && node->func.body)
     {
         if (!block_always_returns(node->func.body))

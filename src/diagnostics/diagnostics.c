@@ -778,3 +778,9 @@ void warn_null_pointer(Token t, const char *expr)
     sprintf(msg, "Potential null pointer access in '%s'", expr);
     zwarn_with_suggestion(t, msg, "Add a null check before accessing");
 }
+
+void warn_void_main(Token t)
+{
+    zwarn_with_suggestion(t, "'void main()' is non-standard and leads to undefined behavior",
+                          "Consider using 'fn main()' or 'fn main() -> c_int' instead");
+}
