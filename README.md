@@ -409,13 +409,32 @@ fn main() {
 Anonymous functions that can capture their environment.
 ```zc
 let factor = 2;
-let double = x -> x * factor;  // Arrow syntax
+let doubler = x -> x * factor;  // Arrow syntax
 let full = fn(x: int) -> int { return x * factor; }; // Block syntax
+
+// Capture by Reference (Block Syntax)
+let val = 10;
+let modify = fn[&]() { val += 1; }; 
+modify(); // val is now 11
+
+// Capture by Reference (Arrow Syntax)
+let modify_arrow = [&] x -> val += x;
+modify_arrow(5); // val is now 16
+
+// Capture by Reference (Arrow Syntax with Multiple Arguments)
+let sum_into = [&] (a, b) -> val += (a + b);
+sum_into(2, 2); // val is now 20
+
+// Capture by Value (Default)
+let original = 100;
+let implicit = x -> original + x;       // Implicit capture by value (no brackets)
+let explicit = [=] x -> original + x;   // Explicit capture by value
+// let fail = x -> original += x;       // Error: cannot assign to captured value
+
 ```
 
 #### Raw Function Pointers
 Zen C supports raw C function pointers using the `fn*` syntax. This allows seamless interop with C libraries that expect function pointers without closure overhead.
-
 ```zc
 // Function taking a raw function pointer
 fn set_callback(cb: fn*(int)) {

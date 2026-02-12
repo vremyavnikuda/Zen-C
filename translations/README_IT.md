@@ -409,8 +409,28 @@ fn main() {
 Funzioni anonime che possono catturare il loro ambiente.
 ```zc
 let fattore = 2;
-let double = x -> x * fattore;  // Sintassi con freccia
+let raddoppia = x -> x * fattore;  // Sintassi con freccia
 let pieno = fn(x: int) -> int { return x * fattore; }; // Sintassi a blocco
+
+// Cattura per Riferimento (Sintassi a Blocco)
+let val = 10;
+let modify = fn[&]() { val += 1; }; 
+modify(); // val ora è 11
+
+// Cattura per Riferimento (Sintassi a Freccia)
+let modify_arrow = [&] x -> val += x;
+modify_arrow(5); // val ora è 16
+
+// Cattura per Riferimento (Sintassi a Freccia con Argomenti Multipli)
+let sum_into = [&] (a, b) -> val += (a + b);
+sum_into(2, 2); // val ora è 20
+
+// Cattura per Valore (Predefinito)
+let original = 100;
+let implicit = x -> original + x;       // Cattura implicita per valore (senza parentesi)
+let explicit = [=] x -> original + x;   // Cattura esplicita per valore
+// let fail = x -> original += x;       // Errore: impossibile assegnare a valore catturato
+
 ```
 
 #### Puntatori-Funzione grezzi

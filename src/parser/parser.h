@@ -590,12 +590,14 @@ DeprecatedFunc *find_deprecated_func(ParserContext *ctx, const char *name);
 /**
  * @brief Parses a single parameter arrow lambda.
  */
-ASTNode *parse_arrow_lambda_single(ParserContext *ctx, Lexer *l, char *param_name);
+ASTNode *parse_arrow_lambda_single(ParserContext *ctx, Lexer *l, char *param_name,
+                                   int default_capture_mode);
 
 /**
  * @brief Parses a multi-parameter arrow lambda.
  */
-ASTNode *parse_arrow_lambda_multi(ParserContext *ctx, Lexer *l, char **param_names, int num_params);
+ASTNode *parse_arrow_lambda_multi(ParserContext *ctx, Lexer *l, char **param_names, int num_params,
+                                  int default_capture_mode);
 
 // Utils
 

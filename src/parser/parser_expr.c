@@ -218,7 +218,7 @@ static int type_is_unsigned(Type *t)
               0 == strcmp(t->name, "size_t"))));
 }
 
-static void check_format_string(ASTNode *call, Token t)
+static void __attribute__((unused)) check_format_string(ASTNode *call, Token t)
 {
     if (call->type != NODE_EXPR_CALL)
     {
@@ -727,6 +727,7 @@ void analyze_lambda_captures(ParserContext *ctx, ASTNode *lambda)
 
     char **captures = xmalloc(sizeof(char *) * 16);
     char **capture_types = xmalloc(sizeof(char *) * 16);
+    int *capture_modes = xmalloc(sizeof(int) * 16);
     int num_captures = 0;
 
     for (int i = 0; i < num_refs; i++)
@@ -802,7 +803,22 @@ void analyze_lambda_captures(ParserContext *ctx, ASTNode *lambda)
             continue;
         }
 
+        int found = 0;
+        for (int j = 0; j < num_captures; j++)
+        {
+            if (strcmp(var_name, captures[j]) == 0)
+            {
+                found = 1;
+                break;
+            }
+        }
+        if (found)
+        {
+            continue;
+        }
+
         captures[num_captures] = xstrdup(var_name);
+        capture_modes[num_captures] = lambda->lambda.default_capture_mode;
 
         Type *t = find_symbol_type_info(ctx, var_name);
         if (t)
@@ -811,9 +827,6 @@ void analyze_lambda_captures(ParserContext *ctx, ASTNode *lambda)
         }
         else
         {
-            // Fallback for global/unknown
-            // If looks like a function, use "void*" (for closure ctx)
-            // else default to "int" or "void*"
             capture_types[num_captures] = xstrdup("int");
         }
         num_captures++;
@@ -821,6 +834,7 @@ void analyze_lambda_captures(ParserContext *ctx, ASTNode *lambda)
 
     lambda->lambda.captured_vars = captures;
     lambda->lambda.captured_types = capture_types;
+    lambda->lambda.capture_modes = capture_modes;
     lambda->lambda.num_captures = num_captures;
 
     if (local_decls)
@@ -841,6 +855,33 @@ void analyze_lambda_captures(ParserContext *ctx, ASTNode *lambda)
 ASTNode *parse_lambda(ParserContext *ctx, Lexer *l)
 {
     lexer_next(l);
+
+    int default_capture_mode = 0; // 0=Value, 1=Reference
+    // TODO: explicit capture list parsing
+    if (lexer_peek(l).type == TOK_LBRACKET)
+    {
+        lexer_next(l); // eat [
+        if (lexer_peek(l).type == TOK_OP && lexer_peek(l).len == 1 && lexer_peek(l).start[0] == '&')
+        {
+            default_capture_mode = 1;
+            lexer_next(l);
+        }
+        else if (lexer_peek(l).type == TOK_OP && lexer_peek(l).len == 1 &&
+                 lexer_peek(l).start[0] == '=')
+        {
+            default_capture_mode = 0;
+            lexer_next(l);
+        }
+
+        // TODO: parse specific captures (e.g. [=, &x, y])
+        // For now just handle default mode
+
+        if (lexer_peek(l).type != TOK_RBRACKET)
+        {
+            zpanic_at(lexer_peek(l), "Expected ']' after capture list");
+        }
+        lexer_next(l); // eat ]
+    }
 
     if (lexer_peek(l).type != TOK_LPAREN)
     {
@@ -921,7 +962,10 @@ ASTNode *parse_lambda(ParserContext *ctx, Lexer *l)
     lambda->lambda.param_types = param_types;
     lambda->lambda.return_type = return_type;
     lambda->lambda.body = body;
+    lambda->lambda.body = body;
     lambda->lambda.num_params = num_params;
+    lambda->lambda.default_capture_mode = default_capture_mode;
+    lambda->lambda.capture_modes = NULL; // Will be allocated in analysis
     lambda->lambda.lambda_id = ctx->lambda_counter++;
     lambda->lambda.is_expression = 0;
     lambda->type_info = t;
@@ -1818,7 +1862,8 @@ ASTNode *parse_primary(ParserContext *ctx, Lexer *l)
 
     else if (t.type == TOK_IDENT)
     {
-        if (t.len == 2 && strncmp(t.start, "fn", 2) == 0 && lexer_peek(l).type == TOK_LPAREN)
+        if (t.len == 2 && strncmp(t.start, "fn", 2) == 0 &&
+            (lexer_peek(l).type == TOK_LPAREN || lexer_peek(l).type == TOK_LBRACKET))
         {
             l->pos -= t.len;
             l->col -= t.len;
@@ -1840,7 +1885,7 @@ ASTNode *parse_primary(ParserContext *ctx, Lexer *l)
         if (lexer_peek(l).type == TOK_ARROW)
         {
             lexer_next(l);
-            return parse_arrow_lambda_single(ctx, l, ident);
+            return parse_arrow_lambda_single(ctx, l, ident, 0);
         }
 
         char *acc = ident;
@@ -3342,7 +3387,7 @@ ASTNode *parse_primary(ParserContext *ctx, Lexer *l)
         if (is_lambda && nparams > 0)
         {
             *l = lookahead; // Commit
-            return parse_arrow_lambda_multi(ctx, l, params, nparams);
+            return parse_arrow_lambda_multi(ctx, l, params, nparams, 0);
         }
 
         int saved = l->pos;
@@ -3521,6 +3566,116 @@ ASTNode *parse_primary(ParserContext *ctx, Lexer *l)
 
     else if (t.type == TOK_LBRACKET)
     {
+        int default_capture_mode = -1;
+        Lexer capture_look = *l;
+        if (lexer_peek(&capture_look).type == TOK_OP && lexer_peek(&capture_look).len == 1)
+        {
+            char op = lexer_peek(&capture_look).start[0];
+            if (op == '&')
+            {
+                default_capture_mode = 1;
+            }
+            else if (op == '=')
+            {
+                default_capture_mode = 0;
+            }
+
+            if (default_capture_mode != -1)
+            {
+                lexer_next(&capture_look);
+                if (lexer_peek(&capture_look).type == TOK_RBRACKET)
+                {
+                    lexer_next(&capture_look);
+
+                    Token next = lexer_peek(&capture_look);
+                    if (next.type == TOK_IDENT)
+                    {
+                        lexer_next(&capture_look);
+                        if (lexer_peek(&capture_look).type == TOK_ARROW)
+                        {
+                            lexer_next(l);
+                            lexer_next(l);
+                            Token param = lexer_next(l);
+                            lexer_next(l);
+                            return parse_arrow_lambda_single(ctx, l, token_strdup(param),
+                                                             default_capture_mode);
+                        }
+                    }
+                    else if (next.type == TOK_LPAREN)
+                    {
+                        int depth = 0;
+                        Lexer scan = capture_look;
+                        int is_arrow = 0;
+                        while (1)
+                        {
+                            Token tk = lexer_next(&scan);
+                            if (tk.type == TOK_EOF)
+                            {
+                                break;
+                            }
+                            if (tk.type == TOK_LPAREN)
+                            {
+                                depth++;
+                            }
+                            else if (tk.type == TOK_RPAREN)
+                            {
+                                depth--;
+                                if (depth == 0)
+                                {
+                                    if (lexer_peek(&scan).type == TOK_ARROW)
+                                    {
+                                        is_arrow = 1;
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (is_arrow)
+                        {
+                            lexer_next(l);
+                            lexer_next(l);
+
+                            lexer_next(l);
+                            char **params = xmalloc(sizeof(char *) * 16);
+                            int nparams = 0;
+                            while (1)
+                            {
+                                if (lexer_peek(l).type != TOK_IDENT)
+                                {
+                                    break;
+                                }
+                                params[nparams++] = token_strdup(lexer_next(l));
+                                Token sep = lexer_peek(l);
+                                if (sep.type == TOK_COMMA)
+                                {
+                                    lexer_next(l);
+                                    continue;
+                                }
+                                else if (sep.type == TOK_RPAREN)
+                                {
+                                    lexer_next(l);
+                                    break;
+                                }
+                                else
+                                {
+                                    break;
+                                }
+                            }
+
+                            if (lexer_next(l).type != TOK_ARROW)
+                            {
+                                zpanic_at(t, "Expected ->");
+                            }
+
+                            return parse_arrow_lambda_multi(ctx, l, params, nparams,
+                                                            default_capture_mode);
+                        }
+                    }
+                }
+            }
+        }
+
         ASTNode *head = NULL, *tail = NULL;
         int count = 0;
         while (lexer_peek(l).type != TOK_RBRACKET)
@@ -6721,9 +6876,12 @@ ASTNode *parse_expr_prec(ParserContext *ctx, Lexer *l, Precedence min_prec)
     return lhs;
 }
 
-ASTNode *parse_arrow_lambda_single(ParserContext *ctx, Lexer *l, char *param_name)
+ASTNode *parse_arrow_lambda_single(ParserContext *ctx, Lexer *l, char *param_name,
+                                   int default_capture_mode)
 {
     ASTNode *lambda = ast_create(NODE_LAMBDA);
+    lambda->lambda.num_params = 1;
+    lambda->lambda.default_capture_mode = default_capture_mode;
     lambda->lambda.param_names = xmalloc(sizeof(char *));
     lambda->lambda.param_names[0] = param_name;
     lambda->lambda.num_params = 1;
@@ -6815,11 +6973,13 @@ ASTNode *parse_arrow_lambda_single(ParserContext *ctx, Lexer *l, char *param_nam
     return lambda;
 }
 
-ASTNode *parse_arrow_lambda_multi(ParserContext *ctx, Lexer *l, char **param_names, int num_params)
+ASTNode *parse_arrow_lambda_multi(ParserContext *ctx, Lexer *l, char **param_names, int num_params,
+                                  int default_capture_mode)
 {
     ASTNode *lambda = ast_create(NODE_LAMBDA);
     lambda->lambda.param_names = param_names;
     lambda->lambda.num_params = num_params;
+    lambda->lambda.default_capture_mode = default_capture_mode;
 
     // Type Info construction
     Type *t = type_new(TYPE_FUNCTION);

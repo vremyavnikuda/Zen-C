@@ -411,6 +411,26 @@ Funciones anónimas que pueden capturar su entorno.
 let factor = 2;
 let doble = x -> x * factor;  // Sintaxis de flecha
 let completo = fn(x: int) -> int { return x * factor; }; // Sintaxis de bloque
+
+// Captura por Referencia (Sintaxis de Bloque)
+let val = 10;
+let modificar = fn[&]() { val += 1; }; 
+modificar(); // val ahora es 11
+
+// Captura por Referencia (Sintaxis de Flecha)
+let modificar_flecha = [&] x -> val += x;
+modificar_flecha(5); // val ahora es 16
+
+// Captura por Referencia (Sintaxis de Flecha con Múltiples Argumentos)
+let sumar_en = [&] (a, b) -> val += (a + b);
+sumar_en(2, 2); // val ahora es 20
+
+// Captura por Valor (Por Defecto)
+let original = 100;
+let implicita = x -> original + x;      // Captura implícita por valor (sin corchetes)
+let explicita = [=] x -> original + x;  // Captura explícita por valor
+// let fallar = x -> original += x;     // Error: no se puede asignar a valor capturado
+
 ```
 
 #### Punteros a Funciones Crudos

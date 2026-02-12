@@ -292,8 +292,16 @@ void emit_lambda_defs(ParserContext *ctx, FILE *out)
             fprintf(out, "struct Lambda_%d_Ctx {\n", node->lambda.lambda_id);
             for (int i = 0; i < node->lambda.num_captures; i++)
             {
-                fprintf(out, "    %s %s;\n", node->lambda.captured_types[i],
-                        node->lambda.captured_vars[i]);
+                if (node->lambda.capture_modes && node->lambda.capture_modes[i] == 1)
+                {
+                    fprintf(out, "    %s* %s;\n", node->lambda.captured_types[i],
+                            node->lambda.captured_vars[i]);
+                }
+                else
+                {
+                    fprintf(out, "    %s %s;\n", node->lambda.captured_types[i],
+                            node->lambda.captured_vars[i]);
+                }
             }
             fprintf(out, "};\n");
         }

@@ -68,7 +68,15 @@ static void codegen_var_expr(ParserContext *ctx, ASTNode *node, FILE *out)
         {
             if (strcmp(node->var_ref.name, g_current_lambda->lambda.captured_vars[i]) == 0)
             {
-                fprintf(out, "ctx->%s", node->var_ref.name);
+                if (g_current_lambda->lambda.capture_modes &&
+                    g_current_lambda->lambda.capture_modes[i] == 1)
+                {
+                    fprintf(out, "(*ctx->%s)", node->var_ref.name);
+                }
+                else
+                {
+                    fprintf(out, "ctx->%s", node->var_ref.name);
+                }
                 return;
             }
         }
@@ -145,26 +153,69 @@ static void codegen_lambda_expr(ASTNode *node, FILE *out)
                 node->lambda.lambda_id, node->lambda.lambda_id);
         for (int i = 0; i < node->lambda.num_captures; i++)
         {
-            fprintf(out, "ctx->%s = ", node->lambda.captured_vars[i]);
-            int found = 0;
-            if (g_current_lambda)
+            if (node->lambda.capture_modes && node->lambda.capture_modes[i] == 1)
             {
-                for (int k = 0; k < g_current_lambda->lambda.num_captures; k++)
+                int found = 0;
+                if (g_current_lambda)
                 {
-                    if (strcmp(node->lambda.captured_vars[i],
-                               g_current_lambda->lambda.captured_vars[k]) == 0)
+                    for (int k = 0; k < g_current_lambda->lambda.num_captures; k++)
                     {
-                        fprintf(out, "ctx->%s", node->lambda.captured_vars[i]);
-                        found = 1;
-                        break;
+                        if (strcmp(node->lambda.captured_vars[i],
+                                   g_current_lambda->lambda.captured_vars[k]) == 0)
+                        {
+                            if (g_current_lambda->lambda.capture_modes &&
+                                g_current_lambda->lambda.capture_modes[k] == 1)
+                            {
+                                fprintf(out, "ctx->%s = ctx->%s;\n", node->lambda.captured_vars[i],
+                                        node->lambda.captured_vars[i]);
+                            }
+                            else
+                            {
+                                fprintf(out, "ctx->%s = &ctx->%s;\n", node->lambda.captured_vars[i],
+                                        node->lambda.captured_vars[i]);
+                            }
+                            found = 1;
+                            break;
+                        }
                     }
                 }
+                if (!found)
+                {
+                    fprintf(out, "ctx->%s = &%s;\n", node->lambda.captured_vars[i],
+                            node->lambda.captured_vars[i]);
+                }
             }
-            if (!found)
+            else
             {
-                fprintf(out, "%s", node->lambda.captured_vars[i]);
+                fprintf(out, "ctx->%s = ", node->lambda.captured_vars[i]);
+                int found = 0;
+                if (g_current_lambda)
+                {
+                    for (int k = 0; k < g_current_lambda->lambda.num_captures; k++)
+                    {
+                        if (strcmp(node->lambda.captured_vars[i],
+                                   g_current_lambda->lambda.captured_vars[k]) == 0)
+                        {
+                            if (g_current_lambda->lambda.capture_modes &&
+                                g_current_lambda->lambda.capture_modes[k] == 1)
+                            {
+                                fprintf(out, "(*ctx->%s)", node->lambda.captured_vars[i]);
+                            }
+                            else
+                            {
+                                fprintf(out, "ctx->%s", node->lambda.captured_vars[i]);
+                            }
+                            found = 1;
+                            break;
+                        }
+                    }
+                }
+                if (!found)
+                {
+                    fprintf(out, "%s", node->lambda.captured_vars[i]);
+                }
+                fprintf(out, ";\n");
             }
-            fprintf(out, ";\n");
         }
         fprintf(out, "(z_closure_T){.func = _lambda_%d, .ctx = ctx}; })", node->lambda.lambda_id);
     }

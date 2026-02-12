@@ -577,6 +577,8 @@ struct ASTNode
             char **captured_vars;
             char **captured_types;
             int num_captures;
+            int *capture_modes;
+            int default_capture_mode;
         } lambda;
 
         struct

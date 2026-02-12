@@ -407,8 +407,28 @@ fn main() {
 Funções anônimas que podem capturar seu ambiente.
 ```zc
 let factor = 2;
-let double = x -> x * factor;  // Sintaxe de seta
+let dobrar = x -> x * factor;  // Sintaxe de seta
 let full = fn(x: int) -> int { return x * factor; }; // Sintaxe de bloco
+
+// Captura por Referência (Sintaxe de Bloco)
+let val = 10;
+let modify = fn[&]() { val += 1; }; 
+modify(); // val agora é 11
+
+// Captura por Referência (Sintaxe de Seta)
+let modify_arrow = [&] x -> val += x;
+modify_arrow(5); // val agora é 16
+
+// Captura por Referência (Sintaxe de Seta com Múltiplos Argumentos)
+let sum_into = [&] (a, b) -> val += (a + b);
+sum_into(2, 2); // val agora é 20
+
+// Captura por Valor (Padrão)
+let original = 100;
+let implicita = x -> original + x;      // Captura implícita por valor (sem colchetes)
+let explicita = [=] x -> original + x;  // Captura explícita por valor
+// let fail = x -> original += x;       // Erro: não é possível atribuir a valor capturado
+
 ```
 
 #### Ponteiros de Função Brutos

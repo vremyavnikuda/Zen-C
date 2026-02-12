@@ -474,13 +474,9 @@ Token lexer_next(Lexer *l)
     {
         len = 2;
     }
-    else if (s[1] == '=')
+    else if (s[1] == '=' && strchr("=!<>+-*/%|&^", s[0]))
     {
-        // This catches: == != <= >= += -= *= /= %= |= &= ^=
-        if (strchr("=!<>+-*/%|&^", s[0]))
-        {
-            len = 2;
-        }
+        len = 2;
     }
 
     else

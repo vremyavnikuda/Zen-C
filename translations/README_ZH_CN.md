@@ -410,8 +410,28 @@ fn main() {
 可以捕获环境的匿名函数。
 ```zc
 let factor = 2;
-let double = x -> x * factor;  // 箭头语法
+let doubler = x -> x * factor;  // 箭头语法
 let full = fn(x: int) -> int { return x * factor; }; // 块语法
+
+// 引用捕获（块语法）
+let val = 10;
+let modify = fn[&]() { val += 1; }; 
+modify(); // val 现在是 11
+
+// 引用捕获（箭头语法）
+let modify_arrow = [&] x -> val += x;
+modify_arrow(5); // val 现在是 16
+
+// 引用捕获（多参数箭头语法）
+let sum_into = [&] (a, b) -> val += (a + b);
+sum_into(2, 2); // val 现在是 20
+
+// 值捕获（默认）
+let original = 100;
+let implicit = x -> original + x;       // 隐式值捕获（无括号）
+let explicit = [=] x -> original + x;   // 显式值捕获
+// let fail = x -> original += x;       // 错误：无法赋值给捕获的值
+
 ```
 
 #### 原始函数指针
