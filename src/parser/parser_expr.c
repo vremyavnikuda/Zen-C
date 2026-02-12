@@ -2802,6 +2802,30 @@ ASTNode *parse_primary(ParserContext *ctx, Lexer *l)
 
                     ASTNode *arg = parse_expression(ctx, l);
 
+                    // Move Semantics Logic
+                    check_move_usage(ctx, arg, arg ? arg->token : t1);
+                    if (arg && arg->type == NODE_EXPR_VAR)
+                    {
+                        Type *t = find_symbol_type_info(ctx, arg->var_ref.name);
+                        if (!t)
+                        {
+                            ZenSymbol *s = find_symbol_entry(ctx, arg->var_ref.name);
+                            if (s)
+                            {
+                                t = s->type_info;
+                            }
+                        }
+
+                        if (!is_type_copy(ctx, t))
+                        {
+                            ZenSymbol *s = find_symbol_entry(ctx, arg->var_ref.name);
+                            if (s)
+                            {
+                                s->is_moved = 1;
+                            }
+                        }
+                    }
+
                     // Implicit trait cast logic
                     if (sig && args_provided < sig->total_args && arg)
                     {
@@ -3147,6 +3171,30 @@ ASTNode *parse_primary(ParserContext *ctx, Lexer *l)
                     }
 
                     ASTNode *arg = parse_expression(ctx, l);
+
+                    // Move Semantics Logic
+                    check_move_usage(ctx, arg, arg ? arg->token : t1);
+                    if (arg && arg->type == NODE_EXPR_VAR)
+                    {
+                        Type *t = find_symbol_type_info(ctx, arg->var_ref.name);
+                        if (!t)
+                        {
+                            ZenSymbol *s = find_symbol_entry(ctx, arg->var_ref.name);
+                            if (s)
+                            {
+                                t = s->type_info;
+                            }
+                        }
+
+                        if (!is_type_copy(ctx, t))
+                        {
+                            ZenSymbol *s = find_symbol_entry(ctx, arg->var_ref.name);
+                            if (s)
+                            {
+                                s->is_moved = 1;
+                            }
+                        }
+                    }
 
                     if (!head)
                     {
