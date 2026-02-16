@@ -32,7 +32,7 @@ extern fn _z_pclose(stream: void*) -> c_int;
 extern fn _z_fgets(s: char*, size: c_int, stream: void*) -> char*;
 
 struct Output {
-    stdout: String;
+    std_out: String;
     exit_code: int;
 }
 
@@ -78,7 +78,7 @@ impl Command {
             cmd_str.free();
             // TODO: Better error handling...
             return Output { 
-                stdout: String::from(""), 
+                std_out: String::from(""), 
                 exit_code: -1 
             };
         }
@@ -101,7 +101,7 @@ impl Command {
         cmd_str.free();
         
         return Output {
-            stdout: out,
+            std_out: out,
             exit_code: code
         };
     }
@@ -131,6 +131,6 @@ impl Drop for Command {
 
 impl Drop for Output {
     fn drop(self) {
-        self.stdout.free();
+        self.std_out.free();
     }
 }

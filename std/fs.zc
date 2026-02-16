@@ -20,7 +20,6 @@ extern fn unlink(pathname: const char*) -> c_int;
 extern fn rmdir(pathname: const char*) -> c_int;
 extern fn malloc(size: usize) -> void*;
 extern fn free(ptr: void*);
-extern fn getcwd(buf: char*, size: usize) -> char*;
 
 // Minimal raw block: required for opaque FILE*/DIR* types and C struct access
 // These cannot be expressed in Zen-C extern declarations without type conflicts
@@ -77,7 +76,11 @@ raw {
         if (!ent) return 0;
         strncpy(out_name, ent->d_name, buf_size - 1);
         out_name[buf_size - 1] = 0;
+#if defined(_DIRENT_HAVE_D_TYPE) || defined(DT_DIR)
         *is_dir = (ent->d_type == DT_DIR);
+#else
+        *is_dir = 0; // Fallback for Windows/MinGW if d_type missing
+#endif
         return 1;
     }
 
@@ -88,6 +91,11 @@ raw {
         #else
             return mkdir(path, 0777);
         #endif
+    }
+
+    // Wrapper for getcwd to avoid signature conflicts on Windows
+    char* _z_fs_getcwd(char* buf, size_t size) {
+        return getcwd(buf, size);
     }
 }
 
@@ -100,6 +108,7 @@ extern fn _z_fs_fread(ptr: void*, size: usize, nmemb: usize, stream: void*) -> u
 extern fn _z_fs_fwrite(ptr: void*, size: usize, nmemb: usize, stream: void*) -> usize;
 extern fn _z_fs_fseek(stream: void*, offset: I64, whence: c_int) -> c_int;
 extern fn _z_fs_ftell(stream: void*) -> I64;
+extern fn _z_fs_getcwd(buf: char*, size: usize) -> char*;
 extern fn _z_fs_opendir(name: const char*) -> void*;
 extern fn _z_fs_closedir(dir: void*) -> c_int;
 
@@ -293,7 +302,7 @@ impl File {
         let buf: char* = malloc(1024);
         if (buf == NULL) return Result<String>::Err("Out of memory");
         
-        if (getcwd(buf, 1024) == NULL) {
+        if (_z_fs_getcwd(buf, 1024) == NULL) {
             free(buf);
             return Result<String>::Err("Failed to get current directory");
         }
