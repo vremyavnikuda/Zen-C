@@ -71,14 +71,17 @@ jobs:
           echo "Target: $TEST_TARGET"
           echo "Compiler: $COMPILER"
           
-          # Detect executable
+          # Detect executable and flags
           ZC_BIN="./zc"
+          TRE_FLAGS="-Istd/third-party/tre/include -Istd obj/std/third-party/tre/lib/*.o"
+          
           if [ -f "./zc.exe" ]; then
              ZC_BIN="./zc.exe"
+             TRE_FLAGS="-Istd/third-party/tre/include -Istd std/third-party/tre/lib/*.c -DHAVE_CONFIG_H"
           fi
           
           if [ "$TEST_TARGET" = "all" ]; then
-             ./tests/scripts/run_tests.sh --cc $COMPILER
+             ./tests/scripts/run_tests.sh --cc $COMPILER $TRE_FLAGS
           else
              if [ ! -f "$TEST_TARGET" ]; then
                 echo "Error: Test file '$TEST_TARGET' not found."
@@ -86,5 +89,5 @@ jobs:
                 find tests -name "*.zc"
                 exit 1
              fi
-             $ZC_BIN run "$TEST_TARGET" --cc $COMPILER $FLAGS
+             $ZC_BIN run "$TEST_TARGET" --cc $COMPILER $FLAGS $TRE_FLAGS
           fi
