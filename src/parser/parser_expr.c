@@ -2076,6 +2076,8 @@ ASTNode *parse_primary(ParserContext *ctx, Lexer *l)
                             tmp[suffix.len] = 0;
                             free(acc);
                             acc = tmp;
+
+                            register_extern_symbol(ctx, acc);
                         }
 
                         else
