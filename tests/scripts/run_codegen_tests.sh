@@ -22,9 +22,9 @@ if [ $? -ne 0 ]; then
     echo "FAIL (Compilation error)"
     ((FAILED++))
 else
-    # Check out.c for duplicates
+    # Check generated C file for duplicates
     # We expect "typedef struct Vec2f Vec2f;" to appear exactly once
-    COUNT=$(grep -c "typedef struct Vec2f Vec2f;" out.c)
+    COUNT=$(grep -c "typedef struct Vec2f Vec2f;" "${TEST_NAME%.zc}.c")
     
     if [ "$COUNT" -eq 1 ]; then
         echo "PASS"
@@ -36,7 +36,7 @@ else
 fi
 
 # Cleanup
-rm -f out.c a.out
+rm -f "${TEST_NAME%.zc}.c" a.out
 
 echo "----------------------------------------"
 echo "Summary:"

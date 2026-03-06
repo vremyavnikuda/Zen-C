@@ -235,12 +235,6 @@ static void codegen_lambda_expr(ParserContext *ctx, ASTNode *node, FILE *out)
             fprintf(out, "_z_closure_ctx_stash[%d] = _z_ctx_%d;\n", lid, lid);
             fprintf(out, "(z_closure_T){.func = _lambda_%d, .ctx = _z_ctx_%d}; })", lid, lid);
         }
-
-        // Register for pending free at statement level
-        if (pending_closure_free_count < MAX_PENDING_CLOSURE_FREES)
-        {
-            pending_closure_frees[pending_closure_free_count++] = lid;
-        }
     }
     else
     {

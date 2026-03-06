@@ -786,6 +786,8 @@ void codegen_node_single(ParserContext *ctx, ASTNode *node, FILE *out)
             {
                 // Check if type implements Drop
                 int has_drop = 0;
+                char *drop_type_name = NULL;
+
                 if (arg_type->kind == TYPE_STRUCT && arg_type->name)
                 {
                     ASTNode *def = find_struct_def(ctx, arg_type->name);
@@ -793,6 +795,7 @@ void codegen_node_single(ParserContext *ctx, ASTNode *node, FILE *out)
                         def->type_info->traits.has_drop)
                     {
                         has_drop = 1;
+                        drop_type_name = arg_type->name;
                     }
                 }
 
@@ -802,9 +805,9 @@ void codegen_node_single(ParserContext *ctx, ASTNode *node, FILE *out)
 
                     ASTNode *defer_node = xmalloc(sizeof(ASTNode));
                     defer_node->type = NODE_RAW_STMT;
-                    char *stmt_str = xmalloc(256 + strlen(arg_name) * 2 + strlen(arg_type->name));
+                    char *stmt_str = xmalloc(256 + strlen(arg_name) * 2 + strlen(drop_type_name));
                     sprintf(stmt_str, "if (__z_drop_flag_%s) %s__Drop_glue(&%s);", arg_name,
-                            arg_type->name, arg_name);
+                            drop_type_name, arg_name);
                     defer_node->raw_stmt.content = stmt_str;
 
                     if (defer_count < MAX_DEFER)
@@ -1933,6 +1936,29 @@ void codegen_node_single(ParserContext *ctx, ASTNode *node, FILE *out)
     default:
         codegen_expression(ctx, node, out);
         fprintf(out, ";\n");
+        // Suppress closure context free for Thread::spawn calls —
+        // the thread trampoline takes ownership of the closure context.
+        if (node->type == NODE_EXPR_CALL && node->call.callee && pending_closure_free_count > 0)
+        {
+            int is_thread_spawn = 0;
+            if (node->call.callee->type == NODE_EXPR_VAR && node->call.callee->var_ref.name &&
+                strstr(node->call.callee->var_ref.name, "Thread::spawn"))
+            {
+                is_thread_spawn = 1;
+            }
+            else if (node->call.callee->type == NODE_EXPR_MEMBER &&
+                     node->call.callee->member.target &&
+                     node->call.callee->member.target->type == NODE_EXPR_VAR &&
+                     strcmp(node->call.callee->member.target->var_ref.name, "Thread") == 0 &&
+                     strcmp(node->call.callee->member.field, "spawn") == 0)
+            {
+                is_thread_spawn = 1;
+            }
+            if (is_thread_spawn)
+            {
+                pending_closure_free_count = 0;
+            }
+        }
         emit_pending_closure_frees(out);
         break;
     }

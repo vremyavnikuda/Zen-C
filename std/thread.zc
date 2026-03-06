@@ -24,7 +24,9 @@ raw {
         struct ZenThreadCtx *c = (struct ZenThreadCtx*)arg;
         z_closure_T *closure = (z_closure_T*)c;
         void (*f)(void*) = (void(*)(void*))closure->func;
+        void *ctx_to_free = closure->ctx;
         f(closure->ctx);
+        if (ctx_to_free) free(ctx_to_free);
         free(c);
         return NULL;
     }
