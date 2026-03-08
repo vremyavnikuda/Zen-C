@@ -1656,7 +1656,7 @@ static ASTNode *parse_char_literal(Token t)
             val = (unsigned char)*s;
             break;
         }
-        node->type_info = type_new(TYPE_I8);
+        node->type_info = type_new(TYPE_CHAR);
     }
     else
     {
@@ -1664,7 +1664,7 @@ static ASTNode *parse_char_literal(Token t)
         if ((first & 0x80) == 0)
         {
             val = first;
-            node->type_info = type_new(TYPE_I8);
+            node->type_info = type_new(TYPE_CHAR);
         }
         else if ((first & 0xE0) == 0xC0)
         {
