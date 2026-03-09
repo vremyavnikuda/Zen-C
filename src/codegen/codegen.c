@@ -53,7 +53,6 @@ static void codegen_literal_expr(ASTNode *node, FILE *out)
     }
     else if (node->literal.type_kind == LITERAL_CHAR)
     {
-        // For multi-byte characters or runes, emit the integer value
         if (node->literal.int_val > 127)
         {
             fprintf(out, "%u", (unsigned int)node->literal.int_val);
@@ -476,24 +475,90 @@ void codegen_expression(ParserContext *ctx, ASTNode *node, FILE *out)
         }
         else
         {
-            fprintf(out, "(");
             int is_assignment =
                 (node->binary.op[strlen(node->binary.op) - 1] == '=' &&
                  strcmp(node->binary.op, "==") != 0 && strcmp(node->binary.op, "!=") != 0 &&
                  strcmp(node->binary.op, "<=") != 0 && strcmp(node->binary.op, ">=") != 0);
 
-            if (is_assignment)
+            int is_drop_assignment = 0;
+            char *clean_type = NULL;
+            if (is_assignment && strcmp(node->binary.op, "=") == 0 && g_config.use_cpp)
             {
+                char *type_name = infer_type(ctx, node->binary.left);
+                if (type_name)
+                {
+                    clean_type = xstrdup(type_name);
+                    char *ptr = strchr(clean_type, '*');
+                    if (ptr)
+                    {
+                        *ptr = '\0';
+                    }
+                    char *base = clean_type;
+                    if (strncmp(base, "struct ", 7) == 0)
+                    {
+                        base += 7;
+                    }
+                    ASTNode *def = find_struct_def(ctx, base);
+                    if (def && def->type_info && def->type_info->traits.has_drop)
+                    {
+                        is_drop_assignment = 1;
+                        memmove(clean_type, base, strlen(base) + 1);
+                    }
+                    free(type_name);
+                }
+            }
+
+            if (is_drop_assignment)
+            {
+                fprintf(out, "({ ");
+                fprintf(out, "__typeof__((");
                 codegen_expression(ctx, node->binary.left, out);
+                fprintf(out, "))* _z_dest = &(");
+                codegen_expression(ctx, node->binary.left, out);
+                fprintf(out, "); ");
+
+                if (node->binary.left->type == NODE_EXPR_VAR)
+                {
+                    fprintf(out, "if (__z_drop_flag_%s) %s__Drop_glue(_z_dest); ",
+                            node->binary.left->var_ref.name, clean_type);
+                }
+                else
+                {
+                    fprintf(out, "%s__Drop_glue(_z_dest); ", clean_type);
+                }
+
+                fprintf(out, "*_z_dest = (");
+                codegen_expression_with_move(ctx, node->binary.right, out);
+                fprintf(out, "); ");
+
+                if (node->binary.left->type == NODE_EXPR_VAR)
+                {
+                    fprintf(out, "__z_drop_flag_%s = 1; ", node->binary.left->var_ref.name);
+                }
+
+                fprintf(out, "*_z_dest; })");
             }
             else
             {
-                codegen_expression_with_move(ctx, node->binary.left, out);
+                fprintf(out, "(");
+                if (is_assignment)
+                {
+                    codegen_expression(ctx, node->binary.left, out);
+                }
+                else
+                {
+                    codegen_expression_with_move(ctx, node->binary.left, out);
+                }
+
+                fprintf(out, " %s ", node->binary.op);
+                codegen_expression_with_move(ctx, node->binary.right, out);
+                fprintf(out, ")");
             }
 
-            fprintf(out, " %s ", node->binary.op);
-            codegen_expression_with_move(ctx, node->binary.right, out);
-            fprintf(out, ")");
+            if (clean_type)
+            {
+                free(clean_type);
+            }
         }
         break;
     case NODE_EXPR_VAR:

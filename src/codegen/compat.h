@@ -43,9 +43,11 @@
     "#endif\n"
 
 #ifdef __SIZEOF_INT128__
+#define _z_safe_i128(x) _Generic((x), __int128: (x), default: (__int128)0)
+#define _z_safe_u128(x) _Generic((x), unsigned __int128: (x), default: (unsigned __int128)0)
 #define _z_128_map , __int128 : "%s", unsigned __int128 : "%s"
 #define _z_128_arg_map(x)                                                                          \
-    , __int128 : _z_i128_str((__int128)(x)), unsigned __int128 : _z_u128_str((unsigned __int128)(x))
+    , __int128 : _z_i128_str(_z_safe_i128(x)), unsigned __int128 : _z_u128_str(_z_safe_u128(x))
 #else
 #define _z_128_map
 #define _z_128_arg_map(x)
@@ -94,8 +96,11 @@
 
 #define ZC_C_ARG_GENERIC_STR                                                                       \
     "#ifdef __SIZEOF_INT128__\n"                                                                   \
-    "#define _z_128_arg_map(x) ,__int128: _z_i128_str((__int128)(x)), unsigned __int128: "         \
-    "_z_u128_str((unsigned __int128)(x))\n"                                                        \
+    "#define _z_safe_i128(x) _Generic((x), __int128: (x), default: (__int128)0)\n"                 \
+    "#define _z_safe_u128(x) _Generic((x), unsigned __int128: (x), default: (unsigned "            \
+    "__int128)0)\n"                                                                                \
+    "#define _z_128_arg_map(x) ,__int128: _z_i128_str(_z_safe_i128(x)), unsigned __int128: "       \
+    "_z_u128_str(_z_safe_u128(x))\n"                                                               \
     "#else\n"                                                                                      \
     "#define _z_128_arg_map(x)\n"                                                                  \
     "#endif\n"                                                                                     \
