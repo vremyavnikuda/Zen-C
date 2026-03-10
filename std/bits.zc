@@ -1,0 +1,235 @@
+
+struct Bits {}
+
+impl Bits {
+    // 8-bit rotations
+    fn rotl8(n: u8, c: u8) -> u8 {
+        let mask: u8 = 7;
+        c &= mask;
+        if (c == 0) return n;
+        return (u8)(((u8)(n << c)) | ((u8)(n >> (8 - c))));
+    }
+
+    fn rotr8(n: u8, c: u8) -> u8 {
+        let mask: u8 = 7;
+        c &= mask;
+        if (c == 0) return n;
+        return (u8)(((u8)(n >> c)) | ((u8)(n << (8 - c))));
+    }
+
+    // 16-bit rotations
+    fn rotl16(n: u16, c: u16) -> u16 {
+        let mask: u16 = 15;
+        c &= mask;
+        if (c == 0) return n;
+        return (u16)(((u16)(n << c)) | ((u16)(n >> (16 - c))));
+    }
+
+    fn rotr16(n: u16, c: u16) -> u16 {
+        let mask: u16 = 15;
+        c &= mask;
+        if (c == 0) return n;
+        return (u16)(((u16)(n >> c)) | ((u16)(n << (16 - c))));
+    }
+
+    // 32-bit rotations
+    fn rotl32(n: u32, c: u32) -> u32 {
+        let mask: u32 = 31;
+        c &= mask;
+        if (c == 0) return n;
+        return (n << c) | (n >> (32 - c));
+    }
+
+    fn rotr32(n: u32, c: u32) -> u32 {
+        let mask: u32 = 31;
+        c &= mask;
+        if (c == 0) return n;
+        return (n >> c) | (n << (32 - c));
+    }
+
+    // 64-bit rotations
+    fn rotl64(n: u64, c: u64) -> u64 {
+        let mask: u64 = 63;
+        c &= mask;
+        if (c == 0) return n;
+        return (n << c) | (n >> (64 - c));
+    }
+
+    fn rotr64(n: u64, c: u64) -> u64 {
+        let mask: u64 = 63;
+        c &= mask;
+        if (c == 0) return n;
+        return (n >> c) | (n << (64 - c));
+    }
+
+    // 128-bit rotations
+    fn rotl128(n: u128, c: u128) -> u128 {
+        let mask: u128 = 127;
+        c &= mask;
+        if (c == 0) return n;
+        return (n << c) | (n >> (128 - c));
+    }
+
+    fn rotr128(n: u128, c: u128) -> u128 {
+        let mask: u128 = 127;
+        c &= mask;
+        if (c == 0) return n;
+        return (n >> c) | (n << (128 - c));
+    }
+
+    // Population Count (Hamming Weight)
+    fn popcount8(n: u8) -> u8 {
+        n = (u8)(n - ((n >> 1) & 0x55));
+        n = (u8)((n & 0x33) + ((n >> 2) & 0x33));
+        return (u8)((n + (n >> 4)) & 0x0F);
+    }
+
+    fn popcount16(n: u16) -> u16 {
+        n = (u16)(n - ((n >> 1) & 0x5555));
+        n = (u16)((n & 0x3333) + ((n >> 2) & 0x3333));
+        return (u16)(((u16)(((n + (n >> 4)) & 0x0F0F) * 0x0101)) >> 8);
+    }
+
+    fn popcount32(n: u32) -> u32 {
+        n = n - ((n >> 1) & 0x55555555);
+        n = (n & 0x33333333) + ((n >> 2) & 0x33333333);
+        return (((n + (n >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
+    }
+
+    fn popcount64(n: u64) -> u64 {
+        n = n - ((n >> 1) & 0x5555555555555555);
+        n = (n & 0x3333333333333333) + ((n >> 2) & 0x3333333333333333);
+        return (((n + (n >> 4)) & 0x0F0F0F0F0F0F0F0F) * 0x0101010101010101) >> 56;
+    }
+
+    fn popcount128(n: u128) -> u128 {
+        return (u128)(Bits::popcount64((u64)(n >> 64)) + Bits::popcount64((u64)(n & 0xFFFFFFFFFFFFFFFF)));
+    }
+
+    // Count Leading Zeros (clz)
+    fn clz8(n: u8) -> u8 {
+        n = (u8)(n | (n >> 1));
+        n = (u8)(n | (n >> 2));
+        n = (u8)(n | (n >> 4));
+        return (u8)(8 - Bits::popcount8(n));
+    }
+
+    fn clz16(n: u16) -> u16 {
+        n = (u16)(n | (n >> 1));
+        n = (u16)(n | (n >> 2));
+        n = (u16)(n | (n >> 4));
+        n = (u16)(n | (n >> 8));
+        return (u16)(16 - Bits::popcount16(n));
+    }
+
+    fn clz32(n: u32) -> u32 {
+        n = n | (n >> 1);
+        n = n | (n >> 2);
+        n = n | (n >> 4);
+        n = n | (n >> 8);
+        n = n | (n >> 16);
+        return 32 - Bits::popcount32(n);
+    }
+
+    fn clz64(n: u64) -> u64 {
+        n = n | (n >> 1);
+        n = n | (n >> 2);
+        n = n | (n >> 4);
+        n = n | (n >> 8);
+        n = n | (n >> 16);
+        n = n | (n >> 32);
+        return 64 - Bits::popcount64(n);
+    }
+
+    fn clz128(n: u128) -> u128 {
+        n = n | (n >> 1);
+        n = n | (n >> 2);
+        n = n | (n >> 4);
+        n = n | (n >> 8);
+        n = n | (n >> 16);
+        n = n | (n >> 32);
+        n = n | (n >> 64);
+        return 128 - Bits::popcount128(n);
+    }
+
+    // --- Count Trailing Zeros (ctz) ---
+    fn ctz8(n: u8) -> u8 {
+        if (n == 0) return 8;
+        return Bits::popcount8((u8)((n & ((~n) + 1)) - 1));
+    }
+
+    fn ctz16(n: u16) -> u16 {
+        if (n == 0) return 16;
+        return Bits::popcount16((u16)((n & ((~n) + 1)) - 1));
+    }
+
+    fn ctz32(n: u32) -> u32 {
+        if (n == 0) return 32;
+        return Bits::popcount32((n & ((~n) + 1)) - 1);
+    }
+
+    fn ctz64(n: u64) -> u64 {
+        if (n == 0) return 64;
+        return Bits::popcount64((n & ((~n) + 1)) - 1);
+    }
+
+    fn ctz128(n: u128) -> u128 {
+        if (n == 0) return 128;
+        return Bits::popcount128((n & ((~n) + 1)) - 1);
+    }
+
+    // --- Byte Swap (Endianness) ---
+    fn bswap16(n: u16) -> u16 {
+        return (u16)((n >> 8) | (n << 8));
+    }
+
+    fn bswap32(n: u32) -> u32 {
+        return ((n >> 24) & 0xFF) | 
+               ((n << 8) & 0xFF0000) | 
+               ((n >> 8) & 0xFF00) | 
+               ((n << 24) & 0xFF000000);
+    }
+
+    fn bswap64(n: u64) -> u64 {
+        return (((u64)Bits::bswap32((u32)n)) << 32) | ((u64)Bits::bswap32((u32)(n >> 32)));
+    }
+
+    fn bswap128(n: u128) -> u128 {
+        return (((u128)Bits::bswap64((u64)n)) << 64) | ((u128)Bits::bswap64((u64)(n >> 64)));
+    }
+
+    // --- Bit Reversal ---
+    fn reverse_bits8(n: u8) -> u8 {
+        n = (u8)(((n >> 1) & 0x55) | ((n & 0x55) << 1));
+        n = (u8)(((n >> 2) & 0x33) | ((n & 0x33) << 2));
+        n = (u8)(((n >> 4) & 0x0F) | ((n & 0x0F) << 4));
+        return n;
+    }
+
+    fn reverse_bits16(n: u16) -> u16 {
+        n = (u16)(((n >> 1) & 0x5555) | ((n & 0x5555) << 1));
+        n = (u16)(((n >> 2) & 0x3333) | ((n & 0x3333) << 2));
+        n = (u16)(((n >> 4) & 0x0F0F) | ((n & 0x0F0F) << 4));
+        return Bits::bswap16(n);
+    }
+
+    fn reverse_bits32(n: u32) -> u32 {
+        n = ((n >> 1) & 0x55555555) | ((n & 0x55555555) << 1);
+        n = ((n >> 2) & 0x33333333) | ((n & 0x33333333) << 2);
+        n = ((n >> 4) & 0x0F0F0F0F) | ((n & 0x0F0F0F0F) << 4);
+        return Bits::bswap32(n);
+    }
+
+    fn reverse_bits64(n: u64) -> u64 {
+        n = ((n >> 1) & 0x5555555555555555) | ((n & 0x5555555555555555) << 1);
+        n = ((n >> 2) & 0x3333333333333333) | ((n & 0x3333333333333333) << 2);
+        n = ((n >> 4) & 0x0F0F0F0F0F0F0F0F) | ((n & 0x0F0F0F0F0F0F0F0F) << 4);
+        return Bits::bswap64(n);
+    }
+
+    fn reverse_bits128(n: u128) -> u128 {
+        let hi = Bits::reverse_bits64((u64)(n >> 64));
+        let lo = Bits::reverse_bits64((u64)n);
+        return (((u128)lo) << 64) | ((u128)hi);
+    }
+}

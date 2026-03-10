@@ -1334,6 +1334,7 @@ Zen C включает стандартную библиотеку (`std`), ох
 | Модуль               | Описание                                           | Docs                        |
 |:---------------------|:---------------------------------------------------|:----------------------------|
 | **`std/bigint.zc`** | Целое число произвольной точности `BigInt`. | [Docs](../docs/std/bigint.md) |
+| **`std/bits.zc`** | Низкоуровневые побитовые операции (`rotl`, `rotr` и т.д.). | [Docs](../docs/std/bits.md) |
 | **`std/vec.zc`**     | Растущий динамический массив `Vec<T>`.             | [Docs](../docs/std/vec.md)     |
 | **`std/string.zc`**  | Выделенный в heap тип `String` с поддержкой UTF-8. | [Docs](../docs/std/string.md)  |
 | **`std/queue.zc`**   | FIFO очередь (Ring Buffer).                        | [Docs](../docs/std/queue.md)   |

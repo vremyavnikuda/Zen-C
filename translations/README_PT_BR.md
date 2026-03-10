@@ -1354,6 +1354,7 @@ O Zen C inclui a biblioteca padrão (`std`), que cobre as funcionalidades essenc
 | Módulo | Descrição | Docs |
 | :--- | :--- | :--- |
 | **`std/bigint.zc`** | Inteiro de precisão arbitrária `BigInt`. | [Docs](../docs/std/bigint.md) |
+| **`std/bits.zc`** | Operações bit-a-bit de baixo nível (`rotl`, `rotr`, etc). | [Docs](../docs/std/bits.md) |
 | **`std/vec.zc`** | Growable dynamic array `Vec<T>`. | [Docs](../docs/std/vec.md) |
 | **`std/string.zc`** | Heap-allocated `String` type with UTF-8 support. | [Docs](../docs/std/string.md) |
 | **`std/queue.zc`** | FIFO queue (Ring Buffer). | [Docs](../docs/std/queue.md) |
