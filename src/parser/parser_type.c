@@ -1267,6 +1267,7 @@ ASTNode *parse_embed(ParserContext *ctx, Lexer *l)
     free(b);
 
     ASTNode *n = ast_create(NODE_RAW_STMT);
+    n->token = t;
     n->raw_stmt.content = o;
     n->type_info = target_type;
     return n;

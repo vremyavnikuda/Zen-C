@@ -32,7 +32,10 @@ fi
 
 echo "** Running Codegen Verification Tests **"
 
+#
 # Test 1: Duplicate Typedefs
+#
+
 TEST_NAME="dedup_typedefs.zc"
 echo -n "Testing $TEST_DIR/$TEST_NAME (Duplicate Typedefs)... "
 
@@ -56,6 +59,25 @@ fi
 
 # Cleanup
 rm -f "${TEST_NAME%.zc}.c" "${TEST_NAME%.zc}" a.out
+
+#
+# Test 2: Emit source mappings
+#         zc check "file.zc" -g --warn-errors
+#         will result in source mapping warnings if it fails and treat warnings as errors
+#         thus returning a non-zero error code
+#
+
+TEST_NAME="emit_source_mapping.zc"
+echo -n "Testing $TEST_DIR/$TEST_NAME (Source Mappings)... "
+
+$ZC check "$TEST_DIR/$TEST_NAME" -g --warn-errors > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+    echo "FAIL"
+    ((FAILED++))
+else
+    echo "PASS"
+    ((PASSED++))
+fi
 
 echo "----------------------------------------"
 echo "Summary:"

@@ -159,7 +159,7 @@ Token expect(Lexer *l, ZenTokenType type, const char *msg)
     if (t.type != type)
     {
         zpanic_at(t, "Expected %s, but got '%.*s'", msg, t.len, t.start);
-        return (Token){type, t.start, 0, t.line, t.col};
+        return (Token){type, t.start, 0, t.line, t.col, NULL};
     }
     return t;
 }

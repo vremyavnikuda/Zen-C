@@ -1598,3 +1598,45 @@ void print_type_defs(ParserContext *ctx, FILE *out, ASTNode *nodes)
         local = local->next;
     }
 }
+
+static int last_source_mapping_line = -1;
+static int last_source_mapping_type = -1;
+
+int should_emit_source_mapping(ASTNode *node)
+{
+    return node
+        && node->type < NODE_REPL_PRINT
+        && node->type != NODE_BLOCK
+        && node->type != NODE_EXPR_UNARY
+        && node->type != NODE_FIELD;
+}
+
+void emit_source_mapping(ASTNode *node, FILE *out)
+{
+    if (!g_config.mode_debug)
+    {
+        return;
+    }
+
+    if (!should_emit_source_mapping(node))
+    {
+        return;
+    }
+
+    if (node->token.line == last_source_mapping_line && node->type == last_source_mapping_type)
+    {
+        return;
+    }
+
+    if (!node->token.start || !node->token.file)
+    {
+        zwarn_at(node->token, "Encountered source mapping issue for node type %i, please report this issue.", node->type);
+        fprintf(out, "\n/* Encountered source mapping issue for node type %i */\n", node->type);
+        return;
+    }
+
+    last_source_mapping_line = node->token.line;
+    last_source_mapping_type = node->type;
+
+    fprintf(out, "\n#line %i \"%s\"\n", node->token.line, node->token.file);
+}

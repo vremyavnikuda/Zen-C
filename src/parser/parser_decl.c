@@ -565,6 +565,7 @@ ASTNode *parse_var_decl(ParserContext *ctx, Lexer *l)
         {
             char *code = parse_array_literal(ctx, l, type);
             init = ast_create(NODE_RAW_STMT);
+            init->token = next;
             init->raw_stmt.content = code;
             if (lexer_peek(l).type == TOK_SEMICOLON)
             {
@@ -575,6 +576,7 @@ ASTNode *parse_var_decl(ParserContext *ctx, Lexer *l)
         {
             char *code = parse_tuple_literal(ctx, l, type);
             init = ast_create(NODE_RAW_STMT);
+            init->token = next;
             init->raw_stmt.content = code;
             if (lexer_peek(l).type == TOK_SEMICOLON)
             {
@@ -777,6 +779,7 @@ ASTNode *parse_var_decl(ParserContext *ctx, Lexer *l)
             sprintf(code, "(%s){.self=&%s, .vtable=&%s_%s_VTable}", type, var_ref_name, struct_type,
                     type);
             ASTNode *wrapper = ast_create(NODE_RAW_STMT);
+            wrapper->token = name_tok;
             wrapper->raw_stmt.content = code;
             init = wrapper;
         }
@@ -869,10 +872,12 @@ ASTNode *parse_def(ParserContext *ctx, Lexer *l)
     {
         lexer_next(l);
 
-        if (lexer_peek(l).type == TOK_LPAREN && type_str && strncmp(type_str, "Tuple_", 6) == 0)
+        Token tk = lexer_peek(l);
+        if (tk.type == TOK_LPAREN && type_str && strncmp(type_str, "Tuple_", 6) == 0)
         {
             char *code = parse_tuple_literal(ctx, l, type_str);
             i = ast_create(NODE_RAW_STMT);
+            i->token = tk;
             i->raw_stmt.content = code;
         }
         else

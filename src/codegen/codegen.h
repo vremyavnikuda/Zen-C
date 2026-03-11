@@ -84,6 +84,11 @@ void emit_impl_vtables(ParserContext *ctx, FILE *out);
 int emit_tests_and_runner(ParserContext *ctx, ASTNode *node, FILE *out);
 void print_type_defs(ParserContext *ctx, FILE *out, ASTNode *nodes);
 
+/**
+ * @brief Emits C preprocessor directives for source mapping.
+ */
+void emit_source_mapping(ASTNode *node, FILE *out);
+
 // Global state (shared across modules).
 extern ASTNode *global_user_structs;  ///< List of user defined structs.
 extern char *g_current_impl_type;     ///< Type currently being implemented (in impl block).

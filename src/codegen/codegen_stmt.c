@@ -235,6 +235,8 @@ void codegen_match_internal(ParserContext *ctx, ASTNode *node, FILE *out, int us
                          node->match_stmt.expr->type == NODE_EXPR_MEMBER ||
                          node->match_stmt.expr->type == NODE_EXPR_INDEX);
 
+    emit_source_mapping(node, out); // Step through match statements elegantly
+
     if (is_self)
     {
         emit_auto_type(ctx, node->match_stmt.expr, node->token, out);
@@ -334,6 +336,7 @@ void codegen_match_internal(ParserContext *ctx, ASTNode *node, FILE *out, int us
         {
             fprintf(out, " else ");
         }
+        emit_source_mapping(c, out); // Step through match cases elegantly
         fprintf(out, "if (");
         if (strcmp(c->match_case.pattern, "_") == 0)
         {
@@ -546,6 +549,7 @@ void codegen_node_single(ParserContext *ctx, ASTNode *node, FILE *out)
     {
         return;
     }
+
     switch (node->type)
     {
     case NODE_AST_COMMENT:
@@ -787,8 +791,7 @@ void codegen_node_single(ParserContext *ctx, ASTNode *node, FILE *out)
             fprintf(out, "inline ");
         }
         emit_func_signature(ctx, out, node, NULL);
-        fprintf(out, "\n");
-        fprintf(out, "{\n");
+        fprintf(out, "\n{\n");
         char *prev_ret = g_current_func_ret_type;
         g_current_func_ret_type = node->func.ret_type;
 
@@ -860,6 +863,7 @@ void codegen_node_single(ParserContext *ctx, ASTNode *node, FILE *out)
             codegen_node_single(ctx, defer_stack[i], out);
         }
         g_current_func_ret_type = prev_ret;
+
         fprintf(out, "}\n");
         if (node->cfg_condition)
         {
@@ -2140,6 +2144,7 @@ void codegen_walker(ParserContext *ctx, ASTNode *node, FILE *out)
 {
     while (node)
     {
+        emit_source_mapping(node, out); // Step to this expression
         codegen_node_single(ctx, node, out);
         node = node->next;
     }

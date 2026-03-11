@@ -1,0 +1,15 @@
+struct Imported {
+    // Empty.
+}
+
+impl Imported {
+    fn hello(self) {
+        printf("Hello\n");
+    }
+}
+
+fn my_imported_function() -> int {
+    let imp = Imported {};
+    imp.hello();
+    return 10;
+}

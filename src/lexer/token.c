@@ -1,6 +1,8 @@
 
 #include "zprep.h"
 
+extern char *g_current_filename;
+
 void lexer_init(Lexer *l, const char *src)
 {
     l->src = src;
@@ -46,7 +48,7 @@ Token lexer_next(Lexer *l)
     // Check for EOF.
     if (!*s)
     {
-        return (Token){TOK_EOF, s, 0, start_line, start_col};
+        return (Token){TOK_EOF, s, 0, start_line, start_col, g_current_filename};
     }
 
     // C preprocessor directives.
@@ -72,7 +74,7 @@ Token lexer_next(Lexer *l)
         }
         l->pos += len;
 
-        return (Token){TOK_PREPROC, s, len, start_line, start_col};
+        return (Token){TOK_PREPROC, s, len, start_line, start_col, g_current_filename};
     }
 
     // Comments.
@@ -88,7 +90,7 @@ Token lexer_next(Lexer *l)
         {
             l->pos += len;
             l->col += len;
-            return (Token){TOK_COMMENT, s, len, start_line, start_col};
+            return (Token){TOK_COMMENT, s, len, start_line, start_col, g_current_filename};
         }
 
         l->pos += len;
@@ -132,7 +134,7 @@ Token lexer_next(Lexer *l)
         if (l->emit_comments)
         {
             size_t len = s - comment_start;
-            return (Token){TOK_COMMENT, comment_start, len, start_line, start_col};
+            return (Token){TOK_COMMENT, comment_start, len, start_line, start_col, g_current_filename};
         }
 
         return lexer_next(l);
@@ -152,75 +154,75 @@ Token lexer_next(Lexer *l)
 
         if (len == 4 && strncmp(s, "test", 4) == 0)
         {
-            return (Token){TOK_TEST, s, 4, start_line, start_col};
+            return (Token){TOK_TEST, s, 4, start_line, start_col, g_current_filename};
         }
         if (len == 6 && strncmp(s, "assert", 6) == 0)
         {
-            return (Token){TOK_ASSERT, s, 6, start_line, start_col};
+            return (Token){TOK_ASSERT, s, 6, start_line, start_col, g_current_filename};
         }
         if (len == 6 && strncmp(s, "sizeof", 6) == 0)
         {
-            return (Token){TOK_SIZEOF, s, 6, start_line, start_col};
+            return (Token){TOK_SIZEOF, s, 6, start_line, start_col, g_current_filename};
         }
         if (len == 5 && strncmp(s, "defer", 5) == 0)
         {
-            return (Token){TOK_DEFER, s, 5, start_line, start_col};
+            return (Token){TOK_DEFER, s, 5, start_line, start_col, g_current_filename};
         }
         if (len == 3 && strncmp(s, "def", 3) == 0)
         {
-            return (Token){TOK_DEF, s, 3, start_line, start_col};
+            return (Token){TOK_DEF, s, 3, start_line, start_col, g_current_filename};
         }
         if (len == 5 && strncmp(s, "trait", 5) == 0)
         {
-            return (Token){TOK_TRAIT, s, 5, start_line, start_col};
+            return (Token){TOK_TRAIT, s, 5, start_line, start_col, g_current_filename};
         }
         if (len == 4 && strncmp(s, "impl", 4) == 0)
         {
-            return (Token){TOK_IMPL, s, 4, start_line, start_col};
+            return (Token){TOK_IMPL, s, 4, start_line, start_col, g_current_filename};
         }
         if (len == 8 && strncmp(s, "autofree", 8) == 0)
         {
-            return (Token){TOK_AUTOFREE, s, 8, start_line, start_col};
+            return (Token){TOK_AUTOFREE, s, 8, start_line, start_col, g_current_filename};
         }
         if (len == 5 && strncmp(s, "alias", 5) == 0)
         {
-            return (Token){TOK_ALIAS, s, 5, start_line, start_col};
+            return (Token){TOK_ALIAS, s, 5, start_line, start_col, g_current_filename};
         }
         if (len == 3 && strncmp(s, "use", 3) == 0)
         {
-            return (Token){TOK_USE, s, 3, start_line, start_col};
+            return (Token){TOK_USE, s, 3, start_line, start_col, g_current_filename};
         }
         if (len == 8 && strncmp(s, "comptime", 8) == 0)
         {
-            return (Token){TOK_COMPTIME, s, 8, start_line, start_col};
+            return (Token){TOK_COMPTIME, s, 8, start_line, start_col, g_current_filename};
         }
         if (len == 5 && strncmp(s, "union", 5) == 0)
         {
-            return (Token){TOK_UNION, s, 5, start_line, start_col};
+            return (Token){TOK_UNION, s, 5, start_line, start_col, g_current_filename};
         }
         if (len == 3 && strncmp(s, "asm", 3) == 0)
         {
-            return (Token){TOK_ASM, s, 3, start_line, start_col};
+            return (Token){TOK_ASM, s, 3, start_line, start_col, g_current_filename};
         }
         if (len == 8 && strncmp(s, "volatile", 8) == 0)
         {
-            return (Token){TOK_VOLATILE, s, 8, start_line, start_col};
+            return (Token){TOK_VOLATILE, s, 8, start_line, start_col, g_current_filename};
         }
         if (len == 5 && strncmp(s, "async", 5) == 0)
         {
-            return (Token){TOK_ASYNC, s, 5, start_line, start_col};
+            return (Token){TOK_ASYNC, s, 5, start_line, start_col, g_current_filename};
         }
         if (len == 5 && strncmp(s, "await", 5) == 0)
         {
-            return (Token){TOK_AWAIT, s, 5, start_line, start_col};
+            return (Token){TOK_AWAIT, s, 5, start_line, start_col, g_current_filename};
         }
         if (len == 3 && strncmp(s, "and", 3) == 0)
         {
-            return (Token){TOK_AND, s, 3, start_line, start_col};
+            return (Token){TOK_AND, s, 3, start_line, start_col, g_current_filename};
         }
         if (len == 2 && strncmp(s, "or", 2) == 0)
         {
-            return (Token){TOK_OR, s, 2, start_line, start_col};
+            return (Token){TOK_OR, s, 2, start_line, start_col, g_current_filename};
         }
         if (len == 3 && strncmp(s, "not", 3) == 0)
         {
@@ -228,7 +230,7 @@ Token lexer_next(Lexer *l)
         }
         if (len == 6 && strncmp(s, "opaque", 6) == 0)
         {
-            return (Token){TOK_OPAQUE, s, 6, start_line, start_col};
+            return (Token){TOK_OPAQUE, s, 6, start_line, start_col, g_current_filename};
         }
 
         // F-Strings
@@ -247,7 +249,7 @@ Token lexer_next(Lexer *l)
         }
         else
         {
-            return (Token){TOK_IDENT, s, len, start_line, start_col};
+            return (Token){TOK_IDENT, s, len, start_line, start_col, g_current_filename};
         }
     }
 
@@ -294,7 +296,7 @@ Token lexer_next(Lexer *l)
             }
         }
         l->pos += len;
-        return (Token){TOK_FSTRING, s, len, start_line, start_col};
+        return (Token){TOK_FSTRING, s, len, start_line, start_col, g_current_filename};
     }
 
     // Raw Strings (r"..." or r'...' or r"""...""")
@@ -347,7 +349,7 @@ Token lexer_next(Lexer *l)
             }
         }
         l->pos += len;
-        return (Token){TOK_RAW_STRING, s, len, start_line, start_col};
+        return (Token){TOK_RAW_STRING, s, len, start_line, start_col, g_current_filename};
     }
 
     // Numbers
@@ -434,7 +436,7 @@ Token lexer_next(Lexer *l)
                 }
                 l->pos += len;
                 l->col += len;
-                return (Token){TOK_FLOAT, s, len, start_line, start_col};
+                return (Token){TOK_FLOAT, s, len, start_line, start_col, g_current_filename};
             }
         }
 
@@ -448,7 +450,7 @@ Token lexer_next(Lexer *l)
 
         l->pos += len;
         l->col += len;
-        return (Token){TOK_INT, s, len, start_line, start_col};
+        return (Token){TOK_INT, s, len, start_line, start_col, g_current_filename};
     }
 
     // Strings
@@ -495,7 +497,7 @@ Token lexer_next(Lexer *l)
             }
         }
         l->pos += len;
-        return (Token){TOK_STRING, s, len, start_line, start_col};
+        return (Token){TOK_STRING, s, len, start_line, start_col, g_current_filename};
     }
 
     if (*s == '\'')
@@ -553,7 +555,7 @@ Token lexer_next(Lexer *l)
 
         l->pos += len;
         l->col += len;
-        return (Token){TOK_CHAR, s, len, start_line, start_col};
+        return (Token){TOK_CHAR, s, len, start_line, start_col, g_current_filename};
     }
 
     // Operators.
@@ -693,7 +695,7 @@ Token lexer_next(Lexer *l)
 
     l->pos += len;
     l->col += len;
-    return (Token){type, s, len, start_line, start_col};
+    return (Token){type, s, len, start_line, start_col, g_current_filename};
 }
 
 Token lexer_peek(Lexer *l)

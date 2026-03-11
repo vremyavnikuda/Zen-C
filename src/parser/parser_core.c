@@ -1037,6 +1037,7 @@ ASTNode *parse_program_nodes(ParserContext *ctx, Lexer *l)
             content[t.len] = '\n';
             content[t.len + 1] = 0;
             s = ast_create(NODE_RAW_STMT);
+            s->token = t;
             s->raw_stmt.content = content;
 
             // Attempt to parse simple integer/constant macros
@@ -1219,6 +1220,7 @@ ASTNode *parse_program_nodes(ParserContext *ctx, Lexer *l)
                 content[len] = 0;
 
                 s = ast_create(NODE_RAW_STMT);
+                s->token = t;
                 s->raw_stmt.content = normalize_raw_content(content);
                 free(content);
             }
