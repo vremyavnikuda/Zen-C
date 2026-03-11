@@ -9,6 +9,7 @@ a.out
 *.dylib
 *.a
 *.so.dSYM/
+*.dSYM/
 .vscode/
 .idea/
 *.swp
