@@ -329,7 +329,7 @@ void arg_list_add_from_string(ArgList *list, const char *str)
     const char *p = str;
     while (*p)
     {
-        while (*p && isspace(*p))
+        while (*p && isspace((unsigned char)*p))
         {
             p++;
         }
@@ -342,7 +342,7 @@ void arg_list_add_from_string(ArgList *list, const char *str)
         char *d = arg;
         int in_quote = 0;
 
-        while (*p && (in_quote || !isspace(*p)))
+        while (*p && (in_quote || (!isspace((unsigned char)*p) && *p != '\r')))
         {
             if (*p == '\\' && *(p + 1) == '\"')
             {

@@ -36,17 +36,7 @@ static void main_append_flag(char *dest, size_t max_size, const char *prefix, co
 
     if (val)
     {
-        if (has_space)
-        {
-            strncat(dest, "\"", max_size - cur_len - 1);
-            cur_len++;
-        }
         strncat(dest, val, max_size - cur_len - 1);
-        cur_len = strlen(dest);
-        if (has_space)
-        {
-            strncat(dest, "\"", max_size - cur_len - 1);
-        }
     }
 }
 

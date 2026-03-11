@@ -240,7 +240,7 @@ void scan_build_directives(ParserContext *ctx, const char *src)
         if (p[0] == '/' && p[1] == '/' && p[2] == '>')
         {
             p += 3;
-            while (*p == ' ')
+            while (*p && isspace((unsigned char)*p) && *p != '\n')
             {
                 p++;
             }
@@ -262,9 +262,10 @@ void scan_build_directives(ParserContext *ctx, const char *src)
 
             // Strip trailing \r (Windows CRLF)
             int rlen = strlen(raw_line);
-            if (rlen > 0 && raw_line[rlen - 1] == '\r')
+            while (rlen > 0 && (raw_line[rlen - 1] == '\r' || raw_line[rlen - 1] == '\n' ||
+                                isspace((unsigned char)raw_line[rlen - 1])))
             {
-                raw_line[rlen - 1] = 0;
+                raw_line[--rlen] = 0;
             }
 
             char line[2048];
@@ -281,7 +282,7 @@ void scan_build_directives(ParserContext *ctx, const char *src)
                     if (is_os_active(line))
                     {
                         directive = colon + 1;
-                        while (*directive == ' ')
+                        while (*directive && isspace((unsigned char)*directive))
                         {
                             directive++;
                         }
@@ -305,7 +306,7 @@ void scan_build_directives(ParserContext *ctx, const char *src)
             if (0 == strncmp(directive, "link:", 5))
             {
                 directive_val = directive + 5;
-                while (*directive_val == ' ')
+                while (*directive_val && isspace((unsigned char)*directive_val))
                 {
                     directive_val++;
                 }
@@ -314,7 +315,7 @@ void scan_build_directives(ParserContext *ctx, const char *src)
             else if (0 == strncmp(directive, "cflags:", 7))
             {
                 directive_val = directive + 7;
-                while (*directive_val == ' ')
+                while (*directive_val && isspace((unsigned char)*directive_val))
                 {
                     directive_val++;
                 }
@@ -323,7 +324,7 @@ void scan_build_directives(ParserContext *ctx, const char *src)
             else if (0 == strncmp(directive, "include:", 8))
             {
                 directive_val = directive + 8;
-                while (*directive_val == ' ')
+                while (*directive_val && isspace((unsigned char)*directive_val))
                 {
                     directive_val++;
                 }
@@ -334,7 +335,7 @@ void scan_build_directives(ParserContext *ctx, const char *src)
             else if (strncmp(directive, "lib:", 4) == 0)
             {
                 directive_val = directive + 4;
-                while (*directive_val == ' ')
+                while (*directive_val && isspace((unsigned char)*directive_val))
                 {
                     directive_val++;
                 }
@@ -345,18 +346,47 @@ void scan_build_directives(ParserContext *ctx, const char *src)
             else if (strncmp(directive, "framework:", 10) == 0)
             {
                 directive_val = directive + 10;
-                while (*directive_val == ' ')
+                while (*directive_val && isspace((unsigned char)*directive_val))
                 {
                     directive_val++;
                 }
-                char flags[2048];
-                snprintf(flags, sizeof(flags), "-framework %s", directive_val);
-                append_flag(g_link_flags, sizeof(g_link_flags), flags);
+
+                char *p = directive_val;
+                while (*p)
+                {
+                    while (*p && isspace((unsigned char)*p))
+                    {
+                        p++;
+                    }
+                    if (!*p)
+                    {
+                        break;
+                    }
+
+                    char name[256];
+                    char *d = name;
+                    while (*p && !isspace((unsigned char)*p))
+                    {
+                        if (d - name < 255)
+                        {
+                            *d++ = *p++;
+                        }
+                        else
+                        {
+                            p++;
+                        }
+                    }
+                    *d = '\0';
+
+                    char flags[512];
+                    snprintf(flags, sizeof(flags), "-framework %s", name);
+                    append_flag(g_link_flags, sizeof(g_link_flags), flags);
+                }
             }
             else if (strncmp(directive, "define:", 7) == 0)
             {
                 directive_val = directive + 7;
-                while (*directive_val == ' ')
+                while (*directive_val && isspace((unsigned char)*directive_val))
                 {
                     directive_val++;
                 }
@@ -378,7 +408,7 @@ void scan_build_directives(ParserContext *ctx, const char *src)
             else if (0 == strncmp(directive, "shell:", 6))
             {
                 directive_val = directive + 6;
-                while (*directive_val == ' ')
+                while (*directive_val && isspace((unsigned char)*directive_val))
                 {
                     directive_val++;
                 }
@@ -390,7 +420,7 @@ void scan_build_directives(ParserContext *ctx, const char *src)
             else if (strncmp(directive, "get:", 4) == 0)
             {
                 char *url = directive + 4;
-                while (*url == ' ')
+                while (*url && isspace((unsigned char)*url))
                 {
                     url++;
                 }
