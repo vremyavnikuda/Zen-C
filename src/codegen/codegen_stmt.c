@@ -1701,7 +1701,7 @@ void codegen_node_single(ParserContext *ctx, ASTNode *node, FILE *out)
                     fprintf(out, "; memset(&");
                     codegen_expression(ctx, node->ret.value, out);
                     fprintf(out, ", 0, sizeof(_z_ret_mv)); ");
-                    // Run defers before returning
+                    fprintf(out, "__z_drop_flag_%s = 0; ", node->ret.value->var_ref.name);
                     for (int i = defer_count - 1; i >= func_defer_boundary; i--)
                     {
                         codegen_node_single(ctx, defer_stack[i], out);
@@ -1717,7 +1717,6 @@ void codegen_node_single(ParserContext *ctx, ASTNode *node, FILE *out)
         {
             if (has_defers && node->ret.value)
             {
-                // Save return value, run defers, then return
                 fprintf(out, "    { ");
                 emit_auto_type(ctx, node->ret.value, node->token, out);
                 fprintf(out, " _z_ret = ");
@@ -1731,7 +1730,6 @@ void codegen_node_single(ParserContext *ctx, ASTNode *node, FILE *out)
             }
             else if (has_defers)
             {
-                // No return value, just run defers
                 for (int i = defer_count - 1; i >= func_defer_boundary; i--)
                 {
                     codegen_node_single(ctx, defer_stack[i], out);
@@ -1740,7 +1738,6 @@ void codegen_node_single(ParserContext *ctx, ASTNode *node, FILE *out)
             }
             else
             {
-                // No defers, simple return
                 fprintf(out, "    return ");
                 codegen_expression(ctx, node->ret.value, out);
                 fprintf(out, ";\n");
@@ -1768,7 +1765,6 @@ void codegen_node_single(ParserContext *ctx, ASTNode *node, FILE *out)
     }
     case NODE_REPL_PRINT:
     {
-        // Safe block for printing
         fprintf(out, "{ ");
         emit_auto_type(ctx, node->repl_print.expr, node->token, out);
         fprintf(out, " _zval = (");
@@ -1795,8 +1791,6 @@ void codegen_node_single(ParserContext *ctx, ASTNode *node, FILE *out)
             ret_type = node->resolved_type;
         }
 
-        // Fallback: If type is still Async/void* (likely from Future type, not
-        // Result type), try to infer
         if (strcmp(ret_type, "Async") == 0 || strcmp(ret_type, "void*") == 0)
         {
             char *inf = infer_type(ctx, node);
