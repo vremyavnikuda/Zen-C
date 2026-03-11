@@ -7,7 +7,7 @@
 #include <string.h>
 
 // Helper: Check if a struct depends on another struct/enum by-value.
-static int struct_depends_on(ASTNode *s1, const char *target_name)
+static int struct_depends_on(ParserContext *ctx, ASTNode *s1, const char *target_name)
 {
     if (!s1)
     {
@@ -44,6 +44,15 @@ static int struct_depends_on(ASTNode *s1, const char *target_name)
                 else if (strncmp(clean, "union ", 6) == 0)
                 {
                     clean += 6;
+                }
+
+                if (ctx)
+                {
+                    const char *alias = find_type_alias(ctx, clean);
+                    if (alias)
+                    {
+                        clean = alias;
+                    }
                 }
 
                 // Check for match
@@ -92,6 +101,15 @@ static int struct_depends_on(ASTNode *s1, const char *target_name)
                         clean += 6;
                     }
 
+                    if (ctx)
+                    {
+                        const char *alias = find_type_alias(ctx, clean);
+                        if (alias)
+                        {
+                            clean = alias;
+                        }
+                    }
+
                     size_t len = strlen(target_name);
                     if (strncmp(clean, target_name, len) == 0)
                     {
@@ -113,7 +131,7 @@ static int struct_depends_on(ASTNode *s1, const char *target_name)
 }
 
 // Topologically sort a list of struct/enum nodes.
-static ASTNode *topo_sort_structs(ASTNode *head)
+static ASTNode *topo_sort_structs(ParserContext *ctx, ASTNode *head)
 {
     if (!head)
     {
@@ -199,7 +217,7 @@ static ASTNode *topo_sort_structs(ASTNode *head)
                     dep_name = nodes[j]->enm.name;
                 }
 
-                if (dep_name && struct_depends_on(nodes[i], dep_name))
+                if (dep_name && struct_depends_on(ctx, nodes[i], dep_name))
                 {
                     can_emit = 0;
                     break;
@@ -491,7 +509,7 @@ void codegen_node(ParserContext *ctx, ASTNode *node, FILE *out)
         }
 
         // Topologically sort.
-        ASTNode *sorted = topo_sort_structs(merged);
+        ASTNode *sorted = topo_sort_structs(ctx, merged);
 
         print_type_defs(ctx, out, sorted);
         if (!g_config.use_cpp)

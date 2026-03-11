@@ -155,6 +155,17 @@ static void codegen_var_expr(ParserContext *ctx, ASTNode *node, FILE *out)
         }
 
         // Output as Type__method
+        if (ctx)
+        {
+            const char *alias = find_type_alias(ctx, mangled_type);
+            if (alias)
+            {
+                fprintf(out, "%s__%s", alias, method_name);
+                free(type_name);
+                return;
+            }
+        }
+
         fprintf(out, "%s__%s", mangled_type, method_name);
         free(type_name);
         return;
@@ -679,6 +690,15 @@ void codegen_expression(ParserContext *ctx, ASTNode *node, FILE *out)
                 if (strncmp(base, "struct ", 7) == 0)
                 {
                     base += 7;
+                }
+
+                if (ctx)
+                {
+                    const char *alias = find_type_alias(ctx, base);
+                    if (alias)
+                    {
+                        base = (char *)alias;
+                    }
                 }
 
                 char *mangled_base = base;

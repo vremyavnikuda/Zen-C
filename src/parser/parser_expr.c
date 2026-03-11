@@ -2371,19 +2371,13 @@ ASTNode *parse_primary(ParserContext *ctx, Lexer *l)
                             TypeAlias *ta = find_type_alias_node(ctx, acc);
                             if (ta)
                             {
-                                if (!ta->is_opaque)
+                                const char *aliased = find_type_alias(ctx, acc);
+                                if (aliased)
                                 {
-                                    const char *aliased = find_type_alias(ctx, acc);
-                                    if (aliased)
-                                    {
-                                        free(acc);
-                                        acc = xstrdup(aliased);
-                                        def = find_struct_def(ctx, acc);
-                                    }
-                                }
-                                else
-                                {
-                                    is_opaque_alias = 1;
+                                    free(acc);
+                                    acc = xstrdup(aliased);
+                                    def = find_struct_def(ctx, acc);
+                                    is_opaque_alias = ta->is_opaque;
                                 }
                             }
                         }
