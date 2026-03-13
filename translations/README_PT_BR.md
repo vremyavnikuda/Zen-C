@@ -115,6 +115,7 @@ Confira estes projetos construídos com Zen C:
 ```bash
 git clone https://github.com/z-libs/Zen-C.git
 cd Zen-C
+git submodule update --init --recursive
 make clean # remove arquivos de build antigos
 make
 sudo make install

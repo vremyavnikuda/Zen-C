@@ -115,6 +115,7 @@ Check out these projects built with Zen C:
 ```bash
 git clone https://github.com/z-libs/Zen-C.git
 cd Zen-C
+git submodule update --init --recursive
 make clean # remove old build files
 make
 sudo make install

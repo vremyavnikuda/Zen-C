@@ -115,6 +115,7 @@
 ```bash
 git clone https://github.com/z-libs/Zen-C.git
 cd Zen-C
+git submodule update --init --recursive
 make clean # 移除舊的構建文件
 make
 sudo make install
