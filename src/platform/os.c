@@ -13,6 +13,9 @@
 #include <unistd.h>
 #include <time.h>
 #include <sys/wait.h>
+#if ZC_OS_MACOS
+#include <mach-o/dyld.h>
+#endif
 #endif
 
 void z_setup_terminal(void)
@@ -137,8 +140,12 @@ void z_get_executable_path(char *buffer, size_t size)
         buffer[len] = '\0';
     }
 #elif ZC_OS_MACOS
-    // _NSGetExecutablePath usually needs <mach-o/dyld.h>
-    // Fallback or leave empty
+    uint32_t buf_size = (uint32_t)size;
+    if (_NSGetExecutablePath(buffer, &buf_size) != 0)
+    {
+        // buffer was too small? or other error
+        memset(buffer, 0, size);
+    }
 #else
     // Fallback
 #endif

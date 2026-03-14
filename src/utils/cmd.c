@@ -136,7 +136,7 @@ void build_compile_arg_list(ArgList *list, const char *outfile, const char *temp
     }
 
     // Include paths
-    if (g_config.root_path)
+    if (g_config.root_path && g_config.root_path[0])
     {
         arg_list_add_fmt(list, "-I%s", g_config.root_path);
 

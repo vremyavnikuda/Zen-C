@@ -56,10 +56,17 @@ int main(int argc, char **argv)
     char self_path[MAX_PATH_SIZE];
     z_get_executable_path(self_path, sizeof(self_path));
 
-    g_config.root_path = xstrdup(self_path);
+    if (self_path[0])
+    {
+        g_config.root_path = xstrdup(self_path);
+    }
+    else
+    {
+        g_config.root_path = NULL;
+    }
 
     char *env_root = getenv("ZC_ROOT");
-    if (env_root)
+    if (env_root && env_root[0])
     {
         g_config.root_path = xstrdup(env_root);
     }
