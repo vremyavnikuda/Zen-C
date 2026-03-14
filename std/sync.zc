@@ -1,8 +1,8 @@
-
-include <pthread.h>
-
 import "./core.zc"
 import "./mem.zc"
+
+include <pthread.h>
+include <semaphore.h>
 
 struct Mutex {
     handle: void*;
@@ -21,6 +21,10 @@ impl Mutex {
     
     fn unlock(self) {
         pthread_mutex_unlock(self.handle);
+    }
+    
+    fn try_lock(self) -> bool {
+        return pthread_mutex_trylock(self.handle) == 0;
     }
     
     fn free(self) {
@@ -87,6 +91,14 @@ impl RwLock {
         pthread_rwlock_unlock(self.handle);
     }
     
+    fn try_rdlock(self) -> bool {
+        return pthread_rwlock_tryrdlock(self.handle) == 0;
+    }
+    
+    fn try_wrlock(self) -> bool {
+        return pthread_rwlock_trywrlock(self.handle) == 0;
+    }
+    
     fn free(self) {
         if (self.handle != NULL) {
             pthread_rwlock_destroy(self.handle);
@@ -109,6 +121,113 @@ impl Drop for CondVar {
 }
 
 impl Drop for RwLock {
+    fn drop(self) {
+        self.free();
+    }
+}
+
+struct Once {
+    mutex: Mutex;
+    done: bool;
+}
+
+impl Once {
+    fn new() -> Once {
+        return Once { mutex: Mutex::new(), done: false };
+    }
+    
+    fn call(self, func: fn()) {
+        if (self.done) return;
+        
+        self.mutex.lock();
+        if (!self.done) {
+            func();
+            self.done = true;
+        }
+        self.mutex.unlock();
+    }
+    
+    fn free(self) {
+        self.mutex.free();
+    }
+}
+
+struct Barrier {
+    handle: void*;
+}
+
+impl Barrier {
+    fn new(count: int) -> Barrier {
+        let ptr = malloc(64); 
+        pthread_barrier_init(ptr, NULL, count);
+        return Barrier { handle: ptr };
+    }
+    
+    fn wait(self) -> bool {
+        let ret = pthread_barrier_wait(self.handle);
+        return ret == 0 || ret == -1; 
+    }
+    
+    fn free(self) {
+        if (self.handle != NULL) {
+            pthread_barrier_destroy(self.handle);
+            free(self.handle);
+            self.handle = NULL;
+        }
+    }
+}
+
+impl Drop for Barrier {
+    fn drop(self) {
+        self.free();
+    }
+}
+
+struct Semaphore {
+    handle: void*;
+}
+
+impl Semaphore {
+    fn new(value: int) -> Semaphore {
+        let ptr = malloc(32);
+        sem_init(ptr, 0, value);
+        return Semaphore { handle: ptr };
+    }
+    
+    fn wait(self) {
+        sem_wait(self.handle);
+    }
+    
+    fn try_wait(self) -> bool {
+        return sem_trywait(self.handle) == 0;
+    }
+    
+    fn post(self) {
+        sem_post(self.handle);
+    }
+    
+    fn value(self) -> int {
+        let val: int = 0;
+        sem_getvalue(self.handle, &val);
+        return val;
+    }
+    
+    fn free(self) {
+        if (self.handle != NULL) {
+            sem_destroy(self.handle);
+            free(self.handle);
+            self.handle = NULL;
+        }
+    }
+}
+
+impl Drop for Once {
+    fn drop(self) {
+        self.free();
+    }
+}
+
+impl Drop for Semaphore {
     fn drop(self) {
         self.free();
     }
