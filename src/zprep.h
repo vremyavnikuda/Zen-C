@@ -235,6 +235,8 @@ typedef struct
     // User-defined -I flags tracked for import resolution.
     char *include_paths[64]; ///< Include paths for module resolution.
     int include_path_count;  ///< Number of tracked -I paths.
+
+    char *root_path; ///< Detected Zen-C root directory.
 } CompilerConfig;
 
 extern CompilerConfig g_config;

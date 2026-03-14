@@ -53,7 +53,17 @@ int main(int argc, char **argv)
         g_config.cc[sizeof(g_config.cc) - 1] = '\0';
     }
 
-    // Add default platform defines for @cfg()
+    char self_path[MAX_PATH_SIZE];
+    z_get_executable_path(self_path, sizeof(self_path));
+
+    g_config.root_path = xstrdup(self_path);
+
+    char *env_root = getenv("ZC_ROOT");
+    if (env_root)
+    {
+        g_config.root_path = xstrdup(env_root);
+    }
+
     if (ZC_OS_WINDOWS)
     {
         g_config.cfg_defines[g_config.cfg_define_count++] = xstrdup("windows");

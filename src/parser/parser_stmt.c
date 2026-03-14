@@ -3785,7 +3785,7 @@ ASTNode *parse_import(ParserContext *ctx, Lexer *l)
 
         if (!found)
         {
-            const char *system_paths[] = {getenv("ZC_ROOT"), "/usr/local/share/zenc",
+            const char *system_paths[] = {g_config.root_path, "/usr/local/share/zenc",
                                           "/usr/share/zenc"};
             size_t system_paths_count = sizeof(system_paths) / sizeof(*system_paths);
 

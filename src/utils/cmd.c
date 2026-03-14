@@ -9,17 +9,17 @@
 
 void print_search_paths()
 {
-    char exe_path[8192] = {0};
-    z_get_executable_path(exe_path, sizeof(exe_path));
-
     printf("Search paths:\n");
     for (int i = 0; i < g_config.include_path_count; i++)
     {
         printf("  %s\n", g_config.include_paths[i]);
     }
     printf("  ./\n");
-    printf("  %s/std\n", exe_path);
-    printf("  %s/../share/zenc/std\n", exe_path);
+    if (g_config.root_path)
+    {
+        printf("  %s\n", g_config.root_path);
+        printf("  %s/std\n", g_config.root_path);
+    }
 }
 
 void print_version()
@@ -136,41 +136,21 @@ void build_compile_arg_list(ArgList *list, const char *outfile, const char *temp
     }
 
     // Include paths
-    char exe_path[8192] = {0};
-    z_get_executable_path(exe_path, sizeof(exe_path));
-
-    char dev_std[9000];
-    snprintf(dev_std, sizeof(dev_std), "%s/std", exe_path);
-
-    if (access(dev_std, F_OK) == 0)
+    if (g_config.root_path)
     {
-        arg_list_add_fmt(list, "-I%s", exe_path);
-        if (!g_config.is_freestanding)
+        arg_list_add_fmt(list, "-I%s", g_config.root_path);
+
+        char tre_path[1024];
+        snprintf(tre_path, sizeof(tre_path), "%s/std/third-party/tre/include", g_config.root_path);
+
+        if (!g_config.is_freestanding && access(tre_path, F_OK) == 0)
         {
-            arg_list_add_fmt(list, "-I%s/std/third-party/tre/include", exe_path);
+            arg_list_add_fmt(list, "-I%s", tre_path);
         }
     }
     else
     {
-        char install_std[9000];
-        snprintf(install_std, sizeof(install_std), "%s/../share/zenc/std", exe_path);
-
-        if (access(install_std, F_OK) == 0)
-        {
-            arg_list_add_fmt(list, "-I%s/../share/zenc", exe_path);
-            if (!g_config.is_freestanding)
-            {
-                arg_list_add_fmt(list, "-I%s/../share/zenc/std/third-party/tre/include", exe_path);
-            }
-        }
-        else
-        {
-            arg_list_add(list, "-I.");
-            if (!g_config.is_freestanding)
-            {
-                arg_list_add(list, "-I./std/third-party/tre/include");
-            }
-        }
+        arg_list_add(list, "-I.");
     }
 }
 
