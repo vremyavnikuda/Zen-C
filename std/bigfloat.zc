@@ -109,8 +109,3 @@ impl BigFloat {
     }
 }
 
-impl Drop for BigFloat {
-    fn drop(self) {
-        self.free_mem();
-    }
-}

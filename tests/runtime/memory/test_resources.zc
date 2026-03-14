@@ -8,11 +8,11 @@ trait Clone {
     fn clone(self) -> Self;
 }
 
-struct Box { val: int; }
+struct LocalBox { val: int; }
 
-impl Clone for Box {
-    fn clone(self) -> Box {
-        return Box{val: self.val};
+impl Clone for LocalBox {
+    fn clone(self) -> LocalBox {
+        return LocalBox{val: self.val};
     }
 }
 
@@ -30,9 +30,9 @@ test "Resource Semantics" {
     "Testing Resource Semantics...";
 
     let p1 = Point{x: 10, y: 20};
-    let p2 = p1; // Copied
+    let _p2 = p1; // Copied
     
-    let b1 = Box{val: 99};
+    let b1 = LocalBox{val: 99};
     let b2 = b1.clone(); 
     // let b3 = b1; // This would move if uncommented.
     
@@ -45,10 +45,10 @@ test "Resource Semantics" {
     // struct Resource (Global)
     
     let r1 = Resource{ptr: NULL};
-    let r2 = r1; // Moved
+    let _r2 = r1; // Moved
     
     r1 = Resource{ptr: NULL}; // Re-init
-    let r3 = r1; // Valid again
+    let _r3 = r1; // Valid again
     
     // Function Param Move (Simulated)
     take_point(p1);

@@ -114,4 +114,9 @@ impl Path {
         let parent_str = self.str.substring(0, end);
         return Option<Path>::Some(Path { str: parent_str });
     }
+
+    fn free(self) {
+        self.str.free();
+    }
 }
+

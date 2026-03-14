@@ -91,4 +91,10 @@ impl BigInt {
     }
 }
 
+impl Drop for BigInt {
+    fn drop(self) {
+        self.free_mem();
+    }
+}
+
 

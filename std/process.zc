@@ -108,10 +108,3 @@ impl Command {
     }
 }
 
-impl Drop for Command {
-    fn drop(self) {
-        for s in &self.args {
-            s.free();
-        }
-    }
-}

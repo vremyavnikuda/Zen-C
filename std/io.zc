@@ -13,7 +13,6 @@ extern fn vprintf(fmt: const char*, ap: va_list) -> c_int;
 extern fn _z_vsnprintf(str: char*, size: usize, fmt: const char*, ap: va_list) -> c_int;
 
 // EOF is typically -1, but we define it for portability
-def Z_EOF = -1;
 
 // Minimal raw block: only for truly opaque FILE* types that can't be
 // represented in Zen-C extern declarations without type conflicts.
@@ -111,7 +110,7 @@ fn readln() -> char* {
         len = len + 1;
     }
     
-    let eof_final: c_int = Z_EOF;
+    let eof_final: int = -1;
     if (len == 0 && c == eof_final) {
         free(line);
         return NULL;
@@ -133,7 +132,7 @@ fn _utf8_seq_len(first_byte: byte) -> usize {
 fn read_rune() -> rune {
     let std_in = _z_get_stdin();
     let c1 = _z_fgetc(std_in);
-    if (c1 == Z_EOF) return (rune)0;
+    if (c1 == -1) return (rune)0;
     
     let first = (byte)c1;
     let len = _utf8_seq_len(first);

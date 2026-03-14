@@ -254,7 +254,7 @@ impl Map<V> {
     }
 }
 
-impl Drop for Map<V> {
+impl Drop for Map {
     fn drop(self) {
         self.free();
     }

@@ -45,7 +45,14 @@ impl Box<T> {
     fn free(self) {
         if self.ptr != NULL {
             free(self.ptr);
+            self.ptr = NULL;
         }
+    }
+}
+
+impl Drop for Box {
+    fn drop(self) {
+        self.free();
     }
 }
 

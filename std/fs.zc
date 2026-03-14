@@ -292,4 +292,10 @@ impl File {
         return ret;
     }
 }
+
+impl Drop for File {
+    fn drop(self) {
+        self.close();
+    }
+}
 }

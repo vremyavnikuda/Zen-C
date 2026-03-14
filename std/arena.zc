@@ -1,6 +1,3 @@
-// Arena Allocator - Fast bump allocator for bulk allocations
-// All memory is freed at once when arena.free() is called.
-
 import "./core.zc"
 
 struct Arena {
@@ -76,6 +73,13 @@ impl Arena {
     fn free(self) {
         if (self.data != NULL) {
             free(self.data);
+            self.data = NULL;
         }
+    }
+}
+
+impl Drop for Arena {
+    fn drop(self) {
+        self.free();
     }
 }
