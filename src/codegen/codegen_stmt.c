@@ -881,7 +881,7 @@ void codegen_node_single(ParserContext *ctx, ASTNode *node, FILE *out)
         break;
 
     case NODE_ASSERT:
-        fprintf(out, "assert(");
+        fprintf(out, "__zenc_assert(");
         codegen_expression(ctx, node->assert_stmt.condition, out);
         if (node->assert_stmt.message)
         {

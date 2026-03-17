@@ -210,8 +210,8 @@ void emit_preamble(ParserContext *ctx, FILE *out)
               "z_free(*pp); *pp "
               "= NULL; } }\n",
               out);
-        fputs("#define assert(cond, ...) if (!(cond)) { fprintf(stderr, "
-              "\"Assertion failed: \" "
+        fputs("#define __zenc_assert(cond, ...) if (!(cond)) { fprintf(stderr, "
+              "\"\\\"Assertion failed: \\\" \" "
               "__VA_ARGS__); exit(1); }\n",
               out);
 
