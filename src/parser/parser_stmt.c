@@ -2777,15 +2777,22 @@ ASTNode *parse_statement(ParserContext *ctx, Lexer *l)
             ASTNode *n = ast_create(NODE_BREAK);
             n->token = break_token;
             n->break_stmt.target_label = NULL;
-            // Check for 'label
-            if (lexer_peek(l).type == TOK_CHAR)
+            // Check for 'label or label
+            if (lexer_peek(l).type == TOK_CHAR || lexer_peek(l).type == TOK_IDENT)
             {
                 Token label_tok = lexer_next(l);
-                // Extract label name (strip quotes)
-                char *label = xmalloc(label_tok.len);
-                strncpy(label, label_tok.start + 1, label_tok.len - 2);
-                label[label_tok.len - 2] = 0;
-                n->break_stmt.target_label = label;
+                if (label_tok.type == TOK_CHAR)
+                {
+                    // Extract label name (strip quotes)
+                    char *label = xmalloc(label_tok.len);
+                    strncpy(label, label_tok.start + 1, label_tok.len - 2);
+                    label[label_tok.len - 2] = 0;
+                    n->break_stmt.target_label = label;
+                }
+                else
+                {
+                    n->break_stmt.target_label = token_strdup(label_tok);
+                }
             }
             if (lexer_peek(l).type == TOK_SEMICOLON)
             {
@@ -2808,13 +2815,20 @@ ASTNode *parse_statement(ParserContext *ctx, Lexer *l)
             ASTNode *n = ast_create(NODE_CONTINUE);
             n->token = continue_token;
             n->continue_stmt.target_label = NULL;
-            if (lexer_peek(l).type == TOK_CHAR)
+            if (lexer_peek(l).type == TOK_CHAR || lexer_peek(l).type == TOK_IDENT)
             {
                 Token label_tok = lexer_next(l);
-                char *label = xmalloc(label_tok.len);
-                strncpy(label, label_tok.start + 1, label_tok.len - 2);
-                label[label_tok.len - 2] = 0;
-                n->continue_stmt.target_label = label;
+                if (label_tok.type == TOK_CHAR)
+                {
+                    char *label = xmalloc(label_tok.len);
+                    strncpy(label, label_tok.start + 1, label_tok.len - 2);
+                    label[label_tok.len - 2] = 0;
+                    n->continue_stmt.target_label = label;
+                }
+                else
+                {
+                    n->continue_stmt.target_label = token_strdup(label_tok);
+                }
             }
             if (lexer_peek(l).type == TOK_SEMICOLON)
             {
@@ -3046,9 +3060,48 @@ ASTNode *parse_statement(ParserContext *ctx, Lexer *l)
                     // This is a label!
                     lexer_next(l); // eat identifier
                     lexer_next(l); // eat :
+
+                    char *label_name = token_strdup(ident);
+                    ASTNode *next = parse_statement(ctx, l);
+
+                    if (next)
+                    {
+                        if (next->type == NODE_WHILE)
+                        {
+                            next->while_stmt.loop_label = label_name;
+                            return next;
+                        }
+                        else if (next->type == NODE_FOR)
+                        {
+                            next->for_stmt.loop_label = label_name;
+                            return next;
+                        }
+                        else if (next->type == NODE_FOR_RANGE)
+                        {
+                            next->for_range.loop_label = label_name;
+                            return next;
+                        }
+                        else if (next->type == NODE_LOOP)
+                        {
+                            next->loop_stmt.loop_label = label_name;
+                            return next;
+                        }
+                        else if (next->type == NODE_REPEAT)
+                        {
+                            next->repeat_stmt.loop_label = label_name;
+                            return next;
+                        }
+                        else if (next->type == NODE_DO_WHILE)
+                        {
+                            next->do_while_stmt.loop_label = label_name;
+                            return next;
+                        }
+                    }
+
                     ASTNode *n = ast_create(NODE_LABEL);
-                    n->label_stmt.label_name = token_strdup(ident);
+                    n->label_stmt.label_name = label_name;
                     n->token = ident;
+                    n->next = next;
                     return n;
                 }
             }

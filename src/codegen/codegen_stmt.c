@@ -1367,16 +1367,38 @@ void codegen_node_single(ParserContext *ctx, ASTNode *node, FILE *out)
         break;
     case NODE_WHILE:
     {
+        if (node->while_stmt.loop_label)
+        {
+            fprintf(out, "%s:;\n", node->while_stmt.loop_label);
+        }
         loop_defer_boundary[loop_depth++] = defer_count;
         fprintf(out, "while (");
         codegen_expression(ctx, node->while_stmt.condition, out);
         fprintf(out, ") ");
-        codegen_node_single(ctx, node->while_stmt.body, out);
+        if (node->while_stmt.loop_label)
+        {
+            fprintf(out, "{\n");
+            codegen_node_single(ctx, node->while_stmt.body, out);
+            fprintf(out, "__continue_%s:;\n", node->while_stmt.loop_label);
+            fprintf(out, "}\n");
+        }
+        else
+        {
+            codegen_node_single(ctx, node->while_stmt.body, out);
+        }
         loop_depth--;
+        if (node->while_stmt.loop_label)
+        {
+            fprintf(out, "__break_%s:;\n", node->while_stmt.loop_label);
+        }
         break;
     }
     case NODE_FOR:
     {
+        if (node->for_stmt.loop_label)
+        {
+            fprintf(out, "%s:;\n", node->for_stmt.loop_label);
+        }
         loop_defer_boundary[loop_depth++] = defer_count;
         fprintf(out, "for (");
         if (node->for_stmt.init)
@@ -1414,8 +1436,22 @@ void codegen_node_single(ParserContext *ctx, ASTNode *node, FILE *out)
             codegen_expression_bare(ctx, node->for_stmt.step, out);
         }
         fprintf(out, ") ");
-        codegen_node_single(ctx, node->for_stmt.body, out);
+        if (node->for_stmt.loop_label)
+        {
+            fprintf(out, "{\n");
+            codegen_node_single(ctx, node->for_stmt.body, out);
+            fprintf(out, "__continue_%s:;\n", node->for_stmt.loop_label);
+            fprintf(out, "}\n");
+        }
+        else
+        {
+            codegen_node_single(ctx, node->for_stmt.body, out);
+        }
         loop_depth--;
+        if (node->for_stmt.loop_label)
+        {
+            fprintf(out, "__break_%s:;\n", node->for_stmt.loop_label);
+        }
         break;
     }
     case NODE_BREAK:
@@ -1476,35 +1512,93 @@ void codegen_node_single(ParserContext *ctx, ASTNode *node, FILE *out)
         break;
     case NODE_DO_WHILE:
     {
+        if (node->do_while_stmt.loop_label)
+        {
+            fprintf(out, "%s:;\n", node->do_while_stmt.loop_label);
+        }
         loop_defer_boundary[loop_depth++] = defer_count;
         fprintf(out, "do ");
-        codegen_node_single(ctx, node->do_while_stmt.body, out);
+        if (node->do_while_stmt.loop_label)
+        {
+            fprintf(out, "{\n");
+            codegen_node_single(ctx, node->do_while_stmt.body, out);
+            fprintf(out, "__continue_%s:;\n", node->do_while_stmt.loop_label);
+            fprintf(out, "}\n");
+        }
+        else
+        {
+            codegen_node_single(ctx, node->do_while_stmt.body, out);
+        }
         fprintf(out, " while (");
         codegen_expression(ctx, node->do_while_stmt.condition, out);
         fprintf(out, ");\n");
         loop_depth--;
+        if (node->do_while_stmt.loop_label)
+        {
+            fprintf(out, "__break_%s:;\n", node->do_while_stmt.loop_label);
+        }
         break;
     }
     // Loop constructs: loop, repeat, for-in
     case NODE_LOOP:
     {
         // loop { ... } => while (1) { ... }
+        if (node->loop_stmt.loop_label)
+        {
+            fprintf(out, "%s:;\n", node->loop_stmt.loop_label);
+        }
         loop_defer_boundary[loop_depth++] = defer_count;
         fprintf(out, "while (1) ");
-        codegen_node_single(ctx, node->loop_stmt.body, out);
+        if (node->loop_stmt.loop_label)
+        {
+            fprintf(out, "{\n");
+            codegen_node_single(ctx, node->loop_stmt.body, out);
+            fprintf(out, "__continue_%s:;\n", node->loop_stmt.loop_label);
+            fprintf(out, "}\n");
+        }
+        else
+        {
+            codegen_node_single(ctx, node->loop_stmt.body, out);
+        }
         loop_depth--;
+        if (node->loop_stmt.loop_label)
+        {
+            fprintf(out, "__break_%s:;\n", node->loop_stmt.loop_label);
+        }
         break;
     }
     case NODE_REPEAT:
     {
+        if (node->repeat_stmt.loop_label)
+        {
+            fprintf(out, "%s:;\n", node->repeat_stmt.loop_label);
+        }
         loop_defer_boundary[loop_depth++] = defer_count;
         fprintf(out, "for (int _rpt_i = 0; _rpt_i < (%s); _rpt_i++) ", node->repeat_stmt.count);
-        codegen_node_single(ctx, node->repeat_stmt.body, out);
+        if (node->repeat_stmt.loop_label)
+        {
+            fprintf(out, "{\n");
+            codegen_node_single(ctx, node->repeat_stmt.body, out);
+            fprintf(out, "__continue_%s:;\n", node->repeat_stmt.loop_label);
+            fprintf(out, "}\n");
+        }
+        else
+        {
+            codegen_node_single(ctx, node->repeat_stmt.body, out);
+        }
         loop_depth--;
+        if (node->repeat_stmt.loop_label)
+        {
+            fprintf(out, "__break_%s:;\n", node->repeat_stmt.loop_label);
+        }
         break;
     }
     case NODE_FOR_RANGE:
     {
+        if (node->for_range.loop_label)
+        {
+            fprintf(out, "%s:;\n", node->for_range.loop_label);
+        }
         // Track loop entry for defer boundary
         loop_defer_boundary[loop_depth++] = defer_count;
 
@@ -1552,9 +1646,23 @@ void codegen_node_single(ParserContext *ctx, ASTNode *node, FILE *out)
         {
             fprintf(out, "++) ");
         }
-        codegen_node_single(ctx, node->for_range.body, out);
+        if (node->for_range.loop_label)
+        {
+            fprintf(out, "{\n");
+            codegen_node_single(ctx, node->for_range.body, out);
+            fprintf(out, "__continue_%s:;\n", node->for_range.loop_label);
+            fprintf(out, "}\n");
+        }
+        else
+        {
+            codegen_node_single(ctx, node->for_range.body, out);
+        }
 
         loop_depth--;
+        if (node->for_range.loop_label)
+        {
+            fprintf(out, "__break_%s:;\n", node->for_range.loop_label);
+        }
         break;
     }
     case NODE_ASM:

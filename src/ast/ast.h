@@ -326,6 +326,7 @@ struct ASTNode
             char *step;
             int is_inclusive;
             ASTNode *body;
+            char *loop_label;
         } for_range;
 
         struct
@@ -338,6 +339,7 @@ struct ASTNode
         {
             char *count;
             ASTNode *body;
+            char *loop_label;
         } repeat_stmt;
 
         struct

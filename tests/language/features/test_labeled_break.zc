@@ -1,0 +1,42 @@
+test "labeled break" {
+    let count = 0;
+    outer: for i in 0..10 {
+        for j in 0..10 {
+            if i == 5 && j == 5 {
+                break outer;
+            }
+            count += 1;
+        }
+    }
+    // i=0..4: 5 * 10 = 50
+    // i=5: j=0..4 = 5
+    // Total: 55
+    assert(count == 55);
+}
+
+test "labeled continue" {
+    let count = 0;
+    outer: for i in 0..3 {
+        for j in 0..3 {
+            if i == 1 {
+                continue outer;
+            }
+            count += 1;
+        }
+    }
+    // i=0: j=0,1,2 -> count=3
+    // i=1: continue outer -> skips j=0,1,2
+    // i=2: j=0,1,2 -> count=6
+    assert(count == 6);
+}
+
+test "labeled loop" {
+    let i = 0;
+    outer: loop {
+        i += 1;
+        if i == 10 {
+            break outer;
+        }
+    }
+    assert(i == 10);
+}
