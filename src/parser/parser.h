@@ -109,7 +109,7 @@ typedef struct FuncSig
     Type *ret_type;       ///< Return type.
     int is_varargs;       ///< 1 if variadic.
     int is_async;         ///< 1 if async.
-    int must_use;         ///< 1 if return value must be used.
+    int required;         ///< 1 if return value must be used.
     struct FuncSig *next; ///< Next function in registry.
 } FuncSig;
 

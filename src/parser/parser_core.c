@@ -492,7 +492,7 @@ ASTNode *parse_program_nodes(ParserContext *ctx, Lexer *l)
 
         ASTNode *s = 0;
 
-        int attr_must_use = 0;
+        int attr_required = 0;
         int attr_deprecated = 0;
         int attr_inline = 0;
         int attr_pure = 0;
@@ -530,9 +530,9 @@ ASTNode *parse_program_nodes(ParserContext *ctx, Lexer *l)
                 zpanic_at(attr, "Expected attribute name after @");
             }
 
-            if (0 == strncmp(attr.start, "must_use", 8) && 8 == attr.len)
+            if (0 == strncmp(attr.start, "required", 8) && 8 == attr.len)
             {
-                attr_must_use = 1;
+                attr_required = 1;
             }
             else if (0 == strncmp(attr.start, "deprecated", 10) && 10 == attr.len)
             {
@@ -1291,7 +1291,7 @@ ASTNode *parse_program_nodes(ParserContext *ctx, Lexer *l)
 
         if (s && s->type == NODE_FUNCTION)
         {
-            s->func.must_use = attr_must_use;
+            s->func.required = attr_required;
             s->func.is_inline = attr_inline || s->func.is_inline;
             s->func.noinline = attr_noinline;
             s->func.constructor = attr_constructor;
@@ -1315,12 +1315,12 @@ ASTNode *parse_program_nodes(ParserContext *ctx, Lexer *l)
                 register_deprecated_func(ctx, s->func.name, deprecated_msg);
             }
 
-            if (attr_must_use && s->func.name)
+            if (attr_required && s->func.name)
             {
                 FuncSig *sig = find_func(ctx, s->func.name);
                 if (sig)
                 {
-                    sig->must_use = 1;
+                    sig->required = 1;
                 }
             }
         }

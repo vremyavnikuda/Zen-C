@@ -227,7 +227,7 @@ struct ASTNode
             Type *ret_type_info;
             int is_varargs;
             int is_inline;
-            int must_use; // @must_use: warn if return value is discarded.
+            int required; // @required: warn if return value is discarded.
             // GCC attributes
             int noinline;    // @noinline
             int constructor; // @constructor

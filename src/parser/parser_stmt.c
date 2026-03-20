@@ -3256,16 +3256,16 @@ ASTNode *parse_statement(ParserContext *ctx, Lexer *l)
         s->line = tk.line;
     }
 
-    // Check for discarded must_use result
+    // Check for discarded required result
     if (s && s->type == NODE_EXPR_CALL)
     {
         ASTNode *callee = s->call.callee;
         if (callee && callee->type == NODE_EXPR_VAR)
         {
             FuncSig *sig = find_func(ctx, callee->var_ref.name);
-            if (sig && sig->must_use)
+            if (sig && sig->required)
             {
-                zwarn_at(tk, "Ignoring return value of function marked @must_use");
+                zwarn_at(tk, "Ignoring return value of function marked @required");
                 fprintf(stderr, COLOR_CYAN "   = note: " COLOR_RESET
                                            "Use the result or explicitly discard with `_ = ...`\n");
             }

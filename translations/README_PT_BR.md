@@ -1179,7 +1179,7 @@ Decore funções e structs para modificar o comportamento do compilador.
 
 | Atributo | Escopo | Descrição |
 |:---|:---|:---|
-| `@must_use` | Fn | Avisa se o valor de retorno é ignorado. |
+| `@required` | Fn | Avisa se o valor de retorno é ignorado. |
 | `@deprecated("msg")` | Fn/Struct | Aviso sobre o uso com mensagem. |
 | `@inline` | Fn | Sugere compilador para inline. |
 | `@noinline` | Fn | Previne inline. |

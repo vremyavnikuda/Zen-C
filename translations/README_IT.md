@@ -1218,7 +1218,7 @@ Decora le funzioni e gli struct per modificare il comportamento del compilatore.
 
 | Attributo | Ambito | Descrizione |
 |:---|:---|:---|
-| `@must_use` | Fn | Avvereti se il valore di ritorno viene ignorato. |
+| `@required` | Fn | Avvereti se il valore di ritorno viene ignorato. |
 | `@deprecated("msg")` | Fn/Struct | Avverti all'uso con 'msg' |
 | `@inline` | Fn | Suggerisci al compilatore di rendere il codice inline |
 | `@noinline` | Fn | Previeni l'inline automatico |

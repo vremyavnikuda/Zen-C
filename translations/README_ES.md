@@ -1226,7 +1226,7 @@ Decora funciones y structs para modificar el comportamiento del compilador.
 
 | Atributo | Ámbito | Descripción |
 |:---|:---|:---|
-| `@must_use` | Fn | Advierte si el valor de retorno es ignorado. |
+| `@required` | Fn | Advierte si el valor de retorno es ignorado. |
 | `@deprecated("msg")` | Fn/Struct | Advierte sobre el uso con un mensaje. |
 | `@inline` | Fn | Sugiere al compilador hacer inlininig. |
 | `@noinline` | Fn | Previene el inlining. |

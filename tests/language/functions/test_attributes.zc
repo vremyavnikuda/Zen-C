@@ -1,5 +1,5 @@
 
-@must_use
+@required
 fn compute() -> int {
     return 42;
 }
@@ -14,7 +14,7 @@ fn fast_add(a: int, b: int) -> int {
     return a + b;
 }
 
-@must_use @inline
+@required @inline
 fn combined() -> int {
     return 100;
 }
@@ -78,11 +78,11 @@ fn weak_func() {}
 fn unused_func() {}
 
 test "function attributes" {
-    // @must_use: result used - no warning
+    // @required: result used - no warning
     let x = compute();
     assert(x == 42, "compute() failed");
     
-    // No must_use - can discard
+    // No required - can discard
     optional_result();
     
     // @inline works
@@ -93,8 +93,8 @@ test "function attributes" {
     let c = combined();
     assert(c == 100, "combined failed");
     
-    // @must_use: result verified
-    assert(compute() == 42, "Checking must_use result");
+    // @required: result verified
+    assert(compute() == 42, "Checking required result");
     
     // Check constructor ran
     assert(init_called == 1, "Constructor attribute failed");

@@ -148,7 +148,7 @@ ASTNode *parse_function(ParserContext *ctx, Lexer *l, int is_async)
     {
         register_func(ctx, name, count, defaults, arg_types, ret_type_obj, is_varargs, is_async,
                       name_tok);
-        // Note: must_use is set after return by caller (parser_core.c)
+        // Note: required is set after return by caller (parser_core.c)
     }
 
     ASTNode *body = NULL;

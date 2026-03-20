@@ -1230,7 +1230,7 @@ Decorate functions and structs to modify compiler behavior.
 
 | Attribute | Scope | Description |
 |:---|:---|:---|
-| `@must_use` | Fn | Warn if return value is ignored. |
+| `@required` | Fn | Warn if return value is ignored. |
 | `@deprecated("msg")` | Fn/Struct | Warn on usage with message. |
 | `@inline` | Fn | Hint compiler to inline. |
 | `@noinline` | Fn | Prevent inlining. |

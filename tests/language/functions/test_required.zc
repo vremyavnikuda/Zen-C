@@ -1,6 +1,6 @@
 include <stdio.h>
 
-@must_use
+@required
 fn compute() -> int {
     return 42;
 }
@@ -15,7 +15,7 @@ fn fast_add(a: int, b: int) -> int {
     return a + b;
 }
 
-@must_use @inline
+@required @inline
 fn combined() -> int {
     return 100;
 }
@@ -29,10 +29,10 @@ test "attributes" {
     let x = compute();
     assert(x == 42, "compute() should return 42");
     
-    // This should NOT warn (no must_use attribute)
+    // This should NOT warn (no @required attribute)
     optional_result();
     
-    // This SHOULD warn (result discarded on must_use function)
+    // This SHOULD warn (result discarded on @required function)
     compute();
     
     // Test inline works
