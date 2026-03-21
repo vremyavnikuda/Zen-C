@@ -170,4 +170,13 @@ FILE *z_tmpfile(void);
  */
 int z_run_command(char *const argv[]);
 
+/**
+ * @brief Run a command securely and capture its stdout.
+ * @param argv NULL-terminated array of arguments.
+ * @param buffer Buffer to store output.
+ * @param size Size of the buffer.
+ * @return Exit code of the process, or -1 on error.
+ */
+int z_run_command_capture(char *const argv[], char *buffer, size_t size);
+
 #endif // ZC_PLATFORM_OS_H

@@ -1,6 +1,8 @@
 
 #include "parser.h"
 #include "zprep.h"
+#include "cmd.h"
+#include "platform/os.h"
 
 char *g_current_filename = "unknown";
 ParserContext *g_parser_ctx = NULL;
@@ -566,40 +568,39 @@ void scan_build_directives(ParserContext *ctx, const char *src)
                 }
                 else
                 {
-                    char cmd[4096];
-                    snprintf(cmd, sizeof(cmd), "pkg-config --cflags %s", libs);
-                    FILE *fp = popen(cmd, "r");
-                    if (fp)
-                    {
-                        char buf[1024];
-                        if (fgets(buf, sizeof(buf), fp))
-                        {
-                            size_t l = strlen(buf);
-                            if (l > 0 && buf[l - 1] == '\n')
-                            {
-                                buf[l - 1] = 0;
-                            }
-                            append_flag(g_cflags, sizeof(g_cflags), buf);
-                        }
-                        pclose(fp);
-                    }
+                    ArgList args;
+                    arg_list_init(&args);
+                    arg_list_add(&args, "pkg-config");
+                    arg_list_add(&args, "--cflags");
+                    arg_list_add_from_string(&args, libs);
 
-                    snprintf(cmd, sizeof(cmd), "pkg-config --libs %s", libs);
-                    fp = popen(cmd, "r");
-                    if (fp)
+                    char buf[1024];
+                    if (z_run_command_capture(args.args, buf, sizeof(buf)) == 0)
                     {
-                        char buf[1024];
-                        if (fgets(buf, sizeof(buf), fp))
+                        size_t l = strlen(buf);
+                        if (l > 0 && buf[l - 1] == '\n')
                         {
-                            size_t l = strlen(buf);
-                            if (l > 0 && buf[l - 1] == '\n')
-                            {
-                                buf[l - 1] = 0;
-                            }
-                            append_flag(g_link_flags, sizeof(g_link_flags), buf);
+                            buf[l - 1] = 0;
                         }
-                        pclose(fp);
+                        append_flag(g_cflags, sizeof(g_cflags), buf);
                     }
+                    arg_list_free(&args);
+
+                    arg_list_init(&args);
+                    arg_list_add(&args, "pkg-config");
+                    arg_list_add(&args, "--libs");
+                    arg_list_add_from_string(&args, libs);
+
+                    if (z_run_command_capture(args.args, buf, sizeof(buf)) == 0)
+                    {
+                        size_t l = strlen(buf);
+                        if (l > 0 && buf[l - 1] == '\n')
+                        {
+                            buf[l - 1] = 0;
+                        }
+                        append_flag(g_link_flags, sizeof(g_link_flags), buf);
+                    }
+                    arg_list_free(&args);
                 }
             }
             else

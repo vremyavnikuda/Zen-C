@@ -380,3 +380,127 @@ int z_run_command(char *const argv[])
     }
 #endif
 }
+
+#if !ZC_OS_WINDOWS
+#include <sys/wait.h>
+#endif
+
+int z_run_command_capture(char *const argv[], char *buffer, size_t size)
+{
+#if ZC_OS_WINDOWS
+    HANDLE hReadPipe, hWritePipe;
+    SECURITY_ATTRIBUTES sa;
+    sa.nLength = sizeof(sa);
+    sa.bInheritHandle = TRUE;
+    sa.lpSecurityDescriptor = NULL;
+
+    if (!CreatePipe(&hReadPipe, &hWritePipe, &sa, 0))
+    {
+        return -1;
+    }
+    SetHandleInformation(hReadPipe, HANDLE_FLAG_INHERIT, 0);
+
+    size_t cmd_len = 0;
+    for (int i = 0; argv[i]; i++)
+    {
+        char *q = quote_arg(argv[i]);
+        cmd_len += strlen(q) + 1;
+        free(q);
+    }
+
+    char *cmd_line = malloc(cmd_len + 1);
+    cmd_line[0] = '\0';
+    for (int i = 0; argv[i]; i++)
+    {
+        char *q = quote_arg(argv[i]);
+        strcat(cmd_line, q);
+        if (argv[i + 1])
+        {
+            strcat(cmd_line, " ");
+        }
+        free(q);
+    }
+
+    STARTUPINFOA si;
+    PROCESS_INFORMATION pi;
+    ZeroMemory(&si, sizeof(si));
+    si.cb = sizeof(si);
+    si.hStdOutput = hWritePipe;
+    si.hStdError = GetStdHandle(STD_ERROR_HANDLE);
+    si.dwFlags |= STARTF_USESTDHANDLES;
+    ZeroMemory(&pi, sizeof(pi));
+
+    if (!CreateProcessA(NULL, cmd_line, NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi))
+    {
+        CloseHandle(hReadPipe);
+        CloseHandle(hWritePipe);
+        free(cmd_line);
+        return -1;
+    }
+
+    CloseHandle(hWritePipe);
+
+    DWORD bytesRead;
+    if (ReadFile(hReadPipe, buffer, (DWORD)size - 1, &bytesRead, NULL))
+    {
+        buffer[bytesRead] = '\0';
+    }
+    else
+    {
+        buffer[0] = '\0';
+    }
+
+    CloseHandle(hReadPipe);
+    WaitForSingleObject(pi.hProcess, INFINITE);
+    DWORD exit_code;
+    GetExitCodeProcess(pi.hProcess, &exit_code);
+    CloseHandle(pi.hProcess);
+    CloseHandle(pi.hThread);
+    free(cmd_line);
+    return (int)exit_code;
+#else
+    int pipefd[2];
+    if (pipe(pipefd) == -1)
+    {
+        return -1;
+    }
+
+    pid_t pid = fork();
+    if (pid == 0)
+    {
+        close(pipefd[0]);
+        dup2(pipefd[1], STDOUT_FILENO);
+        close(pipefd[1]);
+        execvp(argv[0], argv);
+        exit(127);
+    }
+    else if (pid < 0)
+    {
+        close(pipefd[0]);
+        close(pipefd[1]);
+        return -1;
+    }
+    else
+    {
+        close(pipefd[1]);
+        ssize_t n = read(pipefd[0], buffer, size - 1);
+        if (n >= 0)
+        {
+            buffer[n] = '\0';
+        }
+        else
+        {
+            buffer[0] = '\0';
+        }
+        close(pipefd[0]);
+
+        int status;
+        waitpid(pid, &status, 0);
+        if (WIFEXITED(status))
+        {
+            return WEXITSTATUS(status);
+        }
+        return -1;
+    }
+#endif
+}
