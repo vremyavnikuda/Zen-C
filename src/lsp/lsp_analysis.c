@@ -911,7 +911,7 @@ void lsp_signature_help(const char *uri, int line, int col, int id)
         }
         ptr++;
     }
-    if (ptr && col > 0)
+    if (col > 0)
     {
         ptr += col;
     }
