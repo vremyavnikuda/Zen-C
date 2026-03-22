@@ -269,7 +269,10 @@ impl JsonValue {
     fn parse_val(json: char*) -> Result<JsonValue> {
         let result: JsonValue* = _json_do_parse(json);
         if (result != NULL) {
-            let val = *result;
+            let val: JsonValue;
+            raw {
+                val = *result;
+            }
             free(result); // Free the root container, keep children
             return Result<JsonValue>::Ok(val);
         }

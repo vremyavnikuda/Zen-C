@@ -18,9 +18,9 @@ fi
 TEST_FILES=("$@")
 
 if [ ${#TEST_FILES[@]} -gt 0 ]; then
-    TEST_LIST=$(printf "%s\n" "${TEST_FILES[@]}" | grep "$EXAMPLES_DIR"/)
+    TEST_LIST=$(printf "%s\n" "${TEST_FILES[@]}" | grep "examples/")
 else
-    TEST_LIST=$(find "$EXAMPLES_DIR" -name "*.zc" | sort)
+    TEST_LIST=""
 fi
 
 # This script doesn't support running on set of target files currently

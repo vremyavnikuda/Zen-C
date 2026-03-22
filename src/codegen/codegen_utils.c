@@ -207,6 +207,12 @@ char *infer_type(ParserContext *ctx, ASTNode *node)
         return NULL;
     }
 
+    if (node->type_info && node->type_info->kind != TYPE_UNKNOWN)
+    {
+        char *t = codegen_type_to_string(node->type_info);
+        return t;
+    }
+
     if (node->resolved_type && strcmp(node->resolved_type, "unknown") != 0 &&
         strcmp(node->resolved_type, "void*") != 0)
     {

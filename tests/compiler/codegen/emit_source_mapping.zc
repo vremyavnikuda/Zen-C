@@ -19,8 +19,8 @@ struct Point {
 impl Point {
     fn new() -> Self {
         return Point {
-            x: 1,
-            y: my_function(),
+            x: 1.0,
+            y: (f64)my_function(),
         }
     }
     fn mark_unused(self) { }

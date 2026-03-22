@@ -140,9 +140,7 @@ impl File {
         content.destroy();
         
         let ret_res = Result< Vec<String> >::Ok(lines);
-        lines.forget();
         let ret = ret_res;
-        ret_res.forget();
         return ret;
     }
 
@@ -255,9 +253,7 @@ impl File {
         _z_fs_closedir(dir);
         
         let res = Result< Vec<DirEntry> >::Ok(entries);
-        entries.forget();
         let ret = res;
-        res.forget();
         return ret;
     }
 

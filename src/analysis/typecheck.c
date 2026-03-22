@@ -1013,9 +1013,6 @@ static int block_always_returns(ASTNode *block)
 
 static void check_function(TypeChecker *tc, ASTNode *node)
 {
-    // Just to suppress the warning.
-    (void)tc_error;
-
     tc->current_func = node;
     tc_enter_scope(tc);
 
@@ -1105,6 +1102,36 @@ static void check_expr_var(TypeChecker *tc, ASTNode *node)
     if (!tc->is_assign_lhs)
     {
         check_use_validity(tc, node);
+    }
+}
+
+static void tc_check_trait(TypeChecker *tc, ASTNode *node)
+{
+    ASTNode *method = node->trait.methods;
+    while (method)
+    {
+        check_node(tc, method);
+        method = method->next;
+    }
+}
+
+static void tc_check_impl(TypeChecker *tc, ASTNode *node)
+{
+    ASTNode *method = node->impl.methods;
+    while (method)
+    {
+        check_node(tc, method);
+        method = method->next;
+    }
+}
+
+static void tc_check_impl_trait(TypeChecker *tc, ASTNode *node)
+{
+    ASTNode *method = node->impl_trait.methods;
+    while (method)
+    {
+        check_node(tc, method);
+        method = method->next;
     }
 }
 
@@ -1499,6 +1526,15 @@ static void check_node(TypeChecker *tc, ASTNode *node)
         break;
     case NODE_FUNCTION:
         check_function(tc, node);
+        break;
+    case NODE_TRAIT:
+        tc_check_trait(tc, node);
+        break;
+    case NODE_IMPL:
+        tc_check_impl(tc, node);
+        break;
+    case NODE_IMPL_TRAIT:
+        tc_check_impl_trait(tc, node);
         break;
     case NODE_EXPR_VAR:
         check_expr_var(tc, node);
