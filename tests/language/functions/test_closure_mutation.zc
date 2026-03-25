@@ -1,0 +1,12 @@
+// EXPECT: FAIL
+
+test "closure_value_capture_mutation" {
+    let x = 10;
+    
+    // Value capture should be immutable in C context
+    let cl = fn[=]() {
+        x = x + 1; // Error: assignment of read-only member
+    };
+    
+    cl();
+}

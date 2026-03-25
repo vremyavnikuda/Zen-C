@@ -434,13 +434,31 @@ void emit_lambda_defs(ParserContext *ctx, FILE *out)
             {
                 if (node->lambda.capture_modes && node->lambda.capture_modes[i] == 1)
                 {
-                    fprintf(out, "    %s* %s;\n", node->lambda.captured_types[i],
-                            node->lambda.captured_vars[i]);
+                    char *tstr = NULL;
+                    if (node->lambda.captured_types_info && node->lambda.captured_types_info[i])
+                    {
+                        tstr = codegen_type_to_string(node->lambda.captured_types_info[i]);
+                    }
+                    else
+                    {
+                        tstr = xstrdup(node->lambda.captured_types[i]);
+                    }
+                    fprintf(out, "    %s* %s;\n", tstr, node->lambda.captured_vars[i]);
+                    free(tstr);
                 }
                 else
                 {
-                    fprintf(out, "    %s %s;\n", node->lambda.captured_types[i],
-                            node->lambda.captured_vars[i]);
+                    char *tstr = NULL;
+                    if (node->lambda.captured_types_info && node->lambda.captured_types_info[i])
+                    {
+                        tstr = codegen_type_to_string(node->lambda.captured_types_info[i]);
+                    }
+                    else
+                    {
+                        tstr = xstrdup(node->lambda.captured_types[i]);
+                    }
+                    fprintf(out, "    %s const %s;\n", tstr, node->lambda.captured_vars[i]);
+                    free(tstr);
 
                     char *tname = node->lambda.captured_types[i];
                     const char *clean = tname;

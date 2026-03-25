@@ -12,6 +12,7 @@
 #include "zprep_plugin.h"
 
 char *g_current_func_ret_type = NULL;
+Type *g_current_func_ret_type_info = NULL;
 
 // Helper: emit a single pattern condition (either a value, or a range)
 static void emit_single_pattern_cond(const char *pat, int id, int is_ptr, FILE *out)
@@ -799,7 +800,9 @@ void codegen_node_single(ParserContext *ctx, ASTNode *node, FILE *out)
         emit_func_signature(ctx, out, node, NULL);
         fprintf(out, "\n{\n");
         char *prev_ret = g_current_func_ret_type;
+        Type *prev_ret_info = g_current_func_ret_type_info;
         g_current_func_ret_type = node->func.ret_type;
+        g_current_func_ret_type_info = node->func.ret_type_info;
 
         // Set self_is_pointer flag for codegen of the body
         int prev_self_is_ptr = ctx->self_is_pointer;
@@ -890,6 +893,7 @@ void codegen_node_single(ParserContext *ctx, ASTNode *node, FILE *out)
             codegen_node_single(ctx, defer_stack[i], out);
         }
         g_current_func_ret_type = prev_ret;
+        g_current_func_ret_type_info = prev_ret_info;
         ctx->self_is_pointer = prev_self_is_ptr;
 
         fprintf(out, "}\n");
@@ -1984,8 +1988,14 @@ void codegen_node_single(ParserContext *ctx, ASTNode *node, FILE *out)
             if (has_defers && node->ret.value)
             {
                 fprintf(out, "    { ");
-                if (g_current_func_ret_type && strcmp(g_current_func_ret_type, "void") != 0 &&
-                    strcmp(g_current_func_ret_type, "unknown") != 0)
+                if (g_current_func_ret_type_info)
+                {
+                    char *tstr = codegen_type_to_string(g_current_func_ret_type_info);
+                    fprintf(out, "%s", tstr);
+                    free(tstr);
+                }
+                else if (g_current_func_ret_type && strcmp(g_current_func_ret_type, "void") != 0 &&
+                         strcmp(g_current_func_ret_type, "unknown") != 0)
                 {
                     fprintf(out, "%s", g_current_func_ret_type);
                 }

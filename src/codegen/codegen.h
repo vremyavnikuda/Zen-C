@@ -103,6 +103,7 @@ extern int defer_count;               ///< Counter for defer statements in curre
 extern ASTNode *defer_stack[];        ///< Stack of deferred nodes.
 extern ASTNode *g_current_lambda;     ///< Current lambda being generated.
 extern char *g_current_func_ret_type; ///< Return type of current function.
+extern Type *g_current_func_ret_type_info;
 
 // Defer boundary tracking for proper defer execution on break/continue/return
 #define MAX_DEFER 1024

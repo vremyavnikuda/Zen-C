@@ -1,0 +1,20 @@
+import "std/vec.zc"
+
+alias clos = fn(int) -> int;
+
+fn make_adder(i: int) -> clos {
+    // Instantiate a generic type to trigger RAII block wrapping for return
+    let _ = Vec<int>::new();
+    
+    return fn[=](input: int) -> int {
+        return input + i;
+    }
+}
+
+test "closure_generic_raii" {
+    let add3 = make_adder(3);
+    assert(add3(10) == 13, "Closure with generic RAII failed");
+    
+    let add5 = make_adder(5);
+    assert(add5(10) == 15, "Closure with generic RAII (second call) failed");
+}

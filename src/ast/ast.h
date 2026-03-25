@@ -592,6 +592,7 @@ struct ASTNode
             int is_bare; // 1 if should be emitted without void* ctx (for fn*)
             char **captured_vars;
             char **captured_types;
+            Type **captured_types_info;
             int num_captures;
             int *capture_modes;
             int default_capture_mode;
