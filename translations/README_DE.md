@@ -1,12 +1,12 @@
 <div align="center">  
   <p>  
-	<a href="README.md">English</a> •  
-	<a href="translations/README_RU.md">Русский</a> •  
-	<a href="translations/README_ZH_CN.md">简体中文</a> •  
-	<a href="translations/README_ZH_TW.md">繁體中文</a> •  
-	<a href="translations/README_ES.md">Español</a> •  
-	<a href="translations/README_IT.md">Italiano</a> •  
-	<a href="translations/README_PT_BR.md">Português Brasileiro</a> 
+	<a href="../README.md">English</a> •  
+	<a href="README_RU.md">Русский</a> •  
+	<a href="README_ZH_CN.md">简体中文</a> •  
+	<a href="README_ZH_TW.md">繁體中文</a> •  
+	<a href="README_ES.md">Español</a> •  
+	<a href="README_IT.md">Italiano</a> •  
+	<a href="README_PT_BR.md">Português Brasileiro</a> 
   </p>  
 </div>  
 
