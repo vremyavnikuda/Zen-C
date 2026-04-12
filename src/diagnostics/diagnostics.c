@@ -68,6 +68,10 @@ void zpanic(const char *fmt, ...)
         vsnprintf(msg, sizeof(msg), fmt, a);
         va_end(a);
         emit_json("error", (Token){0}, msg, NULL, DIAG_NONE);
+        if (g_config.mode_lsp)
+        {
+            return;
+        }
         exit(1);
     }
     va_list a;
@@ -76,6 +80,10 @@ void zpanic(const char *fmt, ...)
     vfprintf(stderr, fmt, a);
     fprintf(stderr, COLOR_RESET "\n");
     va_end(a);
+    if (g_config.mode_lsp)
+    {
+        return;
+    }
     exit(1);
 }
 
@@ -87,6 +95,10 @@ void zfatal(const char *fmt, ...)
     vfprintf(stderr, fmt, a);
     fprintf(stderr, "\n");
     va_end(a);
+    if (g_config.mode_lsp)
+    {
+        return;
+    }
     exit(1);
 }
 
@@ -280,6 +292,10 @@ void zpanic_at(Token t, const char *fmt, ...)
             g_parser_ctx->on_error(g_parser_ctx->error_callback_data, t, msg);
             return;
         }
+        if (g_config.mode_lsp)
+        {
+            return;
+        }
         exit(1);
     }
     // Header: 'error: message'.
@@ -330,6 +346,10 @@ void zpanic_at(Token t, const char *fmt, ...)
         return; // Recover!
     }
 
+    if (g_config.mode_lsp)
+    {
+        return;
+    }
     exit(1);
 }
 
@@ -346,6 +366,10 @@ void zpanic_with_suggestion(Token t, const char *msg, const char *suggestion)
                      suggestion ? suggestion : "");
             g_parser_ctx->had_error = 1;
             g_parser_ctx->on_error(g_parser_ctx->error_callback_data, t, full_msg);
+            return;
+        }
+        if (g_config.mode_lsp)
+        {
             return;
         }
         exit(1);
@@ -393,6 +417,10 @@ void zpanic_with_suggestion(Token t, const char *msg, const char *suggestion)
         return; // Recover!
     }
 
+    if (g_config.mode_lsp)
+    {
+        return;
+    }
     exit(1);
 }
 
@@ -422,6 +450,10 @@ void zpanic_with_hints(Token t, const char *msg, const char *const *hints)
             snprintf(full_msg, sizeof(full_msg), "%s\n%s", msg, combined_hints);
             g_parser_ctx->had_error = 1;
             g_parser_ctx->on_error(g_parser_ctx->error_callback_data, t, full_msg);
+            return;
+        }
+        if (g_config.mode_lsp)
+        {
             return;
         }
         exit(1);
@@ -491,6 +523,10 @@ void zpanic_with_hints(Token t, const char *msg, const char *const *hints)
         return; // Recover!
     }
 
+    if (g_config.mode_lsp)
+    {
+        return;
+    }
     exit(1);
 }
 

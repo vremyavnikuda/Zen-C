@@ -248,11 +248,19 @@ int type_eq(Type *a, Type *b)
 
     if (a->kind != b->kind)
     {
-        return 0;
+        if (!((a->kind == TYPE_STRUCT && b->kind == TYPE_ENUM) ||
+              (a->kind == TYPE_ENUM && b->kind == TYPE_STRUCT)))
+        {
+            return 0;
+        }
     }
 
-    if (a->kind == TYPE_STRUCT || a->kind == TYPE_GENERIC)
+    if (a->kind == TYPE_STRUCT || a->kind == TYPE_GENERIC || a->kind == TYPE_ENUM)
     {
+        if (!a->name || !b->name)
+        {
+            return 0;
+        }
         return 0 == strcmp(a->name, b->name);
     }
     if (a->kind == TYPE_ALIAS)
@@ -591,6 +599,8 @@ static char *type_to_string_impl(Type *t)
         return xstrdup(t->name);
     }
     case TYPE_ALIAS:
+        return xstrdup(t->name);
+    case TYPE_ENUM:
         return xstrdup(t->name);
 
     default:

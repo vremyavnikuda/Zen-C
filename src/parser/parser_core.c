@@ -1444,9 +1444,16 @@ ASTNode *parse_program_nodes(ParserContext *ctx, Lexer *l)
 ASTNode *parse_program(ParserContext *ctx, Lexer *l)
 {
     g_parser_ctx = ctx;
-    ctx->global_scope = symbol_scope_create(NULL, "Global");
-    ctx->current_scope = ctx->global_scope;
-    register_builtins(ctx);
+    if (!ctx->global_scope)
+    {
+        ctx->global_scope = symbol_scope_create(NULL, "Global");
+        ctx->current_scope = ctx->global_scope;
+        register_builtins(ctx);
+    }
+    else
+    {
+        ctx->current_scope = ctx->global_scope;
+    }
 
     ASTNode *r = ast_create(NODE_ROOT);
     r->root.children = parse_program_nodes(ctx, l);

@@ -167,6 +167,7 @@ impl Map<V> {
                 return Option<V>::None();
             }
         }
+        return Option<V>::None();
     }
     
     fn contains(self, key: char*) -> bool {

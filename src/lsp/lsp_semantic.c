@@ -81,9 +81,9 @@ static int compare_tokens(const void *a, const void *b)
 }
 
 // AST Traversal
-static void traverse_node(TokenBuilder *b, ASTNode *node)
+static void traverse_node(TokenBuilder *b, ASTNode *node, int depth)
 {
-    if (!node)
+    if (!node || depth > 32)
     {
         return;
     }
@@ -105,7 +105,7 @@ static void traverse_node(TokenBuilder *b, ASTNode *node)
                 attr = attr->next;
             }
         }
-        traverse_node(b, node->func.body);
+        traverse_node(b, node->func.body, depth + 1);
         break;
 
     case NODE_VAR_DECL:
@@ -114,7 +114,7 @@ static void traverse_node(TokenBuilder *b, ASTNode *node)
             builder_push(b, node->token.line - 1, node->token.col - 1, node->token.len,
                          TOKEN_TYPE_VARIABLE, 0);
         }
-        traverse_node(b, node->var_decl.init_expr);
+        traverse_node(b, node->var_decl.init_expr, depth + 1);
         break;
 
     case NODE_BLOCK:
@@ -122,28 +122,28 @@ static void traverse_node(TokenBuilder *b, ASTNode *node)
         ASTNode *stmt = node->block.statements;
         while (stmt)
         {
-            traverse_node(b, stmt);
+            traverse_node(b, stmt, depth + 1);
             stmt = stmt->next;
         }
         break;
     }
 
     case NODE_RETURN:
-        traverse_node(b, node->ret.value);
+        traverse_node(b, node->ret.value, depth + 1);
         break;
 
     case NODE_EXPR_BINARY:
-        traverse_node(b, node->binary.left);
-        traverse_node(b, node->binary.right);
+        traverse_node(b, node->binary.left, depth + 1);
+        traverse_node(b, node->binary.right, depth + 1);
         break;
 
     case NODE_EXPR_CALL:
-        traverse_node(b, node->call.callee);
+        traverse_node(b, node->call.callee, depth + 1);
         {
             ASTNode *arg = node->call.args;
             while (arg)
             {
-                traverse_node(b, arg);
+                traverse_node(b, arg, depth + 1);
                 arg = arg->next;
             }
         }
@@ -155,7 +155,7 @@ static void traverse_node(TokenBuilder *b, ASTNode *node)
             builder_push(b, node->token.line - 1, node->token.col - 1, node->token.len,
                          TOKEN_TYPE_VARIABLE, 2);
         }
-        traverse_node(b, node->var_decl.init_expr);
+        traverse_node(b, node->var_decl.init_expr, depth + 1);
         break;
 
     case NODE_TYPE_ALIAS:
@@ -180,7 +180,7 @@ static void traverse_node(TokenBuilder *b, ASTNode *node)
             builder_push(b, node->token.line - 1, node->token.col - 1, node->token.len,
                          TOKEN_TYPE_STRUCT, 0);
         }
-        traverse_node(b, node->strct.fields);
+        traverse_node(b, node->strct.fields, depth + 1);
         break;
 
     case NODE_FIELD:
@@ -192,7 +192,7 @@ static void traverse_node(TokenBuilder *b, ASTNode *node)
         break;
 
     case NODE_EXPR_MEMBER:
-        traverse_node(b, node->member.target);
+        traverse_node(b, node->member.target, depth + 1);
         if (node->token.type != TOK_EOF)
         {
             builder_push(b, node->token.line - 1, node->token.col - 1, node->token.len,
@@ -228,7 +228,7 @@ static void traverse_node(TokenBuilder *b, ASTNode *node)
             builder_push(b, node->token.line - 1, node->token.col - 1, node->token.len,
                          TOKEN_TYPE_STRUCT, 0);
         }
-        traverse_node(b, node->trait.methods);
+        traverse_node(b, node->trait.methods, depth + 1);
         break;
 
     case NODE_IMPL:
@@ -237,7 +237,7 @@ static void traverse_node(TokenBuilder *b, ASTNode *node)
             builder_push(b, node->token.line - 1, node->token.col - 1, node->token.len,
                          TOKEN_TYPE_STRUCT, 0);
         }
-        traverse_node(b, node->impl.methods);
+        traverse_node(b, node->impl.methods, depth + 1);
         break;
 
     case NODE_IMPL_TRAIT:
@@ -246,7 +246,7 @@ static void traverse_node(TokenBuilder *b, ASTNode *node)
             builder_push(b, node->token.line - 1, node->token.col - 1, node->token.len,
                          TOKEN_TYPE_STRUCT, 0);
         }
-        traverse_node(b, node->impl_trait.methods);
+        traverse_node(b, node->impl_trait.methods, depth + 1);
         break;
 
     case NODE_ENUM:
@@ -255,7 +255,7 @@ static void traverse_node(TokenBuilder *b, ASTNode *node)
             builder_push(b, node->token.line - 1, node->token.col - 1, node->token.len,
                          TOKEN_TYPE_ENUM, 0);
         }
-        traverse_node(b, node->enm.variants);
+        traverse_node(b, node->enm.variants, depth + 1);
         break;
 
     case NODE_ENUM_VARIANT:
@@ -271,29 +271,29 @@ static void traverse_node(TokenBuilder *b, ASTNode *node)
         break;
 
     case NODE_DESTRUCT_VAR:
-        traverse_node(b, node->destruct.init_expr);
-        traverse_node(b, node->destruct.else_block);
+        traverse_node(b, node->destruct.init_expr, depth + 1);
+        traverse_node(b, node->destruct.else_block, depth + 1);
         break;
 
     case NODE_MATCH_CASE:
-        traverse_node(b, node->match_case.guard);
-        traverse_node(b, node->match_case.body);
+        traverse_node(b, node->match_case.guard, depth + 1);
+        traverse_node(b, node->match_case.body, depth + 1);
         break;
 
     case NODE_LAMBDA:
-        traverse_node(b, node->lambda.body);
+        traverse_node(b, node->lambda.body, depth + 1);
         break;
 
     case NODE_FOR_RANGE:
-        traverse_node(b, node->for_range.start);
-        traverse_node(b, node->for_range.end);
-        traverse_node(b, node->for_range.body);
+        traverse_node(b, node->for_range.start, depth + 1);
+        traverse_node(b, node->for_range.end, depth + 1);
+        traverse_node(b, node->for_range.body, depth + 1);
         break;
 
     default:
         if (node->type == NODE_ROOT)
         {
-            traverse_node(b, node->root.children);
+            traverse_node(b, node->root.children, depth + 1);
         }
         else if (node->next)
         {
@@ -317,7 +317,7 @@ char *lsp_semantic_tokens_full(const char *uri)
     ASTNode *root = pf->ast;
     while (root)
     {
-        traverse_node(&b, root);
+        traverse_node(&b, root, 0);
         root = root->next;
     }
 

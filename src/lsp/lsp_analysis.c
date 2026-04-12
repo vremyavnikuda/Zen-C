@@ -68,7 +68,7 @@ void lsp_on_diagnostic(void *data, Token t, int severity, const char *msg, int d
     d->len = t.len;
     d->severity = severity;
     d->id = diag_id;
-    d->message = strdup(msg);
+    d->message = msg ? strdup(msg) : strdup("Unknown error");
     d->next = NULL;
 
     if (!list->head)
@@ -152,7 +152,7 @@ void lsp_check_file(const char *uri, const char *json_src, int id)
         if (d->id != DIAG_NONE)
         {
             char code_str[32];
-            sprintf(code_str, "W%d", d->id);
+            snprintf(code_str, sizeof(code_str), "W%d", d->id);
             cJSON_AddStringToObject(diag, "code", code_str);
         }
 
@@ -495,8 +495,9 @@ void lsp_hover(const char *uri, int line, int col, int id)
         else
         {
             // Need to wrap in ```zc code block (using zc for highlighting)
-            char *code_block = malloc(strlen(text) + 16);
-            sprintf(code_block, "```zc\n%s\n```", text);
+            size_t block_size = strlen(text) + 16;
+            char *code_block = malloc(block_size);
+            snprintf(code_block, block_size, "```zc\n%s\n```", text);
             cJSON_AddStringToObject(contents, "value", code_block);
             free(code_block);
         }
@@ -1199,28 +1200,35 @@ void lsp_completion(const char *uri, int line, int col, int id)
 
             // Rich detail with signature
             char detail[1024];
-            int offset = sprintf(detail, "fn %s(", f->name);
+            int offset = snprintf(detail, sizeof(detail), "fn %s(", f->name);
             for (int i = 0; i < f->total_args; i++)
             {
                 char *tstr = type_to_string(f->arg_types[i]);
-                offset +=
-                    sprintf(detail + offset, "%s%s", tstr, (i < f->total_args - 1) ? ", " : "");
+                offset += snprintf(detail + offset, sizeof(detail) - offset, "%s%s", tstr,
+                                   (i < f->total_args - 1) ? ", " : "");
                 free(tstr);
+                if (offset >= (int)sizeof(detail))
+                {
+                    break;
+                }
             }
             char *ret_str = type_to_string(f->ret_type);
-            sprintf(detail + offset, ") -> %s", ret_str);
+            if (offset < (int)sizeof(detail))
+            {
+                snprintf(detail + offset, sizeof(detail) - offset, ") -> %s", ret_str);
+            }
             free(ret_str);
             cJSON_AddStringToObject(item, "detail", detail);
 
             // Snippet to jump inside parens
-            char snippet[256];
+            char snippet[MAX_VAR_NAME_LEN];
             if (f->total_args > 0)
             {
-                sprintf(snippet, "%s($1)", f->name);
+                snprintf(snippet, sizeof(snippet), "%s($1)", f->name);
             }
             else
             {
-                sprintf(snippet, "%s()", f->name);
+                snprintf(snippet, sizeof(snippet), "%s()", f->name);
             }
             cJSON_AddStringToObject(item, "insertText", snippet);
             cJSON_AddNumberToObject(item, "insertTextFormat", 2); // Snippet
@@ -1604,17 +1612,17 @@ void lsp_signature_help(const char *uri, int line, int col, int id)
                         {
                             if (!first)
                             {
-                                strcat(params, ", ");
+                                strncat(params, ", ", sizeof(params) - strlen(params) - 1);
                             }
                             char *tstr = type_to_string(fn->arg_types[i]);
                             if (tstr)
                             {
-                                strcat(params, tstr);
+                                strncat(params, tstr, sizeof(params) - strlen(params) - 1);
                                 free(tstr);
                             }
                             else
                             {
-                                strcat(params, "unknown");
+                                strncat(params, "unknown", sizeof(params) - strlen(params) - 1);
                             }
                             first = 0;
                         }

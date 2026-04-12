@@ -8,11 +8,15 @@ struct Result<T> {
 
 impl Result<T> {
     fn Ok(v: T) -> Result<T> {
-        return Result<T> { is_ok: true, val: v, err: 0 };
+        return Result<T> { is_ok: true, val: v, err: NULL };
     }
 
     fn Err(e: char*) -> Result<T> {
-        return Result<T> { is_ok: false, val: 0, err: e };
+        let r: Result<T>;
+        r.is_ok = false;
+        r.err = e;
+        memset(&r.val, 0, sizeof(T));
+        return r;
     }
 
     fn is_ok(self) -> bool {
@@ -33,7 +37,7 @@ impl Result<T> {
             exit(1);
         }
         let v = self.val;
-        memset(&self.val, 0, sizeof(T));
+        // Moved value
         return v;
     }
 

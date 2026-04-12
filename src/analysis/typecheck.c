@@ -151,8 +151,8 @@ static int integer_type_width(Type *t)
 
 // ** Node Checkers **
 
-static void check_node(TypeChecker *tc, ASTNode *node);
-static void check_expr_lambda(TypeChecker *tc, ASTNode *node);
+static void check_node(TypeChecker *tc, ASTNode *node, int depth);
+static void check_expr_lambda(TypeChecker *tc, ASTNode *node, int depth);
 static void apply_implicit_struct_pointer_conversions(TypeChecker *tc, ASTNode **expr_ptr,
                                                       Type *expected_type);
 static int check_type_compatibility(TypeChecker *tc, Type *target, Type *value, Token t);
@@ -207,9 +207,9 @@ static Type *resolve_alias(Type *t)
     return t;
 }
 
-static void check_expr_unary(TypeChecker *tc, ASTNode *node)
+static void check_expr_unary(TypeChecker *tc, ASTNode *node, int depth)
 {
-    check_node(tc, node->unary.operand);
+    check_node(tc, node->unary.operand, depth + 1);
 
     Type *operand_type = node->unary.operand->type_info;
     const char *op = node->unary.op;
@@ -290,7 +290,7 @@ static void check_expr_unary(TypeChecker *tc, ASTNode *node)
     }
 }
 
-static void check_expr_binary(TypeChecker *tc, ASTNode *node)
+static void check_expr_binary(TypeChecker *tc, ASTNode *node, int depth)
 {
     const char *op = node->binary.op;
 
@@ -298,18 +298,18 @@ static void check_expr_binary(TypeChecker *tc, ASTNode *node)
     {
         int old_is_assign_lhs = tc->is_assign_lhs;
         tc->is_assign_lhs = 1;
-        check_node(tc, node->binary.left);
+        check_node(tc, node->binary.left, depth + 1);
         tc->is_assign_lhs = old_is_assign_lhs;
         if (node->binary.left->type_info && node->binary.right->type == NODE_LAMBDA)
         {
             node->binary.right->type_info = node->binary.left->type_info;
         }
-        check_node(tc, node->binary.right);
+        check_node(tc, node->binary.right, depth + 1);
     }
     else
     {
-        check_node(tc, node->binary.left);
-        check_node(tc, node->binary.right);
+        check_node(tc, node->binary.left, depth + 1);
+        check_node(tc, node->binary.right, depth + 1);
     }
 
     Type *left_type = node->binary.left->type_info;
@@ -545,9 +545,9 @@ static void check_expr_binary(TypeChecker *tc, ASTNode *node)
     }
 }
 
-static void check_expr_call(TypeChecker *tc, ASTNode *node)
+static void check_expr_call(TypeChecker *tc, ASTNode *node, int depth)
 {
-    check_node(tc, node->call.callee);
+    check_node(tc, node->call.callee, depth + 1);
 
     const char *func_name = NULL;
     FuncSig *sig = NULL;
@@ -566,7 +566,7 @@ static void check_expr_call(TypeChecker *tc, ASTNode *node)
             if (strcmp(func_name, "_z_str") == 0)
             {
                 // _z_str is a generic format macro from ZC_C_GENERIC_STR
-                check_node(tc, node->call.args); // Still check the argument
+                check_node(tc, node->call.args, depth + 1); // Still check the argument
                 node->type_info = type_new(TYPE_STRING);
                 return;
             }
@@ -742,7 +742,7 @@ static void check_expr_call(TypeChecker *tc, ASTNode *node)
             arg->type_info = expected;
         }
 
-        check_node(tc, arg);
+        check_node(tc, arg, depth + 1);
 
         // Validate type against signature
         Type *actual = arg->type_info;
@@ -798,7 +798,7 @@ static void check_expr_call(TypeChecker *tc, ASTNode *node)
     }
 }
 
-static void check_block(TypeChecker *tc, ASTNode *block)
+static void check_block(TypeChecker *tc, ASTNode *block, int depth)
 {
     tc_enter_scope(tc);
     ASTNode *stmt = block->block.statements;
@@ -815,7 +815,7 @@ static void check_block(TypeChecker *tc, ASTNode *block)
             seen_terminator = 0; // Only warn once per block
         }
 
-        check_node(tc, stmt);
+        check_node(tc, stmt, depth + 1);
 
         // Track terminating statements
         if (stmt->type == NODE_RETURN || stmt->type == NODE_BREAK || stmt->type == NODE_CONTINUE ||
@@ -1063,7 +1063,7 @@ static int check_type_compatibility(TypeChecker *tc, Type *target, Type *value, 
     return 0;
 }
 
-static void check_var_decl(TypeChecker *tc, ASTNode *node)
+static void check_var_decl(TypeChecker *tc, ASTNode *node, int depth)
 {
     if (node->var_decl.init_expr)
     {
@@ -1071,7 +1071,7 @@ static void check_var_decl(TypeChecker *tc, ASTNode *node)
         {
             node->var_decl.init_expr->type_info = node->type_info;
         }
-        check_node(tc, node->var_decl.init_expr);
+        check_node(tc, node->var_decl.init_expr, depth + 1);
 
         Type *decl_type = node->type_info;
         Type *init_type = node->var_decl.init_expr->type_info;
@@ -1184,7 +1184,7 @@ static int block_always_returns(ASTNode *block)
     return 0;
 }
 
-static void check_function(TypeChecker *tc, ASTNode *node)
+static void check_function(TypeChecker *tc, ASTNode *node, int depth)
 {
     tc->current_func = node;
     tc_enter_scope(tc);
@@ -1206,7 +1206,7 @@ static void check_function(TypeChecker *tc, ASTNode *node)
         }
     }
 
-    check_node(tc, node->func.body);
+    check_node(tc, node->func.body, depth + 1);
 
     // Control flow analysis: Check if non-void function always returns
     const char *ret_type = node->func.ret_type;
@@ -1279,32 +1279,32 @@ static void check_expr_var(TypeChecker *tc, ASTNode *node)
     }
 }
 
-static void tc_check_trait(TypeChecker *tc, ASTNode *node)
+static void tc_check_trait(TypeChecker *tc, ASTNode *node, int depth)
 {
     ASTNode *method = node->trait.methods;
     while (method)
     {
-        check_node(tc, method);
+        check_node(tc, method, depth + 1);
         method = method->next;
     }
 }
 
-static void tc_check_impl(TypeChecker *tc, ASTNode *node)
+static void tc_check_impl(TypeChecker *tc, ASTNode *node, int depth)
 {
     ASTNode *method = node->impl.methods;
     while (method)
     {
-        check_node(tc, method);
+        check_node(tc, method, depth + 1);
         method = method->next;
     }
 }
 
-static void tc_check_impl_trait(TypeChecker *tc, ASTNode *node)
+static void tc_check_impl_trait(TypeChecker *tc, ASTNode *node, int depth)
 {
     ASTNode *method = node->impl_trait.methods;
     while (method)
     {
-        check_node(tc, method);
+        check_node(tc, method, depth + 1);
         method = method->next;
     }
 }
@@ -1331,7 +1331,7 @@ static void check_expr_literal(TypeChecker *tc, ASTNode *node)
     }
 }
 
-static void check_struct_init(TypeChecker *tc, ASTNode *node)
+static void check_struct_init(TypeChecker *tc, ASTNode *node, int depth)
 {
     // Find struct definition
     ASTNode *def = find_struct_def(tc->pctx, node->struct_init.struct_name);
@@ -1370,7 +1370,7 @@ static void check_struct_init(TypeChecker *tc, ASTNode *node)
         }
 
         // Check the initialization expression
-        check_node(tc, field_init->var_decl.init_expr);
+        check_node(tc, field_init->var_decl.init_expr, depth + 1);
 
         if (!found)
         {
@@ -1423,7 +1423,7 @@ static void check_struct_init(TypeChecker *tc, ASTNode *node)
     node->type_info = def->type_info;
 }
 
-static void check_loop_passes(TypeChecker *tc, ASTNode *node)
+static void check_loop_passes(TypeChecker *tc, ASTNode *node, int depth)
 {
     MoveState *prev_break = tc->loop_break_state;
     MoveState *prev_cont = tc->loop_continue_state;
@@ -1446,7 +1446,7 @@ static void check_loop_passes(TypeChecker *tc, ASTNode *node)
     switch (node->type)
     {
     case NODE_WHILE:
-        check_node(tc, node->while_stmt.condition);
+        check_node(tc, node->while_stmt.condition, depth + 1);
         if (node->while_stmt.condition && node->while_stmt.condition->type_info)
         {
             Type *cond_type = resolve_alias(node->while_stmt.condition->type_info);
@@ -1459,12 +1459,12 @@ static void check_loop_passes(TypeChecker *tc, ASTNode *node)
                                     "Condition must be a truthy type", hints);
             }
         }
-        check_node(tc, node->while_stmt.body);
+        check_node(tc, node->while_stmt.body, depth + 1);
         break;
 
     case NODE_FOR:
         tc_enter_scope(tc); // For loop init variable is scoped
-        check_node(tc, node->for_stmt.init);
+        check_node(tc, node->for_stmt.init, depth + 1);
 
         // Loop start is conceptually here for FOR
         if (loop_start)
@@ -1474,7 +1474,7 @@ static void check_loop_passes(TypeChecker *tc, ASTNode *node)
         loop_start = tc->pctx->move_state ? move_state_clone(tc->pctx->move_state) : NULL;
         tc->loop_start_state = loop_start;
 
-        check_node(tc, node->for_stmt.condition);
+        check_node(tc, node->for_stmt.condition, depth + 1);
         if (node->for_stmt.condition && node->for_stmt.condition->type_info)
         {
             Type *cond_type = resolve_alias(node->for_stmt.condition->type_info);
@@ -1486,13 +1486,13 @@ static void check_loop_passes(TypeChecker *tc, ASTNode *node)
                                     "Condition must be a truthy type", hints);
             }
         }
-        check_node(tc, node->for_stmt.body);
-        check_node(tc, node->for_stmt.step); // step happens after body
+        check_node(tc, node->for_stmt.body, depth + 1);
+        check_node(tc, node->for_stmt.step, depth + 1); // step happens after body
         break;
 
     case NODE_FOR_RANGE:
-        check_node(tc, node->for_range.start);
-        check_node(tc, node->for_range.end);
+        check_node(tc, node->for_range.start, depth + 1);
+        check_node(tc, node->for_range.end, depth + 1);
 
         // Loop start conceptually here
         if (loop_start)
@@ -1502,20 +1502,20 @@ static void check_loop_passes(TypeChecker *tc, ASTNode *node)
         loop_start = tc->pctx->move_state ? move_state_clone(tc->pctx->move_state) : NULL;
         tc->loop_start_state = loop_start;
 
-        check_node(tc, node->for_range.body);
+        check_node(tc, node->for_range.body, depth + 1);
         break;
 
     case NODE_LOOP:
-        check_node(tc, node->loop_stmt.body);
+        check_node(tc, node->loop_stmt.body, depth + 1);
         break;
 
     case NODE_REPEAT:
-        check_node(tc, node->repeat_stmt.body);
+        check_node(tc, node->repeat_stmt.body, depth + 1);
         break;
 
     case NODE_DO_WHILE:
-        check_node(tc, node->do_while_stmt.body);
-        check_node(tc, node->do_while_stmt.condition);
+        check_node(tc, node->do_while_stmt.body, depth + 1);
+        check_node(tc, node->do_while_stmt.condition, depth + 1);
         if (node->do_while_stmt.condition && node->do_while_stmt.condition->type_info)
         {
             Type *cond_type = resolve_alias(node->do_while_stmt.condition->type_info);
@@ -1565,26 +1565,26 @@ static void check_loop_passes(TypeChecker *tc, ASTNode *node)
         switch (node->type)
         {
         case NODE_WHILE:
-            check_node(tc, node->while_stmt.condition);
-            check_node(tc, node->while_stmt.body);
+            check_node(tc, node->while_stmt.condition, depth + 1);
+            check_node(tc, node->while_stmt.body, depth + 1);
             break;
         case NODE_FOR:
-            check_node(tc, node->for_stmt.condition);
-            check_node(tc, node->for_stmt.body);
-            check_node(tc, node->for_stmt.step);
+            check_node(tc, node->for_stmt.condition, depth + 1);
+            check_node(tc, node->for_stmt.body, depth + 1);
+            check_node(tc, node->for_stmt.step, depth + 1);
             break;
         case NODE_FOR_RANGE:
-            check_node(tc, node->for_range.body);
+            check_node(tc, node->for_range.body, depth + 1);
             break;
         case NODE_LOOP:
-            check_node(tc, node->loop_stmt.body);
+            check_node(tc, node->loop_stmt.body, depth + 1);
             break;
         case NODE_REPEAT:
-            check_node(tc, node->repeat_stmt.body);
+            check_node(tc, node->repeat_stmt.body, depth + 1);
             break;
         case NODE_DO_WHILE:
-            check_node(tc, node->do_while_stmt.body);
-            check_node(tc, node->do_while_stmt.condition);
+            check_node(tc, node->do_while_stmt.body, depth + 1);
+            check_node(tc, node->do_while_stmt.condition, depth + 1);
             break;
         default:
             break;
@@ -1673,9 +1673,14 @@ static void check_loop_passes(TypeChecker *tc, ASTNode *node)
     tc->in_loop_pass2 = outer_in_pass2;
 }
 
-static void check_node(TypeChecker *tc, ASTNode *node)
+static void check_node(TypeChecker *tc, ASTNode *node, int depth)
 {
     if (!node)
+    {
+        return;
+    }
+
+    if (depth > 64)
     {
         return;
     }
@@ -1687,28 +1692,28 @@ static void check_node(TypeChecker *tc, ASTNode *node)
         ASTNode *child = node->root.children;
         while (child)
         {
-            check_node(tc, child);
+            check_node(tc, child, depth + 1);
             child = child->next;
         }
     }
     break;
     case NODE_BLOCK:
-        check_block(tc, node);
+        check_block(tc, node, depth + 1);
         break;
     case NODE_VAR_DECL:
-        check_var_decl(tc, node);
+        check_var_decl(tc, node, depth + 1);
         break;
     case NODE_FUNCTION:
-        check_function(tc, node);
+        check_function(tc, node, depth + 1);
         break;
     case NODE_TRAIT:
-        tc_check_trait(tc, node);
+        tc_check_trait(tc, node, depth + 1);
         break;
     case NODE_IMPL:
-        tc_check_impl(tc, node);
+        tc_check_impl(tc, node, depth + 1);
         break;
     case NODE_IMPL_TRAIT:
-        tc_check_impl_trait(tc, node);
+        tc_check_impl_trait(tc, node, depth + 1);
         break;
     case NODE_EXPR_VAR:
         check_expr_var(tc, node);
@@ -1719,7 +1724,7 @@ static void check_node(TypeChecker *tc, ASTNode *node)
     case NODE_RETURN:
         if (node->ret.value)
         {
-            check_node(tc, node->ret.value);
+            check_node(tc, node->ret.value, depth + 1);
         }
         // Check return type compatibility with function
         if (tc->current_func)
@@ -1753,7 +1758,7 @@ static void check_node(TypeChecker *tc, ASTNode *node)
 
     // Control flow with nested nodes.
     case NODE_IF:
-        check_node(tc, node->if_stmt.condition);
+        check_node(tc, node->if_stmt.condition, depth + 1);
         // Validate condition is boolean-compatible
         if (node->if_stmt.condition && node->if_stmt.condition->type_info)
         {
@@ -1774,7 +1779,7 @@ static void check_node(TypeChecker *tc, ASTNode *node)
         {
             tc->pctx->move_state = move_state_clone(initial_state);
         }
-        check_node(tc, node->if_stmt.then_body);
+        check_node(tc, node->if_stmt.then_body, depth + 1);
         MoveState *after_then = tc->pctx->move_state;
         int then_unreachable = tc->is_unreachable;
 
@@ -1788,7 +1793,7 @@ static void check_node(TypeChecker *tc, ASTNode *node)
             {
                 tc->pctx->move_state = move_state_clone(initial_state);
             }
-            check_node(tc, node->if_stmt.else_body);
+            check_node(tc, node->if_stmt.else_body, depth + 1);
             after_else = tc->pctx->move_state;
             else_unreachable = tc->is_unreachable;
         }
@@ -1817,7 +1822,7 @@ static void check_node(TypeChecker *tc, ASTNode *node)
         tc->is_unreachable = then_unreachable && else_unreachable;
         break;
     case NODE_MATCH:
-        check_node(tc, node->match_stmt.expr);
+        check_node(tc, node->match_stmt.expr, depth + 1);
         // Visit each match case
         {
             MoveState *match_initial_state = tc->pctx->move_state;
@@ -1837,7 +1842,7 @@ static void check_node(TypeChecker *tc, ASTNode *node)
                     }
                     tc->is_unreachable = match_initial_unreachable;
 
-                    check_node(tc, mcase->match_case.body);
+                    check_node(tc, mcase->match_case.body, depth + 1);
 
                     if (!tc->is_unreachable)
                     {
@@ -1887,20 +1892,20 @@ static void check_node(TypeChecker *tc, ASTNode *node)
         break;
     case NODE_WHILE:
     case NODE_FOR:
-        check_loop_passes(tc, node);
+        check_loop_passes(tc, node, depth + 1);
         break;
     case NODE_EXPR_BINARY:
-        check_expr_binary(tc, node);
+        check_expr_binary(tc, node, depth + 1);
         break;
     case NODE_EXPR_UNARY:
-        check_expr_unary(tc, node);
+        check_expr_unary(tc, node, depth + 1);
         break;
     case NODE_EXPR_CALL:
-        check_expr_call(tc, node);
+        check_expr_call(tc, node, depth + 1);
         break;
     case NODE_EXPR_INDEX:
-        check_node(tc, node->index.array);
-        check_node(tc, node->index.index);
+        check_node(tc, node->index.array, depth + 1);
+        check_node(tc, node->index.index, depth + 1);
 
         if (node->index.array->type_info)
         {
@@ -1952,7 +1957,7 @@ static void check_node(TypeChecker *tc, ASTNode *node)
                     node->call.callee = callee;
                     node->call.args = idx;
 
-                    check_expr_call(tc, node);
+                    check_expr_call(tc, node, depth + 1);
                     free(mangled_idx);
                     free(mangled_get);
                     break;
@@ -1985,7 +1990,7 @@ static void check_node(TypeChecker *tc, ASTNode *node)
         }
         break;
     case NODE_EXPR_MEMBER:
-        check_node(tc, node->member.target);
+        check_node(tc, node->member.target, depth + 1);
         if (node->member.target && node->member.target->type_info)
         {
             Type *target_type = get_inner_type(node->member.target->type_info);
@@ -2047,11 +2052,11 @@ static void check_node(TypeChecker *tc, ASTNode *node)
         break;
     case NODE_DEFER:
         // Check the deferred statement
-        check_node(tc, node->defer_stmt.stmt);
+        check_node(tc, node->defer_stmt.stmt, depth + 1);
         break;
     case NODE_GUARD:
         // Guard clause: if !condition return
-        check_node(tc, node->guard_stmt.condition);
+        check_node(tc, node->guard_stmt.condition, depth + 1);
         if (node->guard_stmt.condition && node->guard_stmt.condition->type_info)
         {
             Type *cond_type = resolve_alias(node->guard_stmt.condition->type_info);
@@ -2064,11 +2069,11 @@ static void check_node(TypeChecker *tc, ASTNode *node)
                                     "Condition must be a truthy type", hints);
             }
         }
-        check_node(tc, node->guard_stmt.body);
+        check_node(tc, node->guard_stmt.body, depth + 1);
         break;
     case NODE_UNLESS:
         // Unless is like if !condition
-        check_node(tc, node->unless_stmt.condition);
+        check_node(tc, node->unless_stmt.condition, depth + 1);
         if (node->unless_stmt.condition && node->unless_stmt.condition->type_info)
         {
             Type *cond_type = resolve_alias(node->unless_stmt.condition->type_info);
@@ -2081,11 +2086,11 @@ static void check_node(TypeChecker *tc, ASTNode *node)
                                     "Condition must be a truthy type", hints);
             }
         }
-        check_node(tc, node->unless_stmt.body);
+        check_node(tc, node->unless_stmt.body, depth + 1);
         break;
     case NODE_ASSERT:
         // Check assert condition
-        check_node(tc, node->assert_stmt.condition);
+        check_node(tc, node->assert_stmt.condition, depth + 1);
         if (node->assert_stmt.condition && node->assert_stmt.condition->type_info)
         {
             Type *cond_type = resolve_alias(node->assert_stmt.condition->type_info);
@@ -2104,7 +2109,7 @@ static void check_node(TypeChecker *tc, ASTNode *node)
         MoveState *prev_move_state = tc->pctx->move_state;
         tc->pctx->move_state = move_state_create(NULL);
 
-        check_node(tc, node->test_stmt.body);
+        check_node(tc, node->test_stmt.body, depth + 1);
 
         move_state_free(tc->pctx->move_state);
         tc->pctx->move_state = prev_move_state;
@@ -2113,7 +2118,7 @@ static void check_node(TypeChecker *tc, ASTNode *node)
 
     case NODE_EXPR_CAST:
         // Check the expression being cast
-        check_node(tc, node->cast.expr);
+        check_node(tc, node->cast.expr, depth + 1);
         // Could add cast safety checks here (e.g., narrowing, pointer-to-int)
         if (node->cast.expr && node->cast.expr->type_info && node->cast.target_type)
         {
@@ -2139,7 +2144,7 @@ static void check_node(TypeChecker *tc, ASTNode *node)
         int count = 0;
         while (elem)
         {
-            check_node(tc, elem);
+            check_node(tc, elem, depth + 1);
             if (!elem_type && elem->type_info && elem->type_info->kind != TYPE_UNKNOWN)
             {
                 elem_type = elem->type_info;
@@ -2162,22 +2167,22 @@ static void check_node(TypeChecker *tc, ASTNode *node)
         ASTNode *elem = node->tuple_literal.elements;
         while (elem)
         {
-            check_node(tc, elem);
+            check_node(tc, elem, depth + 1);
             elem = elem->next;
         }
     }
     break;
     case NODE_EXPR_STRUCT_INIT:
-        check_struct_init(tc, node);
+        check_struct_init(tc, node, depth + 1);
         break;
     case NODE_LOOP:
     case NODE_REPEAT:
-        check_loop_passes(tc, node);
+        check_loop_passes(tc, node, depth + 1);
         break;
     case NODE_TERNARY:
-        check_node(tc, node->ternary.cond);
-        check_node(tc, node->ternary.true_expr);
-        check_node(tc, node->ternary.false_expr);
+        check_node(tc, node->ternary.cond, depth + 1);
+        check_node(tc, node->ternary.true_expr, depth + 1);
+        check_node(tc, node->ternary.false_expr, depth + 1);
         // Validate condition
         if (node->ternary.cond && node->ternary.cond->type_info)
         {
@@ -2255,32 +2260,32 @@ static void check_node(TypeChecker *tc, ASTNode *node)
         }
         break;
     case NODE_LAMBDA:
-        check_expr_lambda(tc, node);
+        check_expr_lambda(tc, node, depth + 1);
         break;
     case NODE_EXPR_SIZEOF:
         if (node->size_of.expr)
         {
-            check_node(tc, node->size_of.expr);
+            check_node(tc, node->size_of.expr, depth + 1);
         }
         node->type_info = type_new(TYPE_I32);
         break;
     case NODE_FOR_RANGE:
-        check_loop_passes(tc, node);
+        check_loop_passes(tc, node, depth + 1);
         break;
     case NODE_EXPR_SLICE:
         // Check slice target and indices
-        check_node(tc, node->slice.array);
-        check_node(tc, node->slice.start);
-        check_node(tc, node->slice.end);
+        check_node(tc, node->slice.array, depth + 1);
+        check_node(tc, node->slice.start, depth + 1);
+        check_node(tc, node->slice.end, depth + 1);
         break;
     case NODE_DESTRUCT_VAR:
         if (node->destruct.init_expr)
         {
-            check_node(tc, node->destruct.init_expr);
+            check_node(tc, node->destruct.init_expr, depth + 1);
         }
         break;
     case NODE_DO_WHILE:
-        check_loop_passes(tc, node);
+        check_loop_passes(tc, node, depth + 1);
         break;
     case NODE_BREAK:
         if (tc->pctx->move_state)
@@ -2311,7 +2316,7 @@ static void check_node(TypeChecker *tc, ASTNode *node)
     }
 }
 
-static void check_expr_lambda(TypeChecker *tc, ASTNode *node)
+static void check_expr_lambda(TypeChecker *tc, ASTNode *node, int depth)
 {
     Type *expected = get_inner_type(node->type_info);
     if (expected && expected->kind == TYPE_FUNCTION && expected->is_raw)
@@ -2406,11 +2411,11 @@ static void check_expr_lambda(TypeChecker *tc, ASTNode *node)
     {
         if (node->lambda.body->type == NODE_BLOCK)
         {
-            check_block(tc, node->lambda.body);
+            check_block(tc, node->lambda.body, depth + 1);
         }
         else
         {
-            check_node(tc, node->lambda.body);
+            check_node(tc, node->lambda.body, depth + 1);
         }
     }
 
@@ -2421,9 +2426,14 @@ static void check_expr_lambda(TypeChecker *tc, ASTNode *node)
     tc_exit_scope(tc);
 }
 
-static void check_program_prepass(TypeChecker *tc, ASTNode *root)
+static void check_program_prepass(TypeChecker *tc, ASTNode *root, int depth)
 {
     if (!root || root->type != NODE_ROOT)
+    {
+        return;
+    }
+
+    if (depth > 64)
     {
         return;
     }
@@ -2433,7 +2443,7 @@ static void check_program_prepass(TypeChecker *tc, ASTNode *root)
     {
         if (n->type == NODE_ROOT)
         {
-            check_program_prepass(tc, n);
+            check_program_prepass(tc, n, depth + 1);
         }
         else if (n->type == NODE_IMPL)
         {
@@ -2468,14 +2478,14 @@ int check_program(ParserContext *ctx, ASTNode *root)
         ctx->move_state = move_state_create(NULL);
     }
 
-    check_program_prepass(&tc, root);
+    check_program_prepass(&tc, root, 0);
 
-    check_node(&tc, root);
+    check_node(&tc, root, 0);
 
     ASTNode *inst_func = ctx->instantiated_funcs;
     while (inst_func)
     {
-        check_node(&tc, inst_func);
+        check_node(&tc, inst_func, 0);
         inst_func = inst_func->next;
     }
 
@@ -2509,7 +2519,7 @@ int check_moves_only(ParserContext *ctx, ASTNode *root)
         ctx->move_state = move_state_create(NULL);
     }
 
-    check_node(&tc, root);
+    check_node(&tc, root, 0);
 
     if (ctx->move_state)
     {

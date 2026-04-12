@@ -16,6 +16,15 @@ int lsp_main(int argc, char **argv)
     g_config.mode_lsp = 1;
     g_config.json_output = 1;
 
+    // Initialize root path from executable to find std/
+    char self_path[MAX_PATH_LEN];
+    void z_get_executable_path(char *buf, size_t size);
+    z_get_executable_path(self_path, sizeof(self_path));
+    if (self_path[0])
+    {
+        g_config.root_path = xstrdup(self_path);
+    }
+
     while (1)
     {
         // Read headers

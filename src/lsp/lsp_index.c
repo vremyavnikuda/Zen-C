@@ -115,186 +115,197 @@ LSPRange *lsp_find_at(LSPIndex *idx, int line, int col)
 
 // Walker.
 
-void lsp_walk_node(LSPIndex *idx, ASTNode *node)
+static void lsp_walk_node(LSPIndex *idx, ASTNode *node, int depth)
 {
-    if (!node)
+    if (depth > 32)
     {
         return;
     }
 
-    // Definition logic.
-    if (node->type == NODE_FUNCTION)
+    while (node)
     {
-        char hover[MAX_SHORT_MSG_LEN];
-        sprintf(hover, "fn %s(...) -> %s", node->func.name,
-                node->func.ret_type ? node->func.ret_type : "void");
-        lsp_index_add_def(idx, node->token, hover, node);
-
-        // Recurse body.
-        lsp_walk_node(idx, node->func.body);
-    }
-    else if (node->type == NODE_VAR_DECL)
-    {
-        char hover[MAX_SHORT_MSG_LEN];
-        sprintf(hover, "var %s", node->var_decl.name);
-        lsp_index_add_def(idx, node->token, hover, node);
-
-        lsp_walk_node(idx, node->var_decl.init_expr);
-    }
-    else if (node->type == NODE_CONST)
-    {
-        char hover[MAX_SHORT_MSG_LEN];
-        sprintf(hover, "const %s", node->var_decl.name);
-        lsp_index_add_def(idx, node->token, hover, node);
-
-        lsp_walk_node(idx, node->var_decl.init_expr);
-    }
-    else if (node->type == NODE_STRUCT)
-    {
-        char hover[MAX_SHORT_MSG_LEN];
-        if (node->strct.is_opaque)
+        // Definition logic.
+        if (node->type == NODE_FUNCTION)
         {
-            sprintf(hover, "opaque struct %s", node->strct.name);
+            char hover[MAX_SHORT_MSG_LEN];
+            const char *name = node->func.name ? node->func.name : "unknown";
+            const char *ret = node->func.ret_type ? node->func.ret_type : "void";
+            snprintf(hover, sizeof(hover), "fn %s(...) -> %s", name, ret);
+            lsp_index_add_def(idx, node->token, hover, node);
+
+            // Recurse body.
+            lsp_walk_node(idx, node->func.body, depth + 1);
         }
-        else
+        else if (node->type == NODE_VAR_DECL)
         {
-            sprintf(hover, "struct %s", node->strct.name);
-        }
-        lsp_index_add_def(idx, node->token, hover, node);
+            char hover[MAX_SHORT_MSG_LEN];
+            const char *name = node->var_decl.name ? node->var_decl.name : "unknown";
+            snprintf(hover, sizeof(hover), "var %s", name);
+            lsp_index_add_def(idx, node->token, hover, node);
 
-        // Recurse into fields
-        ASTNode *field = node->strct.fields;
-        while (field)
+            lsp_walk_node(idx, node->var_decl.init_expr, depth + 1);
+        }
+        else if (node->type == NODE_CONST)
         {
-            if (field->type == NODE_FIELD)
+            char hover[MAX_SHORT_MSG_LEN];
+            const char *name = node->var_decl.name ? node->var_decl.name : "unknown";
+            snprintf(hover, sizeof(hover), "const %s", name);
+            lsp_index_add_def(idx, node->token, hover, node);
+
+            lsp_walk_node(idx, node->var_decl.init_expr, depth + 1);
+        }
+        else if (node->type == NODE_STRUCT)
+        {
+            char hover[MAX_SHORT_MSG_LEN];
+            const char *name = node->strct.name ? node->strct.name : "unknown";
+            snprintf(hover, sizeof(hover), "%sstruct %s", node->strct.is_opaque ? "opaque " : "",
+                     name);
+            lsp_index_add_def(idx, node->token, hover, node);
+
+            ASTNode *field = node->strct.fields;
+            while (field)
             {
-                char fh[MAX_SHORT_MSG_LEN];
-                sprintf(fh, "field %s: %s", field->field.name, field->field.type);
-                lsp_index_add_def(idx, field->token, fh, field);
+                if (field->type == NODE_FIELD)
+                {
+                    char fh[MAX_SHORT_MSG_LEN];
+                    const char *fname = field->field.name ? field->field.name : "unknown";
+                    const char *ftype = field->field.type ? field->field.type : "unknown";
+                    snprintf(fh, sizeof(fh), "field %s: %s", fname, ftype);
+                    lsp_index_add_def(idx, field->token, fh, field);
+                }
+                field = field->next;
             }
-            field = field->next;
         }
-    }
-    else if (node->type == NODE_ENUM)
-    {
-        char hover[MAX_SHORT_MSG_LEN];
-        sprintf(hover, "enum %s", node->enm.name);
-        lsp_index_add_def(idx, node->token, hover, node);
-
-        // Recurse into variants
-        ASTNode *variant = node->enm.variants;
-        while (variant)
+        else if (node->type == NODE_ENUM)
         {
-            if (variant->type == NODE_ENUM_VARIANT)
+            char hover[MAX_SHORT_MSG_LEN];
+            const char *name = node->enm.name ? node->enm.name : "unknown";
+            snprintf(hover, sizeof(hover), "enum %s", name);
+            lsp_index_add_def(idx, node->token, hover, node);
+
+            ASTNode *variant = node->enm.variants;
+            while (variant)
             {
-                char vh[MAX_SHORT_MSG_LEN];
-                sprintf(vh, "variant %s", variant->variant.name);
-                lsp_index_add_def(idx, variant->token, vh, variant);
+                if (variant->type == NODE_ENUM_VARIANT)
+                {
+                    char vh[MAX_SHORT_MSG_LEN];
+                    const char *vname = variant->variant.name ? variant->variant.name : "unknown";
+                    snprintf(vh, sizeof(vh), "variant %s", vname);
+                    lsp_index_add_def(idx, variant->token, vh, variant);
+                }
+                variant = variant->next;
             }
-            variant = variant->next;
         }
-    }
-    else if (node->type == NODE_TYPE_ALIAS)
-    {
-        char hover[MAX_SHORT_MSG_LEN];
-        sprintf(hover, "alias %s = %s", node->type_alias.alias, node->type_alias.original_type);
-        lsp_index_add_def(idx, node->token, hover, node);
-    }
-    else if (node->type == NODE_TRAIT)
-    {
-        char hover[MAX_SHORT_MSG_LEN];
-        sprintf(hover, "trait %s", node->trait.name);
-        lsp_index_add_def(idx, node->token, hover, node);
-    }
+        else if (node->type == NODE_TYPE_ALIAS)
+        {
+            char hover[MAX_SHORT_MSG_LEN];
+            const char *alias = node->type_alias.alias ? node->type_alias.alias : "unknown";
+            const char *orig =
+                node->type_alias.original_type ? node->type_alias.original_type : "unknown";
+            snprintf(hover, sizeof(hover), "alias %s = %s", alias, orig);
+            lsp_index_add_def(idx, node->token, hover, node);
+        }
+        else if (node->type == NODE_TRAIT)
+        {
+            char hover[MAX_SHORT_MSG_LEN];
+            const char *name = node->trait.name ? node->trait.name : "unknown";
+            snprintf(hover, sizeof(hover), "trait %s", name);
+            lsp_index_add_def(idx, node->token, hover, node);
+        }
 
-    // Reference logic.
-    if (node->definition_token.line > 0 && node->definition_token.line != node->token.line)
-    {
-        // It has a definition!
-        lsp_index_add_ref(idx, node->token, node->definition_token, node);
-    }
-    else if (node->definition_token.line > 0)
-    {
-        lsp_index_add_ref(idx, node->token, node->definition_token, node);
-    }
+        // Reference logic.
+        if (node->definition_token.line > 0)
+        {
+            lsp_index_add_ref(idx, node->token, node->definition_token, node);
+        }
 
-    // General recursion.
+        // General recursion for children.
+        switch (node->type)
+        {
+        case NODE_ROOT:
+            lsp_walk_node(idx, node->root.children, depth + 1);
+            break;
+        case NODE_BLOCK:
+            lsp_walk_node(idx, node->block.statements, depth + 1);
+            break;
+        case NODE_IF:
+            lsp_walk_node(idx, node->if_stmt.condition, depth + 1);
+            lsp_walk_node(idx, node->if_stmt.then_body, depth + 1);
+            lsp_walk_node(idx, node->if_stmt.else_body, depth + 1);
+            break;
+        case NODE_WHILE:
+            lsp_walk_node(idx, node->while_stmt.condition, depth + 1);
+            lsp_walk_node(idx, node->while_stmt.body, depth + 1);
+            break;
+        case NODE_RETURN:
+            lsp_walk_node(idx, node->ret.value, depth + 1);
+            break;
+        case NODE_EXPR_BINARY:
+            lsp_walk_node(idx, node->binary.left, depth + 1);
+            lsp_walk_node(idx, node->binary.right, depth + 1);
+            break;
+        case NODE_EXPR_UNARY:
+            lsp_walk_node(idx, node->unary.operand, depth + 1);
+            break;
+        case NODE_EXPR_CAST:
+            lsp_walk_node(idx, node->cast.expr, depth + 1);
+            break;
+        case NODE_EXPR_MEMBER:
+            lsp_walk_node(idx, node->member.target, depth + 1);
+            break;
+        case NODE_EXPR_INDEX:
+            lsp_walk_node(idx, node->index.array, depth + 1);
+            lsp_walk_node(idx, node->index.index, depth + 1);
+            break;
+        case NODE_EXPR_CALL:
+            lsp_walk_node(idx, node->call.callee, depth + 1);
+            lsp_walk_node(idx, node->call.args, depth + 1);
+            break;
+        case NODE_MATCH:
+            lsp_walk_node(idx, node->match_stmt.expr, depth + 1);
+            lsp_walk_node(idx, node->match_stmt.cases, depth + 1);
+            break;
+        case NODE_MATCH_CASE:
+            lsp_walk_node(idx, node->match_case.guard, depth + 1);
+            lsp_walk_node(idx, node->match_case.body, depth + 1);
+            break;
+        case NODE_FOR:
+            lsp_walk_node(idx, node->for_stmt.init, depth + 1);
+            lsp_walk_node(idx, node->for_stmt.condition, depth + 1);
+            lsp_walk_node(idx, node->for_stmt.step, depth + 1);
+            lsp_walk_node(idx, node->for_stmt.body, depth + 1);
+            break;
+        case NODE_FOR_RANGE:
+            lsp_walk_node(idx, node->for_range.start, depth + 1);
+            lsp_walk_node(idx, node->for_range.end, depth + 1);
+            lsp_walk_node(idx, node->for_range.body, depth + 1);
+            break;
+        case NODE_LOOP:
+            lsp_walk_node(idx, node->loop_stmt.body, depth + 1);
+            break;
+        case NODE_DEFER:
+            lsp_walk_node(idx, node->defer_stmt.stmt, depth + 1);
+            break;
+        case NODE_GUARD:
+            lsp_walk_node(idx, node->guard_stmt.condition, depth + 1);
+            lsp_walk_node(idx, node->guard_stmt.body, depth + 1);
+            break;
+        case NODE_IMPL:
+            lsp_walk_node(idx, node->impl.methods, depth + 1);
+            break;
+        case NODE_IMPL_TRAIT:
+            lsp_walk_node(idx, node->impl_trait.methods, depth + 1);
+            break;
+        default:
+            break;
+        }
 
-    switch (node->type)
-    {
-    case NODE_ROOT:
-        lsp_walk_node(idx, node->root.children);
-        break;
-    case NODE_BLOCK:
-        lsp_walk_node(idx, node->block.statements);
-        break;
-    case NODE_IF:
-        lsp_walk_node(idx, node->if_stmt.condition);
-        lsp_walk_node(idx, node->if_stmt.then_body);
-        lsp_walk_node(idx, node->if_stmt.else_body);
-        break;
-    case NODE_WHILE:
-        lsp_walk_node(idx, node->while_stmt.condition);
-        lsp_walk_node(idx, node->while_stmt.body);
-        break;
-    case NODE_RETURN:
-        lsp_walk_node(idx, node->ret.value);
-        break;
-    case NODE_EXPR_BINARY:
-        lsp_walk_node(idx, node->binary.left);
-        lsp_walk_node(idx, node->binary.right);
-        break;
-    case NODE_EXPR_UNARY:
-        lsp_walk_node(idx, node->unary.operand);
-        break;
-    case NODE_EXPR_CAST:
-        lsp_walk_node(idx, node->cast.expr);
-        break;
-    case NODE_EXPR_MEMBER:
-        lsp_walk_node(idx, node->member.target);
-        break;
-    case NODE_EXPR_INDEX:
-        lsp_walk_node(idx, node->index.array);
-        lsp_walk_node(idx, node->index.index);
-        break;
-    case NODE_EXPR_CALL:
-        lsp_walk_node(idx, node->call.callee);
-        lsp_walk_node(idx, node->call.args);
-        break;
-    case NODE_MATCH:
-        lsp_walk_node(idx, node->match_stmt.expr);
-        lsp_walk_node(idx, node->match_stmt.cases);
-        break;
-    case NODE_MATCH_CASE:
-        lsp_walk_node(idx, node->match_case.guard);
-        lsp_walk_node(idx, node->match_case.body);
-        break;
-    case NODE_FOR:
-        lsp_walk_node(idx, node->for_stmt.init);
-        lsp_walk_node(idx, node->for_stmt.condition);
-        lsp_walk_node(idx, node->for_stmt.step);
-        lsp_walk_node(idx, node->for_stmt.body);
-        break;
-    case NODE_FOR_RANGE:
-        lsp_walk_node(idx, node->for_range.start);
-        lsp_walk_node(idx, node->for_range.end);
-        lsp_walk_node(idx, node->for_range.body);
-        break;
-    case NODE_LOOP:
-        lsp_walk_node(idx, node->loop_stmt.body);
-        break;
-    case NODE_DEFER:
-        lsp_walk_node(idx, node->defer_stmt.stmt);
-        break;
-    default:
-        break;
+        // Move to next sibling without recursion.
+        node = node->next;
     }
-
-    // Walk next sibling.
-    lsp_walk_node(idx, node->next);
 }
 
 void lsp_build_index(LSPIndex *idx, ASTNode *root)
 {
-    lsp_walk_node(idx, root);
+    lsp_walk_node(idx, root, 0);
 }

@@ -182,7 +182,7 @@ ASTNode *parse_match(ParserContext *ctx, Lexer *l)
             {
                 lexer_next(l); // eat ::
                 Token suffix = lexer_next(l);
-                char *tmp = xmalloc(strlen(p_str) + suffix.len + 2);
+                char *tmp = xmalloc(strlen(p_str) + suffix.len + 3);
                 // Join with underscore: Result::Ok -> Result__Ok
                 sprintf(tmp, "%s__%.*s", p_str, suffix.len, suffix.start);
                 free(p_str);
@@ -199,7 +199,7 @@ ASTNode *parse_match(ParserContext *ctx, Lexer *l)
                 char *end_str = token_strdup(end_tok);
 
                 // Build range pattern: "start..end" or "start..=end"
-                char *range_str = xmalloc(strlen(p_str) + strlen(end_str) + 4);
+                char *range_str = xmalloc(strlen(p_str) + strlen(end_str) + 5);
                 sprintf(range_str, "%s%s%s", p_str, is_inclusive ? "..=" : "..", end_str);
                 free(p_str);
                 free(end_str);
@@ -295,7 +295,21 @@ ASTNode *parse_match(ParserContext *ctx, Lexer *l)
 
         if (lexer_next(l).type != TOK_ARROW)
         {
-            zpanic_at(lexer_peek(l), "Expected =>");
+            zpanic_at(lexer_peek(l), "Expected => after match pattern");
+            if (ctx->is_fault_tolerant)
+            {
+                // Skip until next comma, RBRACE or ARROW
+                while (lexer_peek(l).type != TOK_RBRACE && lexer_peek(l).type != TOK_COMMA &&
+                       lexer_peek(l).type != TOK_EOF)
+                {
+                    lexer_next(l);
+                }
+                if (lexer_peek(l).type == TOK_COMMA)
+                {
+                    lexer_next(l);
+                }
+                continue;
+            }
         }
 
         // Create scope for the case to hold the binding
@@ -323,8 +337,8 @@ ASTNode *parse_match(ParserContext *ctx, Lexer *l)
                     {
                         // Match by variant name (pattern suffix after last _)
                         int size = strlen(vreg->enum_name) + strlen(v->variant.name) + 2;
-                        char *v_full = xmalloc(size);
-                        snprintf(v_full, size, "%s__%s", vreg->enum_name, v->variant.name);
+                        char *v_full = xmalloc(size + 1);
+                        snprintf(v_full, size + 1, "%s__%s", vreg->enum_name, v->variant.name);
                         if (strcmp(v_full, pattern) == 0 && v->variant.payload)
                         {
                             // Found the variant, extract payload type
@@ -431,7 +445,7 @@ ASTNode *parse_match(ParserContext *ctx, Lexer *l)
             }
         }
 
-        ASTNode *body;
+        ASTNode *body = NULL;
         Token pk = lexer_peek(l);
         if (pk.type == TOK_LBRACE)
         {
@@ -446,9 +460,22 @@ ASTNode *parse_match(ParserContext *ctx, Lexer *l)
         {
             body = parse_return(ctx, l);
         }
+        else if (ctx->is_fault_tolerant && (pk.type == TOK_RBRACE || pk.type == TOK_COMMA))
+        {
+            // Missing body after => - do NOT call parse_expression if it's the end of the block
+            // return a dummy node
+            body = ast_create(NODE_BLOCK);
+            body->token = pk;
+        }
         else
         {
             body = parse_expression(ctx, l);
+        }
+
+        if (!body)
+        {
+            body = ast_create(NODE_BLOCK);
+            body->token = pk;
         }
 
         exit_scope(ctx);
@@ -601,7 +628,8 @@ ASTNode *parse_asm(ParserContext *ctx, Lexer *l)
     lexer_next(l);
 
     // Parse assembly template strings
-    char *code = xmalloc(4096); // Buffer for assembly code
+    const size_t code_size = 4096;
+    char *code = xmalloc(code_size); // Buffer for assembly code
     code[0] = 0;
 
     while (1)
@@ -618,7 +646,6 @@ ASTNode *parse_asm(ParserContext *ctx, Lexer *l)
             break;
         }
 
-        // Support string literals for assembly instructions
         if (inner_t.type == TOK_STRING)
         {
             lexer_next(l);
@@ -626,9 +653,15 @@ ASTNode *parse_asm(ParserContext *ctx, Lexer *l)
             int str_len = inner_t.len - 2;
             if (strlen(code) > 0)
             {
-                strcat(code, "\n");
+                if (strlen(code) + 2 < code_size)
+                {
+                    strcat(code, "\n");
+                }
             }
-            strncat(code, inner_t.start + 1, str_len);
+            if (strlen(code) + str_len < code_size)
+            {
+                strncat(code, inner_t.start + 1, str_len);
+            }
         }
         // Also support bare identifiers for simple instructions like 'nop', 'pause'
         else if (inner_t.type == TOK_IDENT)
@@ -636,9 +669,15 @@ ASTNode *parse_asm(ParserContext *ctx, Lexer *l)
             lexer_next(l);
             if (strlen(code) > 0)
             {
-                strcat(code, "\n");
+                if (strlen(code) + 2 < code_size)
+                {
+                    strcat(code, "\n");
+                }
             }
-            strncat(code, inner_t.start, inner_t.len);
+            if (strlen(code) + inner_t.len < code_size)
+            {
+                strncat(code, inner_t.start, inner_t.len);
+            }
 
             // Check for instruction arguments
             while (lexer_peek(l).type != TOK_RBRACE && lexer_peek(l).type != TOK_COLON)
@@ -655,17 +694,26 @@ ASTNode *parse_asm(ParserContext *ctx, Lexer *l)
                 if (arg.type == TOK_LBRACE)
                 {
                     lexer_next(l);
-                    strcat(code, "{");
+                    if (strlen(code) + 2 < code_size)
+                    {
+                        strcat(code, "{");
+                    }
                     // Consume until }
                     while (lexer_peek(l).type != TOK_RBRACE && lexer_peek(l).type != TOK_EOF)
                     {
                         Token sub = lexer_next(l);
-                        strncat(code, sub.start, sub.len);
+                        if (strlen(code) + sub.len < code_size)
+                        {
+                            strncat(code, sub.start, sub.len);
+                        }
                     }
                     if (lexer_peek(l).type == TOK_RBRACE)
                     {
                         lexer_next(l);
-                        strcat(code, "}");
+                        if (strlen(code) + 2 < code_size)
+                        {
+                            strcat(code, "}");
+                        }
                     }
                     continue;
                 }
@@ -1477,7 +1525,7 @@ ASTNode *parse_for(ParserContext *ctx, Lexer *l)
                     if (inner)
                     {
                         // Default inference: if name contains 'Ref', assume pointer.
-                        u_type = xmalloc(strlen(inner) + 8);
+                        u_type = xmalloc(strlen(inner) + 16);
                         if (strchr(coll_type, '&') || (coll_type[0] == '&') ||
                             (strchr(coll_type, '*')) || strstr(coll_type, "Ref"))
                         {
@@ -1499,12 +1547,12 @@ ASTNode *parse_for(ParserContext *ctx, Lexer *l)
                                 free(old_u);
                             }
 
-                            option_type_ptr = xmalloc(strlen(inner) + 64);
+                            option_type_ptr = xmalloc(strlen(inner) + 128);
                             sprintf(option_type_ptr, "MapIterResult<%s>", inner);
                         }
                         else if (strstr(coll_type, "Vec") || strstr(coll_type, "Slice"))
                         {
-                            option_type_ptr = xmalloc(strlen(inner) + 64);
+                            option_type_ptr = xmalloc(strlen(inner) + 128);
                             if (strchr(coll_type, '&') || (coll_type[0] == '&') ||
                                 (strchr(coll_type, '*')) || strstr(coll_type, "Ref"))
                             {
@@ -1543,10 +1591,10 @@ ASTNode *parse_for(ParserContext *ctx, Lexer *l)
                             strcpy(u_type, elem);
 
                             iter_type_ptr = xmalloc(256);
-                            sprintf(iter_type_ptr, "SliceIter<%s>", elem);
+                            snprintf(iter_type_ptr, 256, "SliceIter<%s>", elem);
 
                             option_type_ptr = xmalloc(256);
-                            sprintf(option_type_ptr, "Option<%s>", elem);
+                            snprintf(option_type_ptr, 256, "Option<%s>", elem);
 
                             free(elem);
                         }
@@ -1860,8 +1908,12 @@ char *process_printf_sugar(ParserContext *ctx, Token srctoken, const char *conte
         if (brace > cur)
         {
             // Append text literal
-            sprintf(buf, "fprintf(%s, \"%%s\", \"", target);
-            strcat(gen, buf);
+            const size_t gen_size = 1024 * 32;
+            snprintf(buf, sizeof(buf), "fprintf(%s, \"%%s\", \"", target);
+            if (strlen(gen) + strlen(buf) < gen_size)
+            {
+                strcat(gen, buf);
+            }
 
             int seg_len = brace - cur;
             char *txt = xmalloc(seg_len + 1);
@@ -2115,18 +2167,22 @@ char *process_printf_sugar(ParserContext *ctx, Token srctoken, const char *conte
         if (fmt)
         {
             // Explicit format: {x:%.2f}
+            const size_t gen_size = 1024 * 32;
             if (force_simple)
             {
-                sprintf(buf, "fprintf(%s, \"%%%s\", %s); ", target, fmt, rw_expr);
+                snprintf(buf, sizeof(buf), "fprintf(%s, \"%%%s\", %s); ", target, fmt, rw_expr);
             }
             else
             {
-                sprintf(buf,
-                        "({ ZC_AUTO_INIT(_z_interp_val, %s); fprintf(%s, \"%%%s\", "
-                        "_z_interp_val); _z_drop(_z_interp_val); }); ",
-                        rw_expr, target, fmt);
+                snprintf(buf, sizeof(buf),
+                         "({ ZC_AUTO_INIT(_z_interp_val, %s); fprintf(%s, \"%%%s\", "
+                         "_z_interp_val); _z_drop(_z_interp_val); }); ",
+                         rw_expr, target, fmt);
             }
-            strcat(gen, buf);
+            if (strlen(gen) + strlen(buf) < gen_size)
+            {
+                strcat(gen, buf);
+            }
         }
         else
         {
@@ -2176,7 +2232,7 @@ char *process_printf_sugar(ParserContext *ctx, Token srctoken, const char *conte
                 {
                     char *inner_name = type_to_string(base->inner);
                     char slice_name[MAX_TYPE_NAME_LEN];
-                    sprintf(slice_name, "Slice__%s", inner_name);
+                    snprintf(slice_name, sizeof(slice_name), "Slice__%s", inner_name);
                     free(inner_name);
 
                     ASTNode *def = find_struct_def(ctx, slice_name);
@@ -2585,6 +2641,7 @@ ASTNode *parse_macro_call(ParserContext *ctx, Lexer *l, char *macro_name)
     if (!capture)
     {
         zpanic_at(start_tok, "Failed to create capture buffer for plugin expansion");
+        return NULL;
     }
 
     ZApi api;
@@ -4149,6 +4206,8 @@ ASTNode *parse_import(ParserContext *ctx, Lexer *l)
         else
         {
             zpanic_at(t, "Could not find module: %s", fn);
+            free(fn);
+            return NULL; // In fault-tolerant mode (LSP), zpanic_at returns.
         }
     }
     free(fn);
@@ -4361,6 +4420,7 @@ char *run_comptime_block(ParserContext *ctx, Lexer *l)
     if (!f)
     {
         zpanic_at(lexer_peek(l), "Could not create temp file %s", filename);
+        return NULL; // Prevent crash in LSP mode
     }
 
     emit_preamble(ctx, f);

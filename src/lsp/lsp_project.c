@@ -7,7 +7,7 @@
 #include <sys/stat.h>
 
 LSPProject *g_project = NULL;
-static int g_is_indexing = 0;
+int g_is_indexing = 0;
 
 static void scan_dir(const char *dir_path);
 
@@ -32,11 +32,32 @@ void lsp_project_init(const char *root_path)
     // Create a persistent global context
     g_project->ctx = xcalloc(1, sizeof(ParserContext));
     g_project->ctx->is_fault_tolerant = 1;
+    g_project->ctx->hoist_out = tmpfile(); // Support hoisting in LSP
+    if (!g_project->ctx->hoist_out)
+    {
+        fprintf(stderr, "zls: Warning: Failed to create hoist_out temporary file. Hoisting will be "
+                        "disabled.\n");
+    }
 
     // Set a default error handler that just logs to stderr (or ignores)
     // to prevent exit(1) during initial scan.
     void lsp_default_on_error(void *data, Token t, const char *msg);
     g_project->ctx->on_error = lsp_default_on_error;
+
+    // Add root path and std/ to include paths to resolve 'std.zc' etc.
+    if (g_config.include_path_count < 256)
+    {
+        g_config.include_paths[g_config.include_path_count++] = xstrdup(root_path);
+
+        if (g_config.root_path)
+        {
+            char std_path[MAX_PATH_LEN];
+            snprintf(std_path, sizeof(std_path), "%s/std", g_config.root_path);
+            g_config.include_paths[g_config.include_path_count++] = xstrdup(std_path);
+        }
+    }
+
+    fprintf(stderr, "zls: Project initialized at %s\n", root_path);
 }
 
 void lsp_project_index_workspace()
@@ -74,7 +95,14 @@ static void scan_file(const char *path)
         return;
     }
 
-    fprintf(stderr, "zls: Indexing %s\n", path);
+    char uri[MAX_PATH_LEN + 16];
+    snprintf(uri, sizeof(uri), "file://%s", path);
+
+    // Deduplicate indexing
+    if (lsp_project_get_file(uri))
+    {
+        return;
+    }
 
     char *src = load_file(path);
     if (!src)
@@ -82,9 +110,7 @@ static void scan_file(const char *path)
         return;
     }
 
-    char uri[2048];
-    sprintf(uri, "file://%s", path);
-
+    fprintf(stderr, "zls: Indexing %s\n", path);
     lsp_project_update_file(uri, src);
     free(src);
 }
@@ -105,6 +131,15 @@ static void scan_dir(const char *dir_path)
             continue;
         }
 
+        // Project filters: skip known noise directories
+        if (strcmp(dir->d_name, "node_modules") == 0 || strcmp(dir->d_name, "obj") == 0 ||
+            strcmp(dir->d_name, ".git") == 0 ||
+            strcmp(dir->d_name, "vhdl") == 0 || // Often contains large vendor dirs
+            strcmp(dir->d_name, "vivado") == 0)
+        {
+            continue;
+        }
+
         char path[MAX_PATH_LEN];
         snprintf(path, sizeof(path), "%s/%s", dir_path, dir->d_name);
 
@@ -117,6 +152,7 @@ static void scan_dir(const char *dir_path)
             }
             else if (S_ISREG(st.st_mode))
             {
+                fprintf(stderr, "zls: Indexing %s\n", path);
                 scan_file(path);
             }
         }
@@ -191,33 +227,24 @@ void lsp_project_update_file(const char *uri, const char *src)
     }
     pf->source = xstrdup(src);
 
+    // Use the plain path for internal compiler state.
+    // This allows z_resolve_path and is_file_imported to work correctly.
+    extern char *g_current_filename;
+    char *saved_filename = g_current_filename;
+    g_current_filename = pf->path;
+
     Lexer l;
     lexer_init(&l, src);
 
-    // Reset parser context globals so that imports don't trigger redefinition errors
-    // from previously indexed files in the workspace.
-    if (!g_is_indexing)
+    // Reset parser context globals only for fresh manual updates.
+    // During workspace indexing, we want to accumulate definitions.
+    // Initialize built-ins if it's the first time
+    if (!g_project->ctx->global_scope)
     {
-        g_project->ctx->struct_defs = NULL;
-        g_project->ctx->parsed_structs_list = NULL;
-        g_project->ctx->parsed_enums_list = NULL;
-        g_project->ctx->parsed_funcs_list = NULL;
-        g_project->ctx->parsed_impls_list = NULL;
-        g_project->ctx->parsed_globals_list = NULL;
-        g_project->ctx->enum_variants = NULL;
-        g_project->ctx->registered_impls = NULL;
-        g_project->ctx->used_slices = NULL;
-        g_project->ctx->used_tuples = NULL;
-        g_project->ctx->type_aliases = NULL;
-        g_project->ctx->modules = NULL;
-        g_project->ctx->imported_files = NULL;
-        g_project->ctx->selective_imports = NULL;
-        g_project->ctx->templates = NULL;
-        g_project->ctx->func_templates = NULL;
-        g_project->ctx->impl_templates = NULL;
-        g_project->ctx->func_registry = NULL;
-        g_project->ctx->global_lambdas = NULL;
+        void register_builtins(ParserContext * ctx);
+        register_builtins(g_project->ctx);
     }
+
     g_project->ctx->had_error = 0;
 
     if (!is_file_imported(g_project->ctx, pf->path))
@@ -225,20 +252,30 @@ void lsp_project_update_file(const char *uri, const char *src)
         mark_file_imported(g_project->ctx, pf->path);
     }
 
-    g_project->ctx->had_error = 0;
+    fprintf(stderr, "zls: Parsing %s\n", pf->path);
     ASTNode *root = parse_program(g_project->ctx, &l);
-
-    pf->ast = root;
-
-    pf->index = lsp_index_new();
     if (root)
     {
+        pf->ast = root;
+        fprintf(stderr, "zls: Building index for %s\n", pf->path);
+        pf->index = lsp_index_new();
         lsp_build_index(pf->index, root);
+        fprintf(stderr, "zls: Index built for %s\n", pf->path);
+
         if (!g_is_indexing)
         {
+            fprintf(stderr, "zls: Validating types for %s\n", pf->path);
             validate_types(g_project->ctx);
+            fprintf(stderr, "zls: Validation complete for %s\n", pf->path);
         }
     }
+    else
+    {
+        fprintf(stderr, "zls: Parse failed for %s (returned NULL)\n", pf->path);
+    }
+    fprintf(stderr, "zls: Finished handling %s\n", pf->path);
+
+    g_current_filename = saved_filename;
 }
 
 DefinitionResult lsp_project_find_definition(const char *name)

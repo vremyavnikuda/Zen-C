@@ -365,7 +365,8 @@ ASTNode *parse_impl(ParserContext *ctx, Lexer *l)
         if (target_gen_param)
         {
             full_target_name = xmalloc(strlen(name2) + strlen(target_gen_param) + 3);
-            sprintf(full_target_name, "%s<%s>", name2, target_gen_param);
+            snprintf(full_target_name, strlen(name2) + strlen(target_gen_param) + 3, "%s<%s>",
+                     name2, target_gen_param);
         }
         else
         {
@@ -393,7 +394,7 @@ ASTNode *parse_impl(ParserContext *ctx, Lexer *l)
                 // Mangle: Type_Trait_Method
                 {
                     char tmp[MAX_MANGLED_NAME_LEN];
-                    sprintf(tmp, "%s__%s__%s", name2, name1, f->func.name);
+                    snprintf(tmp, sizeof(tmp), "%s__%s__%s", name2, name1, f->func.name);
                     free(f->func.name);
                     f->func.name = merge_underscores(tmp);
                 }
@@ -441,7 +442,7 @@ ASTNode *parse_impl(ParserContext *ctx, Lexer *l)
                     // Mangle: Type_Trait_Method
                     {
                         char tmp[MAX_MANGLED_NAME_LEN];
-                        sprintf(tmp, "%s__%s__%s", name2, name1, f->func.name);
+                        snprintf(tmp, sizeof(tmp), "%s__%s__%s", name2, name1, f->func.name);
                         free(f->func.name);
                         f->func.name = merge_underscores(tmp);
                     }
@@ -538,7 +539,8 @@ ASTNode *parse_impl(ParserContext *ctx, Lexer *l)
         if (ctx->current_module_prefix && !gen_param && !is_extern_symbol(ctx, name1))
         {
             char *prefixed_name = xmalloc(strlen(ctx->current_module_prefix) + strlen(name1) + 3);
-            sprintf(prefixed_name, "%s__%s", ctx->current_module_prefix, name1);
+            snprintf(prefixed_name, strlen(ctx->current_module_prefix) + strlen(name1) + 3,
+                     "%s__%s", ctx->current_module_prefix, name1);
             free(name1);
             name1 = prefixed_name;
         }
@@ -565,7 +567,8 @@ ASTNode *parse_impl(ParserContext *ctx, Lexer *l)
                 zpanic_at(lexer_peek(l), "Expected {");
             }
             char *full_struct_name = xmalloc(strlen(name1) + strlen(gen_param) + 3);
-            sprintf(full_struct_name, "%s<%s>", name1, gen_param);
+            snprintf(full_struct_name, strlen(name1) + strlen(gen_param) + 3, "%s<%s>", name1,
+                     gen_param);
 
             ASTNode *h = 0, *tl = 0;
             ctx->current_impl_methods = NULL;
@@ -584,7 +587,8 @@ ASTNode *parse_impl(ParserContext *ctx, Lexer *l)
                     // Standard Mangle for template: Box_method
                     {
                         char *tmp = xmalloc(strlen(name1) + strlen(f->func.name) + 3);
-                        sprintf(tmp, "%s__%s", name1, f->func.name);
+                        snprintf(tmp, strlen(name1) + strlen(f->func.name) + 3, "%s__%s", name1,
+                                 f->func.name);
                         free(f->func.name);
                         f->func.name = merge_underscores(tmp);
                         free(tmp);
@@ -632,7 +636,8 @@ ASTNode *parse_impl(ParserContext *ctx, Lexer *l)
                         f->func.is_async = 1;
                         {
                             char *tmp = xmalloc(strlen(name1) + strlen(f->func.name) + 3);
-                            sprintf(tmp, "%s__%s", name1, f->func.name);
+                            snprintf(tmp, strlen(name1) + strlen(f->func.name) + 3, "%s__%s", name1,
+                                     f->func.name);
                             free(f->func.name);
                             f->func.name = merge_underscores(tmp);
                             free(tmp);
@@ -716,8 +721,9 @@ ASTNode *parse_impl(ParserContext *ctx, Lexer *l)
 
                         // Standard Mangle: Struct_method
                         {
-                            char *tmp = xmalloc(strlen(name1) + strlen(f->func.name) + 3);
-                            sprintf(tmp, "%s__%s", name1, f->func.name);
+                            size_t tmp_len = strlen(name1) + strlen(f->func.name) + 3;
+                            char *tmp = xmalloc(tmp_len);
+                            snprintf(tmp, tmp_len, "%s__%s", name1, f->func.name);
                             free(f->func.name);
                             f->func.name = merge_underscores(tmp);
                             free(tmp);
@@ -763,8 +769,9 @@ ASTNode *parse_impl(ParserContext *ctx, Lexer *l)
 
                     // Standard Mangle: Struct_method
                     {
-                        char *tmp = xmalloc(strlen(name1) + strlen(f->func.name) + 3);
-                        sprintf(tmp, "%s__%s", name1, f->func.name);
+                        size_t tmp_len = strlen(name1) + strlen(f->func.name) + 3;
+                        char *tmp = xmalloc(tmp_len);
+                        snprintf(tmp, tmp_len, "%s__%s", name1, f->func.name);
                         free(f->func.name);
                         f->func.name = merge_underscores(tmp);
                         free(tmp);
@@ -804,8 +811,9 @@ ASTNode *parse_impl(ParserContext *ctx, Lexer *l)
                         ASTNode *f = parse_function(ctx, l, 1, 0);
                         f->func.is_async = 1;
                         {
-                            char *tmp = xmalloc(strlen(name1) + strlen(f->func.name) + 3);
-                            sprintf(tmp, "%s__%s", name1, f->func.name);
+                            size_t tmp_len = strlen(name1) + strlen(f->func.name) + 3;
+                            char *tmp = xmalloc(tmp_len);
+                            snprintf(tmp, tmp_len, "%s__%s", name1, f->func.name);
                             free(f->func.name);
                             f->func.name = merge_underscores(tmp);
                             free(tmp);
@@ -1100,14 +1108,15 @@ ASTNode *parse_struct(ParserContext *ctx, Lexer *l, int is_union, int is_opaque,
     // Auto-prefix struct name if in module context
     if (ctx->current_module_prefix && gp_count == 0 && !is_extern && !is_extern_symbol(ctx, name))
     { // Don't prefix generic templates
-        char *prefixed_name = xmalloc(strlen(ctx->current_module_prefix) + strlen(name) + 3);
-        sprintf(prefixed_name, "%s__%s", ctx->current_module_prefix, name);
+        size_t pref_len = strlen(ctx->current_module_prefix) + strlen(name) + 3;
+        char *prefixed_name = xmalloc(pref_len);
+        snprintf(prefixed_name, pref_len, "%s__%s", ctx->current_module_prefix, name);
         free(name);
         name = prefixed_name;
     }
 
     // Generic templates are registered separately and may share the base name.
-    if (gp_count == 0)
+    if (gp_count == 0 && !g_config.mode_lsp)
     {
         ASTNode *existing = find_concrete_struct_def(ctx, name);
         if (existing)
@@ -1365,8 +1374,9 @@ ASTNode *parse_enum(ParserContext *ctx, Lexer *l)
     // Auto-prefix enum name if in module context
     if (ctx->current_module_prefix && !gp)
     { // Don't prefix generic templates
-        char *prefixed_name = xmalloc(strlen(ctx->current_module_prefix) + strlen(ename) + 3);
-        sprintf(prefixed_name, "%s__%s", ctx->current_module_prefix, ename);
+        size_t pref_len = strlen(ctx->current_module_prefix) + strlen(ename) + 3;
+        char *prefixed_name = xmalloc(pref_len);
+        snprintf(prefixed_name, pref_len, "%s__%s", ctx->current_module_prefix, ename);
         free(ename);
         ename = prefixed_name;
     }

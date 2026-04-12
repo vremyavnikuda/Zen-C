@@ -36,7 +36,7 @@ impl Option<T> {
             exit(1);
         }
         let v = self.val;
-        memset(&self.val, 0, sizeof(T));
+        // Moved value
         return v;
     }
 

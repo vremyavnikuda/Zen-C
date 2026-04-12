@@ -34,6 +34,7 @@ typedef struct
 
 // Global project instance
 extern LSPProject *g_project;
+extern int g_is_indexing;
 
 // Initialize the project with a root directory
 void lsp_project_init(const char *root_path);

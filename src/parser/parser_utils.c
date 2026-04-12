@@ -178,18 +178,25 @@ TypeKind get_primitive_type_kind(const char *name)
 }
 
 // Forward declaration
-char *ast_to_string(ASTNode *node);
+char *ast_to_string_recursive(ASTNode *node, int depth);
+
+char *ast_to_string(ASTNode *node)
+{
+    return ast_to_string_recursive(node, 0);
+}
 
 // Temporary lightweight AST printer for default args
 // Comprehensive AST printer for default args and other code generation needs
-char *ast_to_string(ASTNode *node)
+char *ast_to_string_recursive(ASTNode *node, int depth)
 {
-    if (!node)
+    const int MAX_DEPTH = 32;
+    if (!node || depth > MAX_DEPTH)
     {
-        return xstrdup("");
+        return xstrdup(depth > MAX_DEPTH ? "..." : "");
     }
 
-    char *buf = xmalloc(MAX_PATH_LEN);
+    size_t buf_size = MAX_PATH_LEN;
+    char *buf = xmalloc(buf_size);
     buf[0] = 0;
 
     switch (node->type)
@@ -197,71 +204,80 @@ char *ast_to_string(ASTNode *node)
     case NODE_EXPR_LITERAL:
         if (node->literal.type_kind == LITERAL_INT)
         {
-            sprintf(buf, "%llu", node->literal.int_val);
+            snprintf(buf, buf_size, "%llu", node->literal.int_val);
         }
         else if (node->literal.type_kind == LITERAL_FLOAT)
         {
-            sprintf(buf, "%f", node->literal.float_val);
+            snprintf(buf, buf_size, "%f", node->literal.float_val);
         }
         else if (node->literal.type_kind == LITERAL_STRING)
         {
-            sprintf(buf, "\"%s\"", node->literal.string_val);
+            size_t s_len = strlen(node->literal.string_val);
+            size_t required = s_len + 16;
+            if (required > buf_size)
+            {
+                char *new_buf = xrealloc(buf, required);
+                buf = new_buf;
+                buf_size = required;
+            }
+            snprintf(buf, buf_size, "\"%s\"", node->literal.string_val);
         }
         else if (node->literal.type_kind == LITERAL_CHAR)
         {
             if (node->literal.int_val == '\'')
             {
-                sprintf(buf, "'\\''");
+                snprintf(buf, buf_size, "'\\''");
             }
             else if (node->literal.int_val == '\n')
             {
-                sprintf(buf, "'\\n'");
+                snprintf(buf, buf_size, "'\\n'");
             }
             else if (node->literal.int_val == '\\')
             {
-                sprintf(buf, "'\\\\'");
+                snprintf(buf, buf_size, "'\\\\'");
             }
             else if (node->literal.int_val == '\0')
             {
-                sprintf(buf, "'\\0'");
+                snprintf(buf, buf_size, "'\\0'");
             }
             else
             {
-                sprintf(buf, "'%c'", (char)node->literal.int_val);
+                snprintf(buf, buf_size, "'%c'", (char)node->literal.int_val);
             }
         }
         break;
     case NODE_EXPR_VAR:
-        strcpy(buf, node->var_ref.name);
+        snprintf(buf, buf_size, "%s", node->var_ref.name ? node->var_ref.name : "");
         break;
     case NODE_EXPR_BINARY:
     {
-        char *l = ast_to_string(node->binary.left);
-        char *r = ast_to_string(node->binary.right);
+        char *l = ast_to_string_recursive(node->binary.left, depth + 1);
+        char *r = ast_to_string_recursive(node->binary.right, depth + 1);
         // Add parens to be safe
-        sprintf(buf, "(%s %s %s)", l, node->binary.op, r);
+        snprintf(buf, buf_size, "(%s %s %s)", l, node->binary.op ? node->binary.op : "?", r);
         free(l);
         free(r);
         break;
     }
     case NODE_EXPR_UNARY:
     {
-        char *o = ast_to_string(node->unary.operand);
-        sprintf(buf, "(%s%s)", node->unary.op, o);
+        char *o = ast_to_string_recursive(node->unary.operand, depth + 1);
+        snprintf(buf, buf_size, "(%s%s)", node->unary.op ? node->unary.op : "?", o);
         free(o);
         break;
     }
     case NODE_EXPR_CAST:
     {
-        char *e = ast_to_string(node->cast.expr);
-        sprintf(buf, "((%s)%s)", node->cast.target_type, e);
+        char *e = ast_to_string_recursive(node->cast.expr, depth + 1);
+        snprintf(buf, buf_size, "((%s)%s)", node->cast.target_type ? node->cast.target_type : "?",
+                 e);
         free(e);
         break;
     }
     case NODE_EXPR_CALL:
     {
-        char *callee = ast_to_string(node->call.callee);
-        snprintf(buf, MAX_SHORT_MSG_LEN, "%s(", callee);
+        char *callee = ast_to_string_recursive(node->call.callee, depth + 1);
+        snprintf(buf, buf_size, "%s(", callee);
         free(callee);
 
         ASTNode *arg = node->call.args;
@@ -270,10 +286,13 @@ char *ast_to_string(ASTNode *node)
         {
             if (!first)
             {
-                strcat(buf, ", ");
+                if (strlen(buf) + 4 < buf_size)
+                {
+                    strcat(buf, ", ");
+                }
             }
-            char *a = ast_to_string(arg);
-            if (strlen(buf) + strlen(a) < 4090)
+            char *a = ast_to_string_recursive(arg, depth + 1);
+            if (strlen(buf) + strlen(a) + 4 < buf_size)
             {
                 strcat(buf, a);
             }
@@ -281,13 +300,16 @@ char *ast_to_string(ASTNode *node)
             first = 0;
             arg = arg->next;
         }
-        strcat(buf, ")");
+        if (strlen(buf) + 2 < buf_size)
+        {
+            strcat(buf, ")");
+        }
         break;
     }
     case NODE_EXPR_STRUCT_INIT:
     {
         char *name = node->struct_init.struct_name;
-        sprintf(buf, "%s{", name);
+        snprintf(buf, buf_size, "%s{", name ? name : "?");
 
         ASTNode *field = node->struct_init.fields;
         int first = 1;
@@ -295,42 +317,53 @@ char *ast_to_string(ASTNode *node)
         {
             if (!first)
             {
-                strcat(buf, ", ");
+                if (strlen(buf) + 4 < buf_size)
+                {
+                    strcat(buf, ", ");
+                }
             }
-
             if (field->type == NODE_VAR_DECL)
             {
-                strcat(buf, field->var_decl.name);
-                strcat(buf, ": ");
-                char *val = ast_to_string(field->var_decl.init_expr);
-                strcat(buf, val);
+                if (strlen(buf) + (field->var_decl.name ? strlen(field->var_decl.name) : 0) + 4 <
+                    buf_size)
+                {
+                    strcat(buf, field->var_decl.name ? field->var_decl.name : "?");
+                    strcat(buf, ": ");
+                }
+                char *val = ast_to_string_recursive(field->var_decl.init_expr, depth + 1);
+                if (strlen(buf) + strlen(val) + 2 < buf_size)
+                {
+                    strcat(buf, val);
+                }
                 free(val);
             }
-
             first = 0;
             field = field->next;
         }
-        strcat(buf, "}");
+        if (strlen(buf) + 2 < buf_size)
+        {
+            strcat(buf, "}");
+        }
         break;
     }
     case NODE_EXPR_MEMBER:
     {
-        char *t = ast_to_string(node->member.target);
-        sprintf(buf, "%s.%s", t, node->member.field);
+        char *t = ast_to_string_recursive(node->member.target, depth + 1);
+        snprintf(buf, buf_size, "%s.%s", t, node->member.field ? node->member.field : "?");
         free(t);
         break;
     }
     case NODE_EXPR_INDEX:
     {
-        char *arr = ast_to_string(node->index.array);
-        char *idx = ast_to_string(node->index.index);
-        sprintf(buf, "%s[%s]", arr, idx);
+        char *arr = ast_to_string_recursive(node->index.array, depth + 1);
+        char *idx = ast_to_string_recursive(node->index.index, depth + 1);
+        snprintf(buf, buf_size, "%s[%s]", arr, idx);
         free(arr);
         free(idx);
         break;
     }
     default:
-        // Minimal fallback
+        snprintf(buf, buf_size, "<expr>");
         break;
     }
     return buf;
@@ -526,6 +559,19 @@ void add_symbol_with_token(ParserContext *ctx, const char *n, const char *t, Typ
         }
     }
 
+    // In LSP mode, check for existing symbol in the current scope to avoid duplicates
+    if (g_config.mode_lsp)
+    {
+        ZenSymbol *existing = symbol_lookup_local(ctx->current_scope, n);
+        if (existing)
+        {
+            existing->type_name = t ? xstrdup(t) : NULL;
+            existing->type_info = type_info;
+            existing->decl_token = tok;
+            return;
+        }
+    }
+
     ZenSymbol *s = symbol_add(ctx->current_scope, n, SYM_VARIABLE);
     s->type_name = t ? xstrdup(t) : NULL;
     s->type_info = type_info;
@@ -580,8 +626,38 @@ void register_func(ParserContext *ctx, Scope *scope, const char *name, int count
                    Type **arg_types, Type *ret_type, int is_varargs, int is_async, int is_pure,
                    Token decl_token)
 {
-    FuncSig *f = xmalloc(sizeof(FuncSig));
-    f->name = xstrdup(name);
+    // In LSP mode, check for existing function in the registry to avoid duplicates
+    if (g_config.mode_lsp)
+    {
+        FuncSig *existing = find_func(ctx, name);
+        if (existing)
+        {
+            existing->decl_token = decl_token;
+            existing->total_args = count;
+            existing->defaults = defaults;
+            existing->arg_types = arg_types;
+            existing->ret_type = ret_type;
+            existing->is_varargs = is_varargs;
+            existing->is_async = is_async;
+            existing->is_pure = is_pure;
+            // Note: symbol update happens below
+        }
+    }
+
+    FuncSig *f = NULL;
+    if (g_config.mode_lsp)
+    {
+        f = find_func(ctx, name);
+    }
+
+    if (!f)
+    {
+        f = xmalloc(sizeof(FuncSig));
+        f->name = xstrdup(name);
+        f->next = ctx->func_registry;
+        ctx->func_registry = f;
+    }
+
     f->decl_token = decl_token;
     f->total_args = count;
     f->defaults = defaults;
@@ -590,12 +666,18 @@ void register_func(ParserContext *ctx, Scope *scope, const char *name, int count
     f->is_varargs = is_varargs;
     f->is_async = is_async;
     f->is_pure = is_pure;
-    f->required = 0; // Default: can discard result
-    f->next = ctx->func_registry;
-    ctx->func_registry = f;
+    f->required = 0;
 
-    // Unified logic
-    ZenSymbol *sym = symbol_add(scope ? scope : ctx->current_scope, name, SYM_FUNCTION);
+    // Unified logic: check for existing symbol to avoid duplicates
+    ZenSymbol *sym = symbol_lookup_local(scope ? scope : ctx->current_scope, name);
+    if (!sym)
+    {
+        sym = symbol_add(scope ? scope : ctx->current_scope, name, SYM_FUNCTION);
+    }
+    else
+    {
+        sym->kind = SYM_FUNCTION; // Ensure kind is correct if it was a placeholder
+    }
     sym->data.sig = f;
     sym->decl_token = decl_token;
 
@@ -755,19 +837,52 @@ void add_to_struct_list(ParserContext *ctx, ASTNode *node)
 void register_type_alias(ParserContext *ctx, const char *alias, const char *original,
                          Type *type_info, int is_opaque, const char *defined_in_file)
 {
-    TypeAlias *ta = xmalloc(sizeof(TypeAlias));
-    ta->alias = xstrdup(alias);
+    // In LSP mode, check for existing type alias to avoid duplicates
+    if (g_config.mode_lsp)
+    {
+        TypeAlias *existing = find_type_alias_node(ctx, alias);
+        if (existing)
+        {
+            existing->original_type = xstrdup(original);
+            existing->type_info = type_info;
+            existing->is_opaque = is_opaque;
+            existing->defined_in_file = defined_in_file ? xstrdup(defined_in_file) : NULL;
+            // Symbol update will happen in add_symbol (called below)
+        }
+    }
+
+    TypeAlias *ta = NULL;
+    if (g_config.mode_lsp)
+    {
+        ta = find_type_alias_node(ctx, alias);
+    }
+
+    if (!ta)
+    {
+        ta = xmalloc(sizeof(TypeAlias));
+        ta->alias = xstrdup(alias);
+        ta->next = ctx->type_aliases;
+        ctx->type_aliases = ta;
+    }
+
     ta->original_type = xstrdup(original);
     ta->type_info = type_info;
     ta->is_opaque = is_opaque;
     ta->defined_in_file = defined_in_file ? xstrdup(defined_in_file) : NULL;
-    ta->next = ctx->type_aliases;
-    ctx->type_aliases = ta;
 
-    // Unified logic
-    ZenSymbol *sym = symbol_add(ctx->current_scope, alias, SYM_ALIAS);
+    // Unified logic: check for existing symbol to avoid duplicates
+    ZenSymbol *sym = symbol_lookup_local(ctx->current_scope, alias);
+    if (!sym)
+    {
+        sym = symbol_add(ctx->current_scope, alias, SYM_ALIAS);
+    }
+    else
+    {
+        sym->kind = SYM_ALIAS;
+    }
     sym->data.alias.original_type = xstrdup(original);
-    sym->data.alias.resolved_type = type_info;
+    sym->type_info = type_info;
+    register_symbol_to_lsp(ctx, sym);
 }
 
 const char *find_type_alias(ParserContext *ctx, const char *alias)
@@ -953,6 +1068,17 @@ void add_instantiated_func(ParserContext *ctx, ASTNode *fn)
 
 void register_enum_variant(ParserContext *ctx, const char *ename, const char *vname, int tag)
 {
+    // In LSP mode, check for existing variant to avoid duplicates
+    if (g_config.mode_lsp)
+    {
+        EnumVariantReg *existing = find_enum_variant(ctx, vname);
+        if (existing)
+        {
+            existing->tag_id = tag;
+            return;
+        }
+    }
+
     EnumVariantReg *r = xmalloc(sizeof(EnumVariantReg));
     r->enum_name = xstrdup(ename);
     r->variant_name = xstrdup(vname);
@@ -1078,7 +1204,7 @@ void register_slice(ParserContext *ctx, const char *type)
 
     // Register Struct Def for Reflection
     char slice_name[MAX_TYPE_NAME_LEN];
-    sprintf(slice_name, "Slice__%s", type);
+    snprintf(slice_name, sizeof(slice_name), "Slice__%s", type);
 
     ASTNode *len_f = ast_create(NODE_FIELD);
     len_f->field.name = xstrdup("len");
@@ -1089,7 +1215,7 @@ void register_slice(ParserContext *ctx, const char *type)
     ASTNode *data_f = ast_create(NODE_FIELD);
     data_f->field.name = xstrdup("data");
     char ptr_type[MAX_TYPE_NAME_LEN];
-    sprintf(ptr_type, "%s*", type);
+    snprintf(ptr_type, sizeof(ptr_type), "%s*", type);
     data_f->field.type = xstrdup(ptr_type);
 
     data_f->next = len_f;
@@ -1103,7 +1229,7 @@ void register_slice(ParserContext *ctx, const char *type)
 
     // Backward compatibility: alias Slice_T to Slice__T
     char legacy_name[MAX_VAR_NAME_LEN];
-    sprintf(legacy_name, "Slice_%s", type);
+    snprintf(legacy_name, sizeof(legacy_name), "Slice_%s", type);
     if (strcmp(slice_name, legacy_name) != 0)
     {
         register_type_alias(ctx, legacy_name, slice_name, NULL, 0, NULL);
@@ -1128,7 +1254,7 @@ void register_tuple(ParserContext *ctx, const char *sig)
 
     char struct_name[MAX_ERROR_MSG_LEN];
     char *clean_sig = sanitize_mangled_name(sig);
-    sprintf(struct_name, "Tuple__%s", clean_sig);
+    snprintf(struct_name, sizeof(struct_name), "Tuple__%s", clean_sig);
     free(clean_sig);
 
     ASTNode *s_def = ast_create(NODE_STRUCT);
@@ -1148,7 +1274,7 @@ void register_tuple(ParserContext *ctx, const char *sig)
 
         ASTNode *f = ast_create(NODE_FIELD);
         char fname[32];
-        sprintf(fname, "v%d", i++);
+        snprintf(fname, sizeof(fname), "v%d", i++);
         f->field.name = xstrdup(fname);
         f->field.type = xstrdup(current);
 
@@ -1180,15 +1306,64 @@ void register_tuple(ParserContext *ctx, const char *sig)
 
 void register_struct_def(ParserContext *ctx, const char *name, ASTNode *node)
 {
-    StructDef *d = xmalloc(sizeof(StructDef));
-    d->name = xstrdup(name);
-    d->node = node;
-    d->next = ctx->struct_defs;
-    ctx->struct_defs = d;
+    // In LSP mode, check for existing struct def to avoid duplicates
+    if (g_config.mode_lsp)
+    {
+        StructDef *existing = NULL;
+        StructDef *curr = ctx->struct_defs;
+        while (curr)
+        {
+            if (strcmp(curr->name, name) == 0)
+            {
+                existing = curr;
+                break;
+            }
+            curr = curr->next;
+        }
+        if (existing)
+        {
+            existing->node = node;
+            // Symbol update will happen below
+        }
+    }
 
-    // Unified logic
-    ZenSymbol *sym = symbol_add(ctx->global_scope, name,
-                                (node && node->type == NODE_ENUM) ? SYM_ENUM : SYM_STRUCT);
+    StructDef *d = NULL;
+    if (g_config.mode_lsp)
+    {
+        StructDef *curr = ctx->struct_defs;
+        while (curr)
+        {
+            if (strcmp(curr->name, name) == 0)
+            {
+                d = curr;
+                break;
+            }
+            curr = curr->next;
+        }
+    }
+
+    if (!d)
+    {
+        d = xmalloc(sizeof(StructDef));
+        d->name = xstrdup(name);
+        d->next = ctx->struct_defs;
+        ctx->struct_defs = d;
+    }
+
+    d->node = node;
+
+    // Unified logic: check for existing symbol in global scope to avoid duplicates
+    ZenSymbol *sym = symbol_lookup_local(ctx->global_scope, name);
+    if (!sym)
+    {
+        sym = symbol_add(ctx->global_scope, name,
+                         (node && node->type == NODE_ENUM) ? SYM_ENUM : SYM_STRUCT);
+    }
+    else
+    {
+        sym->kind = (node && node->type == NODE_ENUM) ? SYM_ENUM : SYM_STRUCT;
+    }
+
     sym->data.node = node;
     if (node)
     {
@@ -4155,6 +4330,10 @@ void instantiate_generic_multi(ParserContext *ctx, const char *tpl, char **args,
 
 int is_file_imported(ParserContext *ctx, const char *p)
 {
+    if (!p)
+    {
+        return 0;
+    }
     ImportedFile *c = ctx->imported_files;
     while (c)
     {
@@ -5157,19 +5336,22 @@ int validate_types(ParserContext *ctx)
                 {
                     if (!is_trait(u->name) && TYPE_UNKNOWN == find_primitive_kind(u->name))
                     {
-                        char msg[MAX_SHORT_MSG_LEN];
-                        snprintf(msg, sizeof(msg), "Unknown type '%s' (assuming external C struct)",
-                                 u->name);
-                        const char *hint = get_closest_type_hint(ctx, u->name);
-                        if (hint)
+                        if (!g_config.mode_lsp)
                         {
-                            char help[MAX_MANGLED_NAME_LEN];
-                            snprintf(help, sizeof(help), "Did you mean '%s'?", hint);
-                            zwarn_with_suggestion(u->location, msg, help);
-                        }
-                        else
-                        {
-                            zwarn_at(u->location, "%s", msg);
+                            char msg[MAX_SHORT_MSG_LEN];
+                            snprintf(msg, sizeof(msg),
+                                     "Unknown type '%s' (assuming external C struct)", u->name);
+                            const char *hint = get_closest_type_hint(ctx, u->name);
+                            if (hint)
+                            {
+                                char help[MAX_MANGLED_NAME_LEN];
+                                snprintf(help, sizeof(help), "Did you mean '%s'?", hint);
+                                zwarn_with_suggestion(u->location, msg, help);
+                            }
+                            else
+                            {
+                                zwarn_at(u->location, "%s", msg);
+                            }
                         }
                     }
                 }

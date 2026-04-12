@@ -555,6 +555,19 @@ ASTNode *parse_var_decl(ParserContext *ctx, Lexer *l)
         {
             init = parse_embed(ctx, l);
 
+            // In fault-tolerant mode (LSP), parse_embed may return NULL
+            // if the embedded file cannot be found. Create a placeholder.
+            if (!init)
+            {
+                init = ast_create(NODE_RAW_STMT);
+                init->token = next;
+                init->raw_stmt.content = xstrdup("((Slice__char){0})");
+                register_slice(ctx, "char");
+                Type *fallback_t = type_new(TYPE_STRUCT);
+                fallback_t->name = xstrdup("Slice__char");
+                init->type_info = fallback_t;
+            }
+
             if (!type && init->type_info)
             {
                 type = type_to_string(init->type_info);

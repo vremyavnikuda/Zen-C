@@ -92,14 +92,16 @@ Type *parse_type_base(ParserContext *ctx, Lexer *l)
                 {
                     // Zen module: Use module base name as prefix
                     merged = xmalloc(strlen(mod->base_name) + strlen(resolved_suffix) + 2);
-                    sprintf(merged, "%s__%s", mod->base_name, resolved_suffix);
+                    snprintf(merged, strlen(mod->base_name) + strlen(resolved_suffix) + 2, "%s__%s",
+                             mod->base_name, resolved_suffix);
                 }
             }
             else
             {
                 // Regular namespace or enum variant
                 merged = xmalloc(strlen(name) + strlen(resolved_suffix) + 2);
-                sprintf(merged, "%s__%s", name, resolved_suffix);
+                snprintf(merged, strlen(name) + strlen(resolved_suffix) + 2, "%s__%s", name,
+                         resolved_suffix);
             }
 
             free(name);
@@ -219,7 +221,8 @@ Type *parse_type_base(ParserContext *ctx, Lexer *l)
                 // parsing
                 free(name);
                 name = xmalloc(strlen(si->source_module) + strlen(si->symbol) + 3);
-                sprintf(name, "%s__%s", si->source_module, si->symbol);
+                snprintf(name, strlen(si->source_module) + strlen(si->symbol) + 3, "%s__%s",
+                         si->source_module, si->symbol);
             }
         }
 
@@ -231,7 +234,8 @@ Type *parse_type_base(ParserContext *ctx, Lexer *l)
             // Auto-prefix struct name if in module context (unless it's a known
             // primitive/generic)
             char *prefixed_name = xmalloc(strlen(ctx->current_module_prefix) + strlen(name) + 3);
-            sprintf(prefixed_name, "%s__%s", ctx->current_module_prefix, name);
+            snprintf(prefixed_name, strlen(ctx->current_module_prefix) + strlen(name) + 3, "%s__%s",
+                     ctx->current_module_prefix, name);
             free(name);
             name = prefixed_name;
         }
@@ -457,7 +461,7 @@ Type *parse_type_base(ParserContext *ctx, Lexer *l)
 
         char *clean_sig = sanitize_mangled_name(sig);
         char *tuple_name = xmalloc(strlen(clean_sig) + 8);
-        sprintf(tuple_name, "Tuple__%s", clean_sig);
+        snprintf(tuple_name, strlen(clean_sig) + 8, "Tuple__%s", clean_sig);
         free(clean_sig);
 
         Type *ty = type_new(TYPE_STRUCT);
@@ -764,8 +768,9 @@ char *parse_array_literal(ParserContext *ctx, Lexer *l, const char *st)
         strcpy(rt, "int");
     }
 
-    char *o = xmalloc(strlen(c) + 128);
-    sprintf(o, "(%s){.data=(%s[]){%s},.len=%d,.cap=%d}", st, rt, c, n, n);
+    size_t o_sz = strlen(c) + strlen(st) + strlen(rt) + 128;
+    char *o = xmalloc(o_sz);
+    snprintf(o, o_sz, "(%s){.data=(%s[]){%s},.len=%d,.cap=%d}", st, rt, c, n, n);
     free(c);
     return o;
 }
@@ -828,8 +833,9 @@ char *parse_tuple_literal(ParserContext *ctx, Lexer *l, const char *tn)
         strncat(c, s, len);
     }
 
-    char *o = xmalloc(strlen(c) + 128);
-    sprintf(o, "(%s){%s}", tn, c);
+    size_t o_sz = strlen(c) + strlen(tn) + 128;
+    char *o = xmalloc(o_sz);
+    snprintf(o, o_sz, "(%s){%s}", tn, c);
     free(c);
     return o;
 }
@@ -858,6 +864,7 @@ ASTNode *parse_embed(ParserContext *ctx, Lexer *l)
     if (!f)
     {
         zpanic_at(t, "404: %s", fn);
+        return NULL; // In fault-tolerant mode (LSP), zpanic_at returns instead of exiting.
     }
     fseek(f, 0, SEEK_END);
     long len = ftell(f);
@@ -879,7 +886,7 @@ ASTNode *parse_embed(ParserContext *ctx, Lexer *l)
         slice_type->name = xstrdup("Slice__char");
         target_type = slice_type;
 
-        sprintf(o, "(Slice__char){.data=(char[]){");
+        snprintf(o, oc, "(Slice__char){.data=(char[]){");
     }
     else
     {
@@ -893,18 +900,18 @@ ASTNode *parse_embed(ParserContext *ctx, Lexer *l)
             {
                 Type *ptr_type = type_new_ptr(target_type->inner); // Reuse inner
                 target_type = ptr_type;
-                sprintf(o, "(%s[]){", inner_ts);
+                snprintf(o, oc, "(%s[]){", inner_ts);
             }
             else
             {
                 // Slice -> Slice__T struct
                 register_slice(ctx, inner_ts);
                 char slice_name[MAX_TYPE_NAME_LEN];
-                sprintf(slice_name, "Slice__%s", inner_ts);
+                snprintf(slice_name, sizeof(slice_name), "Slice__%s", inner_ts);
                 Type *slice_t = type_new(TYPE_STRUCT);
                 slice_t->name = xstrdup(slice_name);
                 target_type = slice_t;
-                sprintf(o, "(%s){.data=(%s[]){", slice_name, inner_ts);
+                snprintf(o, oc, "(%s){.data=(%s[]){", slice_name, inner_ts);
             }
             free(inner_ts);
         }
@@ -912,17 +919,18 @@ ASTNode *parse_embed(ParserContext *ctx, Lexer *l)
         {
             if (strcmp(ts, "string") == 0 || strcmp(ts, "char*") == 0)
             {
-                sprintf(o, "(char*)\"");
+                snprintf(o, oc, "(char*)\"");
             }
             else
             {
-                sprintf(o, "(%s){", ts);
+                snprintf(o, oc, "(%s){", ts);
             }
         }
         free(ts);
     }
 
-    char *p = o + strlen(o);
+    size_t cur_len = strlen(o);
+    char *p = o + cur_len;
 
     // Check if string mode
     int is_string = (target_type && (strcmp(type_to_string(target_type), "string") == 0 ||
@@ -930,32 +938,43 @@ ASTNode *parse_embed(ParserContext *ctx, Lexer *l)
 
     for (int i = 0; i < len; i++)
     {
+        if (cur_len + 16 >= oc)
+        {
+            break;
+        }
         if (is_string)
         {
             // Hex escape for string
-            p += sprintf(p, "\\x%02X", b[i]);
+            int w = snprintf(p, oc - cur_len, "\\x%02X", b[i]);
+            p += w;
+            cur_len += w;
         }
         else
         {
-            p += sprintf(p, "0x%02X,", b[i]);
+            int w = snprintf(p, oc - cur_len, "0x%02X,", b[i]);
+            p += w;
+            cur_len += w;
         }
     }
 
-    if (is_string)
+    if (cur_len + 16 < oc)
     {
-        sprintf(p, "\"");
-    }
-    else
-    {
-        int is_slice = (strncmp(o, "(Slice__", 8) == 0);
-
-        if (is_slice)
+        if (is_string)
         {
-            sprintf(p, "},.len=%ld,.cap=%ld}", len, len);
+            snprintf(p, oc - cur_len, "\"");
         }
         else
         {
-            sprintf(p, "}");
+            int is_slice = (strncmp(o, "(Slice__", 8) == 0);
+
+            if (is_slice)
+            {
+                snprintf(p, oc - cur_len, "},.len=%ld,.cap=%ld}", (long)len, (long)len);
+            }
+            else
+            {
+                snprintf(p, oc - cur_len, "}");
+            }
         }
     }
 

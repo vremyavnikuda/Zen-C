@@ -58,9 +58,9 @@ void move_state_free(MoveState *state)
     free(state);
 }
 
-char *get_node_path(ASTNode *node)
+char *get_node_path(ASTNode *node, int depth)
 {
-    if (!node)
+    if (!node || depth > 32)
     {
         return NULL;
     }
@@ -72,7 +72,7 @@ char *get_node_path(ASTNode *node)
 
     if (node->type == NODE_EXPR_MEMBER)
     {
-        char *target_path = get_node_path(node->member.target);
+        char *target_path = get_node_path(node->member.target, depth + 1);
         if (!target_path)
         {
             return NULL;
@@ -325,7 +325,7 @@ void check_use_validity(TypeChecker *tc, ASTNode *use_node)
         return;
     }
 
-    char *path = get_node_path(use_node);
+    char *path = get_node_path(use_node, 0);
     if (!path && use_node->type == NODE_EXPR_VAR)
     {
         path = xstrdup(use_node->var_ref.name);
@@ -359,7 +359,7 @@ void mark_symbol_moved(ParserContext *ctx, ZenSymbol *sym, ASTNode *context_node
 
         if (ctx->move_state)
         {
-            char *path = get_node_path(context_node);
+            char *path = get_node_path(context_node, 0);
             if (!path && sym)
             {
                 path = xstrdup(sym->name);
@@ -410,7 +410,7 @@ void mark_symbol_valid(ParserContext *ctx, ZenSymbol *sym, ASTNode *context_node
 
     if (ctx && ctx->move_state)
     {
-        char *path = get_node_path(context_node);
+        char *path = get_node_path(context_node, 0);
         if (!path && sym)
         {
             path = xstrdup(sym->name);
