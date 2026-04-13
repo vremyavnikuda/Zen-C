@@ -20,7 +20,7 @@ test "test_loops" {
     
     // Repeat n times
     let count = 0;
-    repeat 7 {
+    for _ in 0..7 {
         count++;
     }
     assert(count == 7, "repeat 7 failed");

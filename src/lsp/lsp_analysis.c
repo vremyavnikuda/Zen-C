@@ -89,14 +89,21 @@ void lsp_check_file(const char *uri, const char *json_src, int id)
     (void)id;
     if (!g_project)
     {
-        char cwd[MAX_PATH_LEN];
-        if (getcwd(cwd, sizeof(cwd)))
+        if (g_config.root_path)
         {
-            lsp_project_init(cwd);
+            lsp_project_init(g_config.root_path);
         }
         else
         {
-            lsp_project_init(".");
+            char cwd[MAX_PATH_LEN];
+            if (getcwd(cwd, sizeof(cwd)))
+            {
+                lsp_project_init(cwd);
+            }
+            else
+            {
+                lsp_project_init(".");
+            }
         }
     }
 

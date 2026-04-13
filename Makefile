@@ -171,6 +171,7 @@ install: $(TARGET)
 	
 	# Install standard library
 	$(INSTALL) -d $(SHAREDIR)
+	$(INSTALL) -m 644 std.zc $(SHAREDIR)/std.zc
 	$(CP) std $(SHAREDIR)/
 	
 	# Install facts
@@ -210,6 +211,7 @@ install-ape: ape
 	
 	# Install standard library (shared)
 	$(INSTALL) -d $(SHAREDIR)
+	$(INSTALL) -m 644 std.zc $(SHAREDIR)/std.zc
 	$(CP) std $(SHAREDIR)/
 	@echo "=> Installed APE binaries to $(BINDIR)"
 	@echo "=> Alias 'zc' points to zc.com"

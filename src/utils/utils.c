@@ -224,8 +224,15 @@ char *z_resolve_path(const char *fn, const char *relative_to)
     }
 
     // 6. System paths
+#ifdef ZEN_SHARE_DIR
+    const char *system_paths[] = {ZEN_SHARE_DIR, "/usr/local/share/zenc", "/usr/share/zenc"};
+    int sys_count = 3;
+#else
     const char *system_paths[] = {"/usr/local/share/zenc", "/usr/share/zenc"};
-    for (int i = 0; i < 2; i++)
+    int sys_count = 2;
+#endif
+
+    for (int i = 0; i < sys_count; i++)
     {
         snprintf(path, sizeof(path), "%s/%s", system_paths[i], fn);
         if (access(path, R_OK) == 0)

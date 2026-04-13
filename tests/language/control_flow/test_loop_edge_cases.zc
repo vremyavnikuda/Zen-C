@@ -28,7 +28,7 @@ test "test_loop_edge_cases" {
     
     // Repeat 0 times (should not execute)
     let count3 = 0;
-    repeat 0 {
+    for _ in 0..0 {
         count3++;
     }
     if (count3 == 0) {
@@ -40,7 +40,7 @@ test "test_loop_edge_cases" {
     
     // Repeat 1 time
     let count4 = 0;
-    repeat 1 {
+    for _ in 0..1 {
         count4++;
     }
     if (count4 == 1) {

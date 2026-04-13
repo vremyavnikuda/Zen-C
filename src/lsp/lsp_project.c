@@ -45,9 +45,17 @@ void lsp_project_init(const char *root_path)
     g_project->ctx->on_error = lsp_default_on_error;
 
     // Add root path and std/ to include paths to resolve 'std.zc' etc.
-    if (g_config.include_path_count < 256)
+    // Ensure we don't overflow the include_paths array (limit is 64)
+    if (g_config.include_path_count < 62)
     {
         g_config.include_paths[g_config.include_path_count++] = xstrdup(root_path);
+
+        // In LSP mode, the workspace root should also be considered the root path for stdlib
+        // resolution
+        if (root_path)
+        {
+            g_config.root_path = xstrdup(root_path);
+        }
 
         if (g_config.root_path)
         {
