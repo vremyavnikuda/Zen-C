@@ -86,7 +86,7 @@ char *xstrdup(const char *s)
 {
     if (!s)
     {
-        return NULL;
+        zfatal("xstrdup(NULL)");
     }
     size_t len = strlen(s);
     char *d = xmalloc(len + 1);

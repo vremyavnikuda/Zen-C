@@ -250,9 +250,17 @@ void build_compile_arg_list(ArgList *list, const char *outfile, const char *temp
             arg_list_add_fmt(list, "-I%s", tre_path);
         }
     }
-    else
+
+    // User-defined include paths
+    for (int i = 0; i < g_config.include_path_count; i++)
     {
-        arg_list_add(list, "-I.");
+        arg_list_add_fmt(list, "-I%s", g_config.include_paths[i]);
+    }
+
+    // Input directory (to resolve relative includes in raw blocks)
+    if (g_config.input_dir)
+    {
+        arg_list_add_fmt(list, "-I%s", g_config.input_dir);
     }
 }
 

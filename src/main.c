@@ -459,6 +459,20 @@ int main(int argc, char **argv)
         return 1;
     }
 
+    // Compute input directory
+    char *input_file_copy = xstrdup(g_config.input_file);
+    char *last_slash = z_path_last_sep(input_file_copy);
+    if (last_slash)
+    {
+        *last_slash = 0;
+        g_config.input_dir = xstrdup(input_file_copy);
+    }
+    else
+    {
+        g_config.input_dir = xstrdup(".");
+    }
+    free(input_file_copy);
+
     g_current_filename = g_config.input_file;
 
     // Load file

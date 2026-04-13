@@ -271,6 +271,7 @@ typedef struct
     int include_path_count;  ///< Number of tracked -I paths.
 
     char *root_path; ///< Detected Zen-C root directory.
+    char *input_dir; ///< Directory of the primary input file.
 } CompilerConfig;
 
 extern CompilerConfig g_config;

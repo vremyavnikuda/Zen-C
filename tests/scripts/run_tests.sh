@@ -178,7 +178,7 @@ while read -r test_file; do
     
     # Add -w to suppress warnings as requested
     tmp_out="test_out_$$.out"
-    output=$($ZC run "$test_file" -o "$tmp_out" -w "${zc_args[@]}" 2>&1)
+    output=$($ZC run "$test_file" -o "$tmp_out" -w "${zc_args[@]}" 2>&1 | tr -d '\0')
     exit_code=$?
     rm -f "$tmp_out" "${tmp_out}.cpp"
     
