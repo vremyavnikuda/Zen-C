@@ -177,6 +177,7 @@ endforeach()
 
 # --- Install Rules ---
 install(TARGETS zc DESTINATION bin)
+install(FILES std.zc DESTINATION share/zenc)
 install(DIRECTORY std DESTINATION share/zenc)
 install(FILES src/zen/facts.json DESTINATION share/zenc)
 install(FILES src/repl/docs.json DESTINATION share/zenc)
