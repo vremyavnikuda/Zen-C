@@ -178,8 +178,8 @@ while read -r test_file; do
     
     # Add -w to suppress warnings as requested
     tmp_out="test_out_$$.out"
-    cmd_str="$ZC run \"$test_file\" -o \"$tmp_out\" -w \"${zc_args[@]}\""
-    output=$(set -o pipefail; $ZC run "$test_file" -o "$tmp_out" -w "${zc_args[@]}" 2>&1 | tr -d '\0')
+    cmd_str="$ZC run \"$test_file\" -o \"$tmp_out\" -w --emit-c \"${zc_args[@]}\""
+    output=$(set -o pipefail; $ZC run "$test_file" -o "$tmp_out" -w --emit-c "${zc_args[@]}" 2>&1 | tr -d '\0')
     exit_code=$?
     
     # Check for expected failure annotation
@@ -199,6 +199,7 @@ while read -r test_file; do
         else
             echo "FAIL"
             echo "----------------------------------------"
+            echo "Exit Code: $exit_code"
             echo "Command: $cmd_str"
             echo "Output:"
             echo "$output"
