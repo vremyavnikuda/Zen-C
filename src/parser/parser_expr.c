@@ -1433,28 +1433,29 @@ static ASTNode *create_fstring_block(ParserContext *ctx, Token parent_token, cha
             continue;
         }
 
-        char *end_brace = strchr(brace, '}');
-        if (!end_brace || end_brace >= end)
-        {
-            zpanic_at(parent_token, "Unclosed f-string brace");
-        }
-
+        int depth = 0;
+        char *p = brace;
+        char *end_brace = NULL;
         char *colon = NULL;
-        char *p = brace + 1;
-        int depth = 1;
-        while (p < end_brace)
+
+        while (p < end)
         {
             if (*p == '{')
             {
                 depth++;
             }
-            if (*p == '}')
+            else if (*p == '}')
             {
                 depth--;
+                if (depth == 0)
+                {
+                    end_brace = p;
+                    break;
+                }
             }
-            if (depth == 1 && *p == ':' && !colon)
+            else if (depth == 1 && *p == ':' && !colon)
             {
-                if ((p + 1) < end_brace && *(p + 1) == ':')
+                if ((p + 1) < end && *(p + 1) == ':')
                 {
                     p++;
                 }
@@ -1464,6 +1465,11 @@ static ASTNode *create_fstring_block(ParserContext *ctx, Token parent_token, cha
                 }
             }
             p++;
+        }
+
+        if (!end_brace)
+        {
+            zpanic_at(parent_token, "Unclosed f-string brace");
         }
 
         char *expr_start = brace + 1;

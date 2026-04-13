@@ -1982,6 +1982,10 @@ char *process_printf_sugar(ParserContext *ctx, Token srctoken, const char *conte
             p++;
         }
 
+        if (*p == 0)
+        {
+            zpanic_at(srctoken, "Unclosed interpolation brace in printf-sugar");
+        }
         *p = 0; // Terminate expression
         char *expr = brace + 1;
 
