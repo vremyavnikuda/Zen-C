@@ -100,10 +100,13 @@ void zptr_register_plugin(ZPlugin *plugin)
     }
 
     PluginNode *node = malloc(sizeof(PluginNode));
-    node->plugin = plugin;
-    node->handle = NULL;
-    node->next = head;
-    head = node;
+    if (node)
+    {
+        node->plugin = plugin;
+        node->handle = NULL;
+        node->next = head;
+        head = node;
+    }
 }
 
 ZPlugin *zptr_load_plugin(const char *path)
@@ -132,10 +135,19 @@ ZPlugin *zptr_load_plugin(const char *path)
 
     // Register
     PluginNode *node = malloc(sizeof(PluginNode));
-    node->plugin = plugin;
-    node->handle = handle;
-    node->next = head;
-    head = node;
+    if (node)
+    {
+        node->plugin = plugin;
+        node->handle = handle;
+        node->next = head;
+        head = node;
+    }
+    else
+    {
+        // Out of memory
+        z_dlclose(handle);
+        return NULL;
+    }
 
     return plugin;
 }

@@ -14,6 +14,9 @@
 #include "utils/cmd.h"
 #include "diagnostics/diagnostics.h"
 #include <signal.h>
+#if !defined(_WIN32)
+#include <sys/wait.h>
+#endif
 
 static void handle_crash(int sig)
 {
@@ -926,7 +929,18 @@ int main(int argc, char **argv)
                 remove(exe_out);
             }
         }
+        if (!g_config.quiet)
+        {
+            printf(COLOR_BOLD COLOR_CYAN "   Cleaning up" COLOR_RESET " plugins...\n");
+            fflush(stdout);
+        }
         zptr_plugin_mgr_cleanup();
+
+        if (!g_config.quiet)
+        {
+            printf(COLOR_BOLD COLOR_CYAN "   Evaluating" COLOR_RESET " Zen facts...\n");
+            fflush(stdout);
+        }
         zen_trigger_global();
 #if defined(WIFEXITED) && defined(WEXITSTATUS)
         return WIFEXITED(run_ret) ? WEXITSTATUS(run_ret) : run_ret;
@@ -935,7 +949,18 @@ int main(int argc, char **argv)
 #endif
     }
 
+    if (!g_config.quiet)
+    {
+        printf(COLOR_BOLD COLOR_CYAN "   Cleaning up" COLOR_RESET " plugins...\n");
+        fflush(stdout);
+    }
     zptr_plugin_mgr_cleanup();
+
+    if (!g_config.quiet)
+    {
+        printf(COLOR_BOLD COLOR_CYAN "   Evaluating" COLOR_RESET " Zen facts...\n");
+        fflush(stdout);
+    }
     zen_trigger_global();
 
     double end_time = z_get_monotonic_time();

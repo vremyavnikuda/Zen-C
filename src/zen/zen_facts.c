@@ -108,11 +108,17 @@ static void load_facts(void)
     long len = ftell(f);
     fseek(f, 0, SEEK_SET);
 
+    if (len < 0)
+    {
+        fclose(f);
+        return;
+    }
+
     char *data = malloc(len + 1);
     if (data)
     {
-        fread(data, 1, len, f);
-        data[len] = 0;
+        size_t read_bytes = fread(data, 1, len, f);
+        data[read_bytes] = 0;
     }
     fclose(f);
 
@@ -132,7 +138,15 @@ static void load_facts(void)
     if (cJSON_IsArray(json))
     {
         fact_count = cJSON_GetArraySize(json);
-        facts = calloc(fact_count, sizeof(ZenFact));
+        if (fact_count > 0)
+        {
+            facts = calloc(fact_count, sizeof(ZenFact));
+        }
+        if (!facts && fact_count > 0)
+        {
+            cJSON_Delete(json);
+            return;
+        }
 
         cJSON *item = NULL;
         int i = 0;
@@ -179,7 +193,7 @@ void zzen_at(Token t, const char *msg, const char *url)
                 g_current_filename ? g_current_filename : "unknown", t.line, t.col);
     }
 
-    if (t.start)
+    if (t.start && t.col > 0)
     {
         const char *line_start = t.start - (t.col - 1);
         const char *line_end = t.start;
@@ -187,7 +201,7 @@ void zzen_at(Token t, const char *msg, const char *url)
         {
             line_end++;
         }
-        int line_len = line_end - line_start;
+        int line_len = (int)(line_end - line_start);
 
         fprintf(stderr, COLOR_BLUE "   |\n" COLOR_RESET);
         fprintf(stderr, COLOR_BLUE "%-3d| " COLOR_RESET "%.*s\n", t.line, line_len, line_start);
