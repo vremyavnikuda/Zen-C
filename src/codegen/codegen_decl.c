@@ -1668,13 +1668,13 @@ void print_type_defs(ParserContext *ctx, FILE *out, ASTNode *nodes)
                 // For vectors, we emit a custom typedef in emit_struct_defs.
                 // Standard 'typedef struct Name Name' would conflict.
             }
-            else
+            else if (local->strct.name)
             {
                 const char *keyword = local->strct.is_union ? "union" : "struct";
                 fprintf(out, "typedef %s %s %s;\n", keyword, local->strct.name, local->strct.name);
             }
         }
-        if (local->type == NODE_ENUM && !local->enm.is_template)
+        if (local->type == NODE_ENUM && !local->enm.is_template && local->enm.name)
         {
             fprintf(out, "typedef struct %s %s;\n", local->enm.name, local->enm.name);
         }

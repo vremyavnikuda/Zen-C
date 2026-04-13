@@ -13,12 +13,28 @@
 #include <unistd.h>
 #include "utils/cmd.h"
 #include "diagnostics/diagnostics.h"
+#include <signal.h>
+
+static void handle_crash(int sig)
+{
+    fprintf(stderr, "\n------------------------------------------------\n");
+    fprintf(stderr, "CRITICAL: Compiler crashed with signal %d\n", sig);
+    fprintf(stderr, "This is likely a bug in the Zen compiler.\n");
+    fprintf(stderr, "Flushing all output files before exit...\n");
+    fprintf(stderr, "------------------------------------------------\n");
+    fflush(NULL);
+    _exit(139);
+}
 
 // Forward decl for LSP
 int lsp_main(int argc, char **argv);
 
 int main(int argc, char **argv)
 {
+    signal(SIGSEGV, handle_crash);
+    signal(SIGABRT, handle_crash);
+    signal(SIGFPE, handle_crash);
+
     z_setup_terminal();
     memset(&g_config, 0, sizeof(g_config));
     g_config.mode_debug = 1;

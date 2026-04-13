@@ -205,14 +205,17 @@ while read -r test_file; do
             echo "$output"
             # Keep the output file for debugging
             if [ -f "$tmp_out" ]; then
-                echo "Generated C preserved at: $tmp_out"
+                echo "Program output preserved at: $tmp_out"
+            fi
+            if [ -f "$tmp_out.c" ]; then
+                echo "Generated C source preserved at: $tmp_out.c"
                 echo "--- Source Begin ---"
-                cat "$tmp_out"
+                cat "$tmp_out.c"
                 echo "--- Source End ---"
-            elif [ -f "${tmp_out}.cpp" ]; then
-                echo "Generated C++ preserved at: ${tmp_out}.cpp"
+            elif [ -f "$tmp_out.cpp" ]; then
+                echo "Generated C++ source preserved at: $tmp_out.cpp"
                 echo "--- Source Begin ---"
-                cat "${tmp_out}.cpp"
+                cat "$tmp_out.cpp"
                 echo "--- Source End ---"
             fi
             echo "----------------------------------------"

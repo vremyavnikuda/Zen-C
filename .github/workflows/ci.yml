@@ -96,7 +96,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: failed-test-artifacts-${{ matrix.name }}
-        path: test_out_*.out*
+        path: "**/test_out_*"
 
   test-lsp:
     name: LSP Tests

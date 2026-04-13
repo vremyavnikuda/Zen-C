@@ -1475,6 +1475,10 @@ static ASTNode *create_fstring_block(ParserContext *ctx, Token parent_token, cha
         char *expr_start = brace + 1;
         char *expr_end = colon ? colon : end_brace;
         int expr_len = (int)(expr_end - expr_start);
+        if (expr_len < 0)
+        {
+            zpanic_at(parent_token, "Internal error in f-string expression layout");
+        }
         char *expr_str = xmalloc(expr_len + 1);
         strncpy(expr_str, expr_start, expr_len);
         expr_str[expr_len] = '\0';
