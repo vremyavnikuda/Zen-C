@@ -164,6 +164,14 @@ const char *z_get_system_name(void);
 FILE *z_tmpfile(void);
 
 /**
+ * @brief Check if a compiler path/command matches a specific compiler family.
+ * @param path The compiler path or command string.
+ * @param compiler_name The name to match against (e.g. "gcc", "clang", "tcc", "emcc", "msvc").
+ * @return 1 if matched, 0 otherwise.
+ */
+int z_path_match_compiler(const char *path, const char *compiler_name);
+
+/**
  * @brief Run a command securely without shell interpretation.
  * @param argv NULL-terminated array of arguments.
  * @return Exit code of the process.

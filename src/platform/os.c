@@ -215,6 +215,38 @@ const char *z_get_system_name(void)
 #endif
 }
 
+int z_path_match_compiler(const char *path, const char *compiler_name)
+{
+    if (!path || !compiler_name)
+    {
+        return 0;
+    }
+
+    // Handle "zig cc" and other space-separated command strings
+    // We check if the compiler name exists as a distinct word in the path/command.
+    const char *p = path;
+    size_t name_len = strlen(compiler_name);
+
+    while ((p = strstr(p, compiler_name)) != NULL)
+    {
+        // Verify it's a "whole word" match or at least at a boundary
+        // Start boundary: beginning of string, or space, or slash
+        int start_ok = (p == path || isspace((unsigned char)p[-1]) || p[-1] == '/' || p[-1] == '\\');
+
+        // End boundary: end of string, or space, or '.' (for extensions like .exe)
+        int end_ok = (p[name_len] == '\0' || isspace((unsigned char)p[name_len]) ||
+                      p[name_len] == '.' || p[name_len] == '-' || p[name_len] == '_');
+
+        if (start_ok && end_ok)
+        {
+            return 1;
+        }
+        p += name_len;
+    }
+
+    return 0;
+}
+
 FILE *z_tmpfile(void)
 {
 #if ZC_OS_WINDOWS
