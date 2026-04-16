@@ -38,6 +38,8 @@ int main(int argc, char **argv)
     signal(SIGABRT, handle_crash);
     signal(SIGFPE, handle_crash);
 
+    int i;
+    const char *optimization_level = NULL;
     z_setup_terminal();
     memset(&g_config, 0, sizeof(g_config));
     g_config.mode_debug = 1;
@@ -175,10 +177,8 @@ int main(int argc, char **argv)
         }
     }
 
-    const char *optimization_level = NULL;
-
     // Parse args
-    for (int i = arg_start; i < argc; i++)
+    for (i = arg_start; i < argc; i++)
     {
         char *arg = argv[i];
         if (strcmp(arg, "--emit-c") == 0)
@@ -457,7 +457,7 @@ int main(int argc, char **argv)
         }
     }
 
-    for (int i = arg_start; i < argc; i++)
+    for (i = arg_start; i < argc; i++)
     {
         char *arg = argv[i];
         if (arg && (strcmp(arg, "--version") == 0 || strcmp(arg, "-V") == 0))
