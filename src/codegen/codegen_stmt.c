@@ -1244,7 +1244,7 @@ void codegen_node_single(ParserContext *ctx, ASTNode *node, FILE *out)
 
                 // Emit Variable with Type
                 emit_var_decl_type(ctx, out, tname, node->var_decl.name);
-                add_symbol(ctx, node->var_decl.name, tname, node->type_info);
+                add_symbol(ctx, node->var_decl.name, tname, node->type_info, 0);
 
                 if (node->var_decl.init_expr)
                 {
@@ -1348,7 +1348,7 @@ void codegen_node_single(ParserContext *ctx, ASTNode *node, FILE *out)
                     }
 
                     emit_var_decl_type(ctx, out, inferred, node->var_decl.name);
-                    add_symbol(ctx, node->var_decl.name, inferred, NULL);
+                    add_symbol(ctx, node->var_decl.name, inferred, NULL, 0);
                     fprintf(out, " = ");
                     codegen_expression(ctx, node->var_decl.init_expr, out);
                     fprintf(out, ";\n");
@@ -1366,7 +1366,7 @@ void codegen_node_single(ParserContext *ctx, ASTNode *node, FILE *out)
 
                     if (inferred)
                     {
-                        add_symbol(ctx, node->var_decl.name, inferred, NULL);
+                        add_symbol(ctx, node->var_decl.name, inferred, NULL, 0);
                     }
 
                     fprintf(out, " = ");

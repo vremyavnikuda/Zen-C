@@ -1,13 +1,21 @@
-// MISRA Rule 15.7 Verification
+// MISRA Rule 15.7: All if ... else if constructs shall be terminated with an else statement.
 // EXPECT: MISRA Rule 15.7
 
 fn main() {
-    let x = 10;
+    let a = 1;
+    let b = 2;
+
+    if a == 1 {
+        // ...
+    } else if b == 2 {
+        // ...
+    } // FAIL: Missing else
     
-    // Violation: if-else-if chain without terminal else
-    if x > 10 {
-        x = 1;
-    } else if x < 5 {
-        x = 2;
-    }
+    if a == 1 {
+        // ...
+    } else if b == 2 {
+        // ...
+    } else {
+        // ...
+    } // PASS
 }

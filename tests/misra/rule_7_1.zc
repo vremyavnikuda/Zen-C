@@ -1,5 +1,5 @@
 // MISRA Rule 7.1: Octal liters prohibited
 // EXPECT: MISRA Rule 7.1
 fn main() {
-    let x = 010; // Octal-style
+    let _x = 010; // Octal-style
 }

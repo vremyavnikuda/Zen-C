@@ -7,10 +7,10 @@ fn test_10_7() {
     let u32_val: u32 = 100;
 
     // Violation: (u16+u16) is u16, but added to u32. Widening happens implicitly.
-    let fail1 = (u16_a + u16_b) + u32_val;
+    let _fail1 = (u16_a + u16_b) + u32_val;
 
     // OK: cast operands first
-    let ok1 = ((u32)u16_a + (u32)u16_b) + u32_val;
+    let _ok1 = ((u32)u16_a + (u32)u16_b) + u32_val;
 }
 
 fn main() {

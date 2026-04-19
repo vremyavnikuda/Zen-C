@@ -6,5 +6,5 @@ fn main() {
     let ptr: int* = &x;
     
     // Violation: pointer arithmetic
-    let ptr2 = ptr + 1; 
+    let _ptr2 = ptr + 1; 
 }

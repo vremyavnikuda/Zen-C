@@ -1,0 +1,8 @@
+// MISRA Rule 9.3: Arrays shall not be partially initialized.
+// EXPECT: MISRA Rule 9.3
+
+fn main() {
+    let _a: [i32; 5] = [1, 2, 3]; // FAIL: partial initialization
+    let _b: [i32; 3] = [1, 2, 3]; // PASS: full initialization
+    let _c = [1, 2, 3];           // PASS: size inferred as 3
+}

@@ -6,13 +6,13 @@ fn test_misra_bitwise_fail_signed() {
     let a: i32 = 10;
     let b: i32 = 20;
     // Violation: Bitwise operator with signed operand
-    let c = a & b; 
+    let _c = a & b; 
 }
 
 fn test_misra_bitwise_fail_not() {
     let a: i32 = 10;
     // Violation: Bitwise NOT with signed operand
-    let h = ~a; 
+    let _h = ~a; 
 }
 
 fn main() {

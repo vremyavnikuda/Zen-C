@@ -5,14 +5,14 @@ fn test_char_arithmetic() {
     let c1: char = 'A';
     let c2: char = 'B';
     
-    let ok = c2 - c1; // OK: char - char allowed
+    let _ok = c2 - c1; // OK: char - char allowed
     
     // Violation 1
-    let bad = c1 + c2;
+    let _bad = c1 + c2;
     
     let i: i32 = 5;
     // Violation 2
-    let bad2 = c1 + i;
+    let _bad2 = c1 + i;
 }
 
 fn main() {

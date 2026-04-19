@@ -137,7 +137,7 @@ void try_parse_macro_const(ParserContext *ctx, const char *content)
         if (!existing)
         {
             // Add to symbol table
-            add_symbol_with_token(ctx, n, "int", type_new(TYPE_INT), name); // Placeholder type
+            add_symbol_with_token(ctx, n, "int", type_new(TYPE_INT), name, 0); // Placeholder type
             // find_symbol_entry to set properties
             ZenSymbol *sym = find_symbol_entry(ctx, n);
             if (sym)
@@ -563,13 +563,13 @@ void register_symbol_to_lsp(ParserContext *ctx, ZenSymbol *s)
     ctx->all_symbols = lsp_copy;
 }
 
-void add_symbol(ParserContext *ctx, const char *n, const char *t, Type *type_info)
+void add_symbol(ParserContext *ctx, const char *n, const char *t, Type *type_info, int is_export)
 {
-    add_symbol_with_token(ctx, n, t, type_info, (Token){0});
+    add_symbol_with_token(ctx, n, t, type_info, (Token){0}, is_export);
 }
 
 void add_symbol_with_token(ParserContext *ctx, const char *n, const char *t, Type *type_info,
-                           Token tok)
+                           Token tok, int is_export)
 {
     if (!ctx->current_scope)
     {
@@ -602,6 +602,7 @@ void add_symbol_with_token(ParserContext *ctx, const char *n, const char *t, Typ
     s->type_name = t ? xstrdup(t) : NULL;
     s->type_info = type_info;
     s->decl_token = tok;
+    s->is_export = is_export;
 
     register_symbol_to_lsp(ctx, s);
 }
@@ -650,7 +651,7 @@ void init_builtins()
 
 void register_func(ParserContext *ctx, Scope *scope, const char *name, int count, char **defaults,
                    Type **arg_types, Type *ret_type, int is_varargs, int is_async, int is_pure,
-                   const char *link_name, Token decl_token)
+                   const char *link_name, Token decl_token, int is_export)
 {
     // In LSP mode, check for existing function in the registry to avoid duplicates
     if (g_config.mode_lsp)
@@ -710,6 +711,7 @@ void register_func(ParserContext *ctx, Scope *scope, const char *name, int count
     }
     sym->data.sig = f;
     sym->decl_token = decl_token;
+    sym->is_export = is_export;
     if (link_name)
     {
         f->link_name = xstrdup(link_name);
@@ -870,7 +872,8 @@ void add_to_struct_list(ParserContext *ctx, ASTNode *node)
 }
 
 void register_type_alias(ParserContext *ctx, const char *alias, const char *original,
-                         Type *type_info, int is_opaque, const char *defined_in_file, Token tok)
+                         Type *type_info, int is_opaque, const char *defined_in_file, Token tok,
+                         int is_export)
 {
     // In LSP mode, check for existing type alias to avoid duplicates
     if (g_config.mode_lsp)
@@ -917,6 +920,7 @@ void register_type_alias(ParserContext *ctx, const char *alias, const char *orig
         sym->kind = SYM_ALIAS;
     }
     sym->decl_token = tok;
+    sym->is_export = is_export;
     sym->data.alias.original_type = xstrdup(original);
     sym->type_info = type_info;
     register_symbol_to_lsp(ctx, sym);
@@ -985,96 +989,96 @@ void register_builtins(ParserContext *ctx)
 {
     Type *t = type_new(TYPE_BOOL);
     t->is_const = 1;
-    add_symbol(ctx, "true", "bool", t);
+    add_symbol(ctx, "true", "bool", t, 0);
 
     t = type_new(TYPE_BOOL);
     t->is_const = 1;
-    add_symbol(ctx, "false", "bool", t);
+    add_symbol(ctx, "false", "bool", t, 0);
 
     // Register 'free'
     Type *void_t = type_new(TYPE_VOID);
-    add_symbol(ctx, "free", "void", void_t);
+    add_symbol(ctx, "free", "void", void_t, 0);
     ctx->current_scope->symbols->kind = SYM_FUNCTION;
 
     // Register common libc functions to avoid warnings
-    add_symbol(ctx, "strdup", "string", type_new(TYPE_STRING));
+    add_symbol(ctx, "strdup", "string", type_new(TYPE_STRING), 0);
     ctx->current_scope->symbols->kind = SYM_FUNCTION;
-    add_symbol(ctx, "malloc", "void*", type_new_ptr(void_t));
+    add_symbol(ctx, "malloc", "void*", type_new_ptr(void_t), 0);
     ctx->current_scope->symbols->kind = SYM_FUNCTION;
-    add_symbol(ctx, "realloc", "void*", type_new_ptr(void_t));
+    add_symbol(ctx, "realloc", "void*", type_new_ptr(void_t), 0);
     ctx->current_scope->symbols->kind = SYM_FUNCTION;
-    add_symbol(ctx, "calloc", "void*", type_new_ptr(void_t));
+    add_symbol(ctx, "calloc", "void*", type_new_ptr(void_t), 0);
     ctx->current_scope->symbols->kind = SYM_FUNCTION;
-    add_symbol(ctx, "puts", "int", type_new(TYPE_INT));
+    add_symbol(ctx, "puts", "int", type_new(TYPE_INT), 0);
     ctx->current_scope->symbols->kind = SYM_FUNCTION;
-    add_symbol(ctx, "printf", "int", type_new(TYPE_INT));
+    add_symbol(ctx, "printf", "int", type_new(TYPE_INT), 0);
     ctx->current_scope->symbols->kind = SYM_FUNCTION;
-    add_symbol(ctx, "strcmp", "int", type_new(TYPE_INT));
+    add_symbol(ctx, "strcmp", "int", type_new(TYPE_INT), 0);
     ctx->current_scope->symbols->kind = SYM_FUNCTION;
-    add_symbol(ctx, "strlen", "int", type_new(TYPE_INT));
+    add_symbol(ctx, "strlen", "int", type_new(TYPE_INT), 0);
     ctx->current_scope->symbols->kind = SYM_FUNCTION;
-    add_symbol(ctx, "strcpy", "string", type_new(TYPE_STRING));
+    add_symbol(ctx, "strcpy", "string", type_new(TYPE_STRING), 0);
     ctx->current_scope->symbols->kind = SYM_FUNCTION;
-    add_symbol(ctx, "strcat", "string", type_new(TYPE_STRING));
+    add_symbol(ctx, "strcat", "string", type_new(TYPE_STRING), 0);
     ctx->current_scope->symbols->kind = SYM_FUNCTION;
-    add_symbol(ctx, "memset", "void*", type_new_ptr(void_t));
+    add_symbol(ctx, "memset", "void*", type_new_ptr(void_t), 0);
     ctx->current_scope->symbols->kind = SYM_FUNCTION;
-    add_symbol(ctx, "memcpy", "void*", type_new_ptr(void_t));
+    add_symbol(ctx, "memcpy", "void*", type_new_ptr(void_t), 0);
     ctx->current_scope->symbols->kind = SYM_FUNCTION;
-    add_symbol(ctx, "exit", "void", void_t);
+    add_symbol(ctx, "exit", "void", void_t, 0);
     ctx->current_scope->symbols->kind = SYM_FUNCTION;
 
     // Stdio Globals
-    add_symbol(ctx, "stdin", "void*", type_new_ptr(void_t));
-    add_symbol(ctx, "stdout", "void*", type_new_ptr(void_t));
-    add_symbol(ctx, "stderr", "void*", type_new_ptr(void_t));
+    add_symbol(ctx, "stdin", "void*", type_new_ptr(void_t), 0);
+    add_symbol(ctx, "stdout", "void*", type_new_ptr(void_t), 0);
+    add_symbol(ctx, "stderr", "void*", type_new_ptr(void_t), 0);
 
     // File I/O
-    add_symbol(ctx, "fopen", "void*", type_new_ptr(void_t));
+    add_symbol(ctx, "fopen", "void*", type_new_ptr(void_t), 0);
     ctx->current_scope->symbols->kind = SYM_FUNCTION;
-    add_symbol(ctx, "fclose", "int", type_new(TYPE_INT));
+    add_symbol(ctx, "fclose", "int", type_new(TYPE_INT), 0);
     ctx->current_scope->symbols->kind = SYM_FUNCTION;
-    add_symbol(ctx, "fread", "usize", type_new(TYPE_USIZE));
+    add_symbol(ctx, "fread", "usize", type_new(TYPE_USIZE), 0);
     ctx->current_scope->symbols->kind = SYM_FUNCTION;
-    add_symbol(ctx, "fwrite", "usize", type_new(TYPE_USIZE));
+    add_symbol(ctx, "fwrite", "usize", type_new(TYPE_USIZE), 0);
     ctx->current_scope->symbols->kind = SYM_FUNCTION;
-    add_symbol(ctx, "fseek", "int", type_new(TYPE_INT));
+    add_symbol(ctx, "fseek", "int", type_new(TYPE_INT), 0);
     ctx->current_scope->symbols->kind = SYM_FUNCTION;
-    add_symbol(ctx, "ftell", "long", type_new(TYPE_I64));
+    add_symbol(ctx, "ftell", "long", type_new(TYPE_I64), 0);
     ctx->current_scope->symbols->kind = SYM_FUNCTION;
-    add_symbol(ctx, "rewind", "void", void_t);
+    add_symbol(ctx, "rewind", "void", void_t, 0);
     ctx->current_scope->symbols->kind = SYM_FUNCTION;
-    add_symbol(ctx, "fprintf", "int", type_new(TYPE_INT));
+    add_symbol(ctx, "fprintf", "int", type_new(TYPE_INT), 0);
     ctx->current_scope->symbols->kind = SYM_FUNCTION;
-    add_symbol(ctx, "vprintf", "int", type_new(TYPE_INT));
+    add_symbol(ctx, "vprintf", "int", type_new(TYPE_INT), 0);
     ctx->current_scope->symbols->kind = SYM_FUNCTION;
-    add_symbol(ctx, "vfprintf", "int", type_new(TYPE_INT));
+    add_symbol(ctx, "vfprintf", "int", type_new(TYPE_INT), 0);
     ctx->current_scope->symbols->kind = SYM_FUNCTION;
-    add_symbol(ctx, "sprintf", "int", type_new(TYPE_INT));
+    add_symbol(ctx, "sprintf", "int", type_new(TYPE_INT), 0);
     ctx->current_scope->symbols->kind = SYM_FUNCTION;
-    add_symbol(ctx, "vsnprintf", "int", type_new(TYPE_INT));
+    add_symbol(ctx, "vsnprintf", "int", type_new(TYPE_INT), 0);
     ctx->current_scope->symbols->kind = SYM_FUNCTION;
-    add_symbol(ctx, "snprintf", "int", type_new(TYPE_INT));
+    add_symbol(ctx, "snprintf", "int", type_new(TYPE_INT), 0);
     ctx->current_scope->symbols->kind = SYM_FUNCTION;
-    add_symbol(ctx, "feof", "int", type_new(TYPE_INT));
+    add_symbol(ctx, "feof", "int", type_new(TYPE_INT), 0);
     ctx->current_scope->symbols->kind = SYM_FUNCTION;
-    add_symbol(ctx, "ferror", "int", type_new(TYPE_INT));
+    add_symbol(ctx, "ferror", "int", type_new(TYPE_INT), 0);
     ctx->current_scope->symbols->kind = SYM_FUNCTION;
-    add_symbol(ctx, "mkdir", "int", type_new(TYPE_INT));
+    add_symbol(ctx, "mkdir", "int", type_new(TYPE_INT), 0);
     ctx->current_scope->symbols->kind = SYM_FUNCTION;
-    add_symbol(ctx, "rmdir", "int", type_new(TYPE_INT));
+    add_symbol(ctx, "rmdir", "int", type_new(TYPE_INT), 0);
     ctx->current_scope->symbols->kind = SYM_FUNCTION;
-    add_symbol(ctx, "chdir", "int", type_new(TYPE_INT));
+    add_symbol(ctx, "chdir", "int", type_new(TYPE_INT), 0);
     ctx->current_scope->symbols->kind = SYM_FUNCTION;
-    add_symbol(ctx, "getcwd", "string", type_new(TYPE_STRING));
+    add_symbol(ctx, "getcwd", "string", type_new(TYPE_STRING), 0);
     ctx->current_scope->symbols->kind = SYM_FUNCTION;
-    add_symbol(ctx, "system", "int", type_new(TYPE_INT));
+    add_symbol(ctx, "system", "int", type_new(TYPE_INT), 0);
     ctx->current_scope->symbols->kind = SYM_FUNCTION;
-    add_symbol(ctx, "getenv", "string", type_new(TYPE_STRING));
+    add_symbol(ctx, "getenv", "string", type_new(TYPE_STRING), 0);
     ctx->current_scope->symbols->kind = SYM_FUNCTION;
-    add_symbol(ctx, "fgets", "string", type_new(TYPE_STRING));
+    add_symbol(ctx, "fgets", "string", type_new(TYPE_STRING), 0);
     ctx->current_scope->symbols->kind = SYM_FUNCTION;
-    add_symbol(ctx, "usleep", "int", type_new(TYPE_INT));
+    add_symbol(ctx, "usleep", "int", type_new(TYPE_INT), 0);
     ctx->current_scope->symbols->kind = SYM_FUNCTION;
 
     ASTNode *va_def = ast_create(NODE_STRUCT);
@@ -1086,10 +1090,10 @@ void register_builtins(ParserContext *ctx)
 void register_comptime_builtins(ParserContext *ctx)
 {
     Type *void_t = type_new(TYPE_VOID);
-    add_symbol(ctx, "yield", "void", void_t);
-    add_symbol(ctx, "code", "void", void_t); // Alias for yield
-    add_symbol(ctx, "compile_warn", "void", void_t);
-    add_symbol(ctx, "compile_error", "void", void_t);
+    add_symbol(ctx, "yield", "void", void_t, 0);
+    add_symbol(ctx, "code", "void", void_t, 0); // Alias for yield
+    add_symbol(ctx, "compile_warn", "void", void_t, 0);
+    add_symbol(ctx, "compile_error", "void", void_t, 0);
 
     register_extern_symbol(ctx, "yield");
     register_extern_symbol(ctx, "code");
@@ -1272,7 +1276,7 @@ void register_slice(ParserContext *ctx, const char *type)
     snprintf(legacy_name, sizeof(legacy_name), "Slice_%s", type);
     if (strcmp(slice_name, legacy_name) != 0)
     {
-        register_type_alias(ctx, legacy_name, slice_name, NULL, 0, NULL, (Token){0});
+        register_type_alias(ctx, legacy_name, slice_name, NULL, 0, NULL, (Token){0}, 0);
     }
 }
 
@@ -1429,6 +1433,10 @@ void register_struct_def(ParserContext *ctx, const char *name, ASTNode *node)
         if (node->type == NODE_STRUCT)
         {
             sym->is_export = node->strct.is_export;
+        }
+        else if (node->type == NODE_ENUM)
+        {
+            sym->is_export = node->enm.is_export;
         }
     }
     sym->type_info = node ? node->type_info : NULL;
@@ -3470,7 +3478,7 @@ char *instantiate_function_template(ParserContext *ctx, const char *name, const 
 
     register_func(ctx, ctx->global_scope, mangled, new_fn->func.arg_count, new_fn->func.defaults,
                   new_fn->func.arg_types, new_fn->func.ret_type_info, new_fn->func.is_varargs, 0,
-                  new_fn->func.pure, new_fn->link_name, new_fn->token);
+                  new_fn->func.pure, new_fn->link_name, new_fn->token, new_fn->func.is_export);
 
     trigger_instantiations(ctx, new_fn->func.body);
 
@@ -3921,7 +3929,7 @@ void instantiate_methods(ParserContext *ctx, GenericImplTemplate *it,
         register_func(ctx, ctx->global_scope, meth->func.name, meth->func.arg_count,
                       meth->func.defaults, meth->func.arg_types, meth->func.ret_type_info,
                       meth->func.is_varargs, (meth->type == NODE_FUNCTION && meth->func.is_async),
-                      meth->func.pure, meth->link_name, meth->token);
+                      meth->func.pure, meth->link_name, meth->token, meth->func.is_export);
 
         // Handle generic return types in methods (e.g., Option<T> -> Option_int)
         if (meth->func.ret_type &&
@@ -4058,6 +4066,7 @@ void instantiate_generic(ParserContext *ctx, const char *tpl, const char *arg,
         ASTNode *i = ast_create(NODE_STRUCT);
         i->strct.name = xstrdup(m);
         i->strct.is_template = 0;
+        i->strct.is_export = t->struct_node->strct.is_export;
 
         // Copy type attributes (e.g. has_drop)
         i->type_info = type_new(TYPE_STRUCT);
@@ -4098,6 +4107,7 @@ void instantiate_generic(ParserContext *ctx, const char *tpl, const char *arg,
         ASTNode *i = ast_create(NODE_ENUM);
         i->enm.name = xstrdup(m);
         i->enm.is_template = 0;
+        i->enm.is_export = t->struct_node->enm.is_export;
 
         // Copy type attributes (e.g. has_drop)
         i->type_info = type_new(TYPE_ENUM);
@@ -4131,7 +4141,7 @@ void instantiate_generic(ParserContext *ctx, const char *tpl, const char *arg,
                 ret_t->name = xstrdup(m);
 
                 register_func(ctx, ctx->global_scope, mangled_var, 1, NULL, at, ret_t, 0, 0, 0,
-                              NULL, token);
+                              NULL, token, i->enm.is_export);
             }
             else
             {
@@ -4140,7 +4150,7 @@ void instantiate_generic(ParserContext *ctx, const char *tpl, const char *arg,
                 Type *ret_t = type_new(TYPE_ENUM);
                 ret_t->name = xstrdup(m);
                 register_func(ctx, ctx->global_scope, mangled_var, 0, NULL, NULL, ret_t, 0, 0, 0,
-                              NULL, token);
+                              NULL, token, i->enm.is_export);
             }
 
             free(mangled_var);
@@ -4264,6 +4274,7 @@ void instantiate_generic_multi(ParserContext *ctx, const char *tpl, char **args,
         ASTNode *i = ast_create(NODE_STRUCT);
         i->strct.name = xstrdup(m);
         i->strct.is_template = 0;
+        i->strct.is_export = t->struct_node->strct.is_export;
 
         // Copy struct attributes
         i->strct.is_packed = t->struct_node->strct.is_packed;
@@ -4310,6 +4321,7 @@ void instantiate_generic_multi(ParserContext *ctx, const char *tpl, char **args,
         ASTNode *i = ast_create(NODE_ENUM);
         i->enm.name = xstrdup(m);
         i->enm.is_template = 0;
+        i->enm.is_export = t->struct_node->enm.is_export;
 
         // Copy type attributes
         i->type_info = type_new(TYPE_ENUM);
@@ -4373,14 +4385,14 @@ void instantiate_generic_multi(ParserContext *ctx, const char *tpl, char **args,
                 ret_t->name = xstrdup(m);
 
                 register_func(ctx, ctx->global_scope, mangled_var, 1, NULL, at, ret_t, 0, 0, 0,
-                              NULL, token);
+                              NULL, token, i->enm.is_export);
             }
             else
             {
                 Type *ret_t = type_new(TYPE_ENUM);
                 ret_t->name = xstrdup(m);
                 register_func(ctx, ctx->global_scope, mangled_var, 0, NULL, NULL, ret_t, 0, 0, 0,
-                              NULL, token);
+                              NULL, token, i->enm.is_export);
             }
 
             free(mangled_var);
@@ -5108,7 +5120,7 @@ char *parse_and_convert_args(ParserContext *ctx, Lexer *l, char ***defaults_out,
                         bt->is_const = is_const_param;
                         Type *ptr = type_new_ptr(bt);
 
-                        add_symbol(ctx, "self", buf_type, ptr);
+                        add_symbol(ctx, "self", buf_type, ptr, 0);
                         types[count] = ptr;
                     }
                     else
@@ -5119,7 +5131,7 @@ char *parse_and_convert_args(ParserContext *ctx, Lexer *l, char ***defaults_out,
                         st->is_const = is_const_param;
                         Type *ptr = type_new_ptr(st);
 
-                        add_symbol(ctx, "self", buf_type, ptr);
+                        add_symbol(ctx, "self", buf_type, ptr, 0);
                         types[count] = ptr;
                     }
                     free(buf_type);
@@ -5145,7 +5157,8 @@ char *parse_and_convert_args(ParserContext *ctx, Lexer *l, char ***defaults_out,
                     Type *void_type = type_new(TYPE_VOID);
                     void_type->is_const = is_const_param;
                     types[count] = type_new_ptr(void_type);
-                    add_symbol(ctx, "self", is_const_param ? "const void*" : "void*", types[count]);
+                    add_symbol(ctx, "self", is_const_param ? "const void*" : "void*", types[count],
+                               0);
                 }
                 ctype_overrides[count] = ctype_override;
                 count++;
@@ -5171,7 +5184,7 @@ char *parse_and_convert_args(ParserContext *ctx, Lexer *l, char ***defaults_out,
                 }
                 char *type_str = type_to_string(arg_type);
 
-                add_symbol(ctx, name, type_str, arg_type);
+                add_symbol(ctx, name, type_str, arg_type, 0);
                 types[count] = arg_type;
 
                 if (strlen(buf) > 0)

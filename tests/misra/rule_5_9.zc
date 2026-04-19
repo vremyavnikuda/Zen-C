@@ -1,0 +1,12 @@
+// MISRA Rule 5.9 Verification: Internal identifiers should be unique (Advisory)
+// EXPECT: MISRA Rule 5.9
+// EXPECT: MISRA Rule 5.9
+
+// Internal identifiers with the same name across different scopes/modules
+fn internal_util() {}
+fn internal_util() {} // Violation (Advisory)
+
+let global_var = 1;
+let global_var = 2; // Violation (Advisory)
+
+fn main() {}

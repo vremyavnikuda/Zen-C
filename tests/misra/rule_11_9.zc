@@ -3,5 +3,5 @@
 
 fn main() {
     // Violation: literal 0 used directly as null pointer constant
-    let p: int* = (int*)0; 
+    let _p: int* = (int*)0; 
 }

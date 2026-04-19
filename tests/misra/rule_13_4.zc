@@ -4,5 +4,5 @@
 fn main() {
     let i = 0;
     // Violation: The result of an assignment is used
-    let j = (i = 5); 
+    let _j = (i = 5); 
 }

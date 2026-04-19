@@ -65,17 +65,18 @@ typedef enum
     TYPE_C_CHAR,      ///< `c_char` (char).
     TYPE_C_UCHAR,     ///< `c_uchar` (unsigned char).
 
-    TYPE_STRUCT,   ///< Struct type.
-    TYPE_ENUM,     ///< Enum type.
-    TYPE_POINTER,  ///< Pointer type (*).
-    TYPE_ARRAY,    ///< Fixed size array [N].
-    TYPE_VECTOR,   ///< SIMD vector type.
-    TYPE_FUNCTION, ///< Function pointer or reference.
-    TYPE_GENERIC,  ///< Generic type parameter (T).
-    TYPE_ALIAS,    ///< Opaque type alias.
-    TYPE_BITINT,   ///< C23 _BitInt(N).
-    TYPE_UBITINT,  ///< C23 unsigned _BitInt(N).
-    TYPE_UNKNOWN   ///< Unknown/unresolved type.
+    TYPE_STRUCT,     ///< Struct type.
+    TYPE_ENUM,       ///< Enum type.
+    TYPE_POINTER,    ///< Pointer type (*).
+    TYPE_ARRAY,      ///< Fixed size array [N].
+    TYPE_VECTOR,     ///< SIMD vector type.
+    TYPE_FUNCTION,   ///< Function pointer or reference.
+    TYPE_GENERIC,    ///< Generic type parameter (T).
+    TYPE_ALIAS,      ///< Opaque type alias.
+    TYPE_BITINT,     ///< C23 _BitInt(N).
+    TYPE_UBITINT,    ///< C23 unsigned _BitInt(N).
+    TYPE_UNSAFE_ANY, ///< Internal unsafe ANY type for match bindings.
+    TYPE_UNKNOWN     ///< Unknown/unresolved type.
 } TypeKind;
 
 /**
@@ -272,6 +273,7 @@ struct ASTNode
             Type *type_info;
             int is_autofree;
             int is_static;
+            int is_export;
         } var_decl;
 
         struct
@@ -287,6 +289,7 @@ struct ASTNode
             ASTNode *variants;
             int is_template;
             char *generic_param;
+            int is_export;
         } enm;
 
         struct
@@ -295,6 +298,7 @@ struct ASTNode
             char *original_type;
             int is_opaque;
             char *defined_in_file;
+            int is_export;
         } type_alias;
 
         struct

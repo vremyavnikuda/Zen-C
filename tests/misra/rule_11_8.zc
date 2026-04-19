@@ -6,5 +6,5 @@ fn main() {
     let pi: const int* = &i; 
     
     // Violation: Cast shall not remove const qualification
-    let pf: int* = (int*)pi;
+    let _pf: int* = (int*)pi;
 }

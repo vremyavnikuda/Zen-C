@@ -45,7 +45,7 @@ void misra_check_inc_dec_result_used(struct TypeChecker *tc, Token token);
 void misra_check_condition_boolean(struct TypeChecker *tc, struct Type *t, Token token);
 void misra_check_invariant_condition(struct TypeChecker *tc, Token token);
 void misra_check_loop_counter_float(struct TypeChecker *tc, struct Type *t, Token token);
-void misra_check_initializer_side_effects(struct TypeChecker *tc, Token token);
+void misra_check_initializer_side_effects(struct TypeChecker *tc, struct ASTNode *node);
 
 // Section 16: Match/Switch
 void misra_check_match_stmt(struct TypeChecker *tc, struct ASTNode *node);
@@ -75,5 +75,8 @@ void misra_check_identifier_collision(Token tok, const char *name1, const char *
 
 // Section 2: Unused Code
 void misra_audit_unused_symbols(struct TypeChecker *tc);
+
+// Section 5: Identifiers
+void misra_audit_identifier_uniqueness(struct TypeChecker *tc);
 
 #endif // PLATFORM_MISRA_H

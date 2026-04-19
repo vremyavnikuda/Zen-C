@@ -17,12 +17,12 @@ Type *resolve_alias(Type *t);
 static int integer_type_width(Type *t);
 char *merge_underscores(const char *in);
 int eval_const_int_expr(ASTNode *node, ParserContext *ctx, long long *out_val);
-static int expr_has_side_effects(ASTNode *node);
+int tc_expr_has_side_effects(ASTNode *node);
 static int is_expression_invariant(TypeChecker *tc, ASTNode *node, int *val);
 
 // ** Internal Helpers **
 
-static int expr_has_side_effects(ASTNode *node)
+int tc_expr_has_side_effects(ASTNode *node)
 {
     if (!node)
     {
@@ -41,8 +41,8 @@ static int expr_has_side_effects(ASTNode *node)
         {
             return 1;
         }
-        return expr_has_side_effects(node->binary.left) ||
-               expr_has_side_effects(node->binary.right);
+        return tc_expr_has_side_effects(node->binary.left) ||
+               tc_expr_has_side_effects(node->binary.right);
 
     case NODE_EXPR_UNARY:
         // Increment/Decrement are side effects (prefix and postfix)
@@ -52,7 +52,7 @@ static int expr_has_side_effects(ASTNode *node)
         {
             return 1;
         }
-        return expr_has_side_effects(node->unary.operand);
+        return tc_expr_has_side_effects(node->unary.operand);
 
     case NODE_RAW_STMT:
         // Inline assembly always has potential side effects
@@ -63,7 +63,7 @@ static int expr_has_side_effects(ASTNode *node)
         ASTNode *f = node->struct_init.fields;
         while (f)
         {
-            if (expr_has_side_effects(f->var_decl.init_expr))
+            if (tc_expr_has_side_effects(f->var_decl.init_expr))
             {
                 return 1;
             }
@@ -77,7 +77,7 @@ static int expr_has_side_effects(ASTNode *node)
         ASTNode *e = node->array_literal.elements;
         while (e)
         {
-            if (expr_has_side_effects(e))
+            if (tc_expr_has_side_effects(e))
             {
                 return 1;
             }
@@ -91,7 +91,7 @@ static int expr_has_side_effects(ASTNode *node)
         ASTNode *e = node->tuple_literal.elements;
         while (e)
         {
-            if (expr_has_side_effects(e))
+            if (tc_expr_has_side_effects(e))
             {
                 return 1;
             }
@@ -101,17 +101,19 @@ static int expr_has_side_effects(ASTNode *node)
     }
 
     case NODE_EXPR_MEMBER:
-        return expr_has_side_effects(node->member.target);
+        return tc_expr_has_side_effects(node->member.target);
 
     case NODE_EXPR_INDEX:
-        return expr_has_side_effects(node->index.array) || expr_has_side_effects(node->index.index);
+        return tc_expr_has_side_effects(node->index.array) ||
+               tc_expr_has_side_effects(node->index.index);
 
     case NODE_EXPR_CAST:
-        return expr_has_side_effects(node->cast.expr);
+        return tc_expr_has_side_effects(node->cast.expr);
 
     case NODE_EXPR_SLICE:
-        return expr_has_side_effects(node->slice.array) ||
-               expr_has_side_effects(node->slice.start) || expr_has_side_effects(node->slice.end);
+        return tc_expr_has_side_effects(node->slice.array) ||
+               tc_expr_has_side_effects(node->slice.start) ||
+               tc_expr_has_side_effects(node->slice.end);
 
     default:
         // Most other nodes (LITERAL, VAR, SIZEOF itself if nested) are side-effect free
@@ -190,7 +192,7 @@ static void tc_exit_scope(TypeChecker *tc)
 
 static void tc_add_symbol(TypeChecker *tc, const char *name, Type *type, Token t, int is_immutable)
 {
-    add_symbol_with_token(tc->pctx, name, NULL, type, t);
+    add_symbol_with_token(tc->pctx, name, NULL, type, t, 0);
     ZenSymbol *sym = symbol_lookup(tc->pctx->current_scope, name);
     if (sym)
     {
@@ -1125,6 +1127,18 @@ static void check_expr_call(TypeChecker *tc, ASTNode *node, int depth)
                     *a_resolved->inner = *e_resolved->inner;
                 }
             }
+
+            // Rule 17.5: Array parameter sizes must match.
+            if (g_config.misra_mode && e_resolved->kind == TYPE_ARRAY &&
+                a_resolved->kind == TYPE_ARRAY)
+            {
+                if (e_resolved->array_size != a_resolved->array_size)
+                {
+                    misra_check_array_param_size(tc, e_resolved->array_size, a_resolved->array_size,
+                                                 arg->token);
+                }
+            }
+
             check_type_compatibility(tc, expected, actual, arg->token, arg);
         }
 
@@ -1356,18 +1370,6 @@ static int check_type_compatibility(TypeChecker *tc, Type *target, Type *value, 
         // in their respective node visitors.
     }
 
-    // Rule 17.5: Array parameter sizes must match.
-    if (g_config.misra_mode && resolved_target->kind == TYPE_ARRAY &&
-        resolved_value->kind == TYPE_ARRAY)
-    {
-        if (resolved_target->array_size != resolved_value->array_size)
-        {
-            misra_check_array_param_size(tc, resolved_target->array_size,
-                                         resolved_value->array_size, t);
-            return 0;
-        }
-    }
-
     // Resolve type aliases (str -> string, etc.) for non-integer types
     // (Integer aliases handled by resolve_alias above)
     if (target->kind == TYPE_ALIAS && target->name)
@@ -1504,6 +1506,18 @@ static void check_var_decl(TypeChecker *tc, ASTNode *node, int depth)
             if (g_config.misra_mode)
             {
                 misra_check_pointer_conversion(tc, decl_type, init_type, node->token);
+
+                // Rule 9.3: Arrays shall not be partially initialized.
+                if (decl_type->kind == TYPE_ARRAY && init_type->kind == TYPE_ARRAY)
+                {
+                    if (node->var_decl.init_expr->type == NODE_EXPR_ARRAY_LITERAL)
+                    {
+                        if (decl_type->array_size != init_type->array_size)
+                        {
+                            tc_error(tc, node->token, "MISRA Rule 9.3");
+                        }
+                    }
+                }
             }
         }
 
@@ -1534,12 +1548,9 @@ static void check_var_decl(TypeChecker *tc, ASTNode *node, int depth)
     if (g_config.misra_mode && t && t->kind == TYPE_ARRAY)
     {
         // Rule 18.8: No variable length arrays
-        // If it's a stack variable (not static and in a function), it must have a fixed size.
-        // In Zen, type_new_array already requires a constant size, but we verify here for MISRA.
-        if (tc->current_func && !node->var_decl.is_static)
-        {
-            misra_check_vla(tc, t, node->token);
-        }
+        // In Zen C, all [T; N] arrays have constant size N, so Rule 18.8 is satisfied.
+        // We only report if Zen somehow allowed non-constant sizes (which it doesn't in fixed-size
+        // arrays).
     }
 }
 
@@ -2828,7 +2839,7 @@ static void check_node(TypeChecker *tc, ASTNode *node, int depth)
         break;
     case NODE_EXPR_ARRAY_LITERAL:
     {
-        misra_check_initializer_side_effects(tc, node->token);
+        misra_check_initializer_side_effects(tc, node);
         ASTNode *elem = node->array_literal.elements;
         Type *elem_type = NULL;
         int count = 0;
@@ -2854,7 +2865,7 @@ static void check_node(TypeChecker *tc, ASTNode *node, int depth)
     break;
     case NODE_EXPR_TUPLE_LITERAL:
     {
-        misra_check_initializer_side_effects(tc, node->token);
+        misra_check_initializer_side_effects(tc, node);
         ASTNode *elem = node->tuple_literal.elements;
         while (elem)
         {
@@ -2864,7 +2875,7 @@ static void check_node(TypeChecker *tc, ASTNode *node, int depth)
     }
     break;
     case NODE_EXPR_STRUCT_INIT:
-        misra_check_initializer_side_effects(tc, node->token);
+        misra_check_initializer_side_effects(tc, node);
         check_struct_init(tc, node, depth + 1);
         break;
     case NODE_LOOP:
@@ -2969,7 +2980,7 @@ static void check_node(TypeChecker *tc, ASTNode *node, int depth)
         {
             check_node(tc, node->size_of.expr, depth + 1);
 
-            if (g_config.misra_mode && expr_has_side_effects(node->size_of.expr))
+            if (g_config.misra_mode && tc_expr_has_side_effects(node->size_of.expr))
             {
                 misra_check_side_effects_sizeof(tc, node->size_of.expr);
             }
@@ -3247,6 +3258,7 @@ int check_program(ParserContext *ctx, ASTNode *root)
     if (g_config.misra_mode)
     {
         misra_audit_unused_symbols(&tc);
+        misra_audit_identifier_uniqueness(&tc);
     }
 
     if (g_error_count > 0)

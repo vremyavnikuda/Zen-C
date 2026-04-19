@@ -6,5 +6,5 @@ fn main() {
     let pi: int* = &i;
     
     // Violation: Cast between pointer to object and different object type
-    let pf: float* = (float*)pi;
+    let _pf: float* = (float*)pi;
 }

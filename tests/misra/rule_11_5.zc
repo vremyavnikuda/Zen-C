@@ -7,10 +7,10 @@ fn test_void_ptr_cast() {
     let pv: void* = (void*)px; // OK: object to void is fine
     
     // Violation 1
-    let p_bad: int* = (int*)pv;
+    let _p_bad: int* = (int*)pv;
     
     // Violation 2
-    let p_bad2: int* = (int*)pv;
+    let _p_bad2: int* = (int*)pv;
 }
 
 fn main() {

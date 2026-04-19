@@ -9,9 +9,9 @@ fn effect() -> int {
 fn main() {
     let i = 0;
     // Violation: increment side effect in sizeof
-    let s1 = sizeof(i++);        
+    let _s1 = sizeof(i++);        
     // Violation: function call side effect in sizeof
-    let s2 = sizeof(effect());   
+    let _s2 = sizeof(effect());   
     
-    let s3 = sizeof(i + 1);      // OK
+    let _s3 = sizeof(i + 1);      // OK
 }

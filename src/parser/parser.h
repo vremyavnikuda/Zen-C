@@ -489,13 +489,13 @@ void exit_scope(ParserContext *ctx);
 /**
  * @brief Adds a symbol to the current scope.
  */
-void add_symbol(ParserContext *ctx, const char *n, const char *t, Type *type_info);
+void add_symbol(ParserContext *ctx, const char *n, const char *t, Type *type_info, int is_export);
 
 /**
  * @brief Adds a symbol with definition token location.
  */
 void add_symbol_with_token(ParserContext *ctx, const char *n, const char *t, Type *type_info,
-                           Token tok);
+                           Token tok, int is_export);
 
 /**
  * @brief Finds a symbol's type information.
@@ -530,7 +530,7 @@ const char *normalize_type_name(const char *name);
  */
 void register_func(ParserContext *ctx, Scope *scope, const char *name, int count, char **defaults,
                    Type **arg_types, Type *ret_type, int is_varargs, int is_async, int is_pure,
-                   const char *link_name, Token decl_token);
+                   const char *link_name, Token decl_token, int is_export);
 
 /**
  * @brief Registers a function template.
@@ -643,7 +643,8 @@ char *sanitize_mangled_name(const char *name);
  */
 TypeAlias *find_type_alias_node(ParserContext *ctx, const char *name);
 void register_type_alias(ParserContext *ctx, const char *alias, const char *original,
-                         Type *type_info, int is_opaque, const char *defined_in_file, Token tok);
+                         Type *type_info, int is_opaque, const char *defined_in_file, Token tok,
+                         int is_export);
 
 /**
  * @brief Registers an implementation.
@@ -1057,34 +1058,34 @@ ASTNode *parse_plugin(ParserContext *ctx, Lexer *l);
 /**
  * @brief Parses a variable declaration.
  */
-ASTNode *parse_var_decl(ParserContext *ctx, Lexer *l);
+ASTNode *parse_var_decl(ParserContext *ctx, Lexer *l, int is_export);
 
 /**
  * @brief Parses a def statement.
  */
-ASTNode *parse_def(ParserContext *ctx, Lexer *l);
+ASTNode *parse_def(ParserContext *ctx, Lexer *l, int is_export);
 
 /**
  * @brief Parses a type alias.
  */
-ASTNode *parse_type_alias(ParserContext *ctx, Lexer *l, int is_opaque);
+ASTNode *parse_type_alias(ParserContext *ctx, Lexer *l, int is_opaque, int is_export);
 
 /**
  * @brief Parses a function definition.
  */
 ASTNode *parse_function(ParserContext *ctx, Lexer *l, int is_async, int is_extern,
-                        const char *link_name);
+                        const char *link_name, int is_export);
 
 /**
  * @brief Parses a struct or union definition.
  */
 ASTNode *parse_struct(ParserContext *ctx, Lexer *l, int is_union, int is_opaque, int is_extern,
-                      const char *link_name);
+                      const char *link_name, int is_export);
 
 /**
  * @brief Parses an enum definition.
  */
-ASTNode *parse_enum(ParserContext *ctx, Lexer *l, const char *link_name);
+ASTNode *parse_enum(ParserContext *ctx, Lexer *l, const char *link_name, int is_export);
 
 /**
  * @brief Parses a trait definition.

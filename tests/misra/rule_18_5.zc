@@ -15,8 +15,8 @@ fn nested_params(p: int***) {
 fn main() {
     let x = 10;
     let ptr: int* = &x;
-    let ptr2: int** = &ptr; // OK: 2 levels
+    let _ptr2: int** = &ptr; // OK: 2 levels
     
     // Violation: 3 levels of nesting
-    let ptr3: int***; 
+    let _ptr3: int***; 
 }

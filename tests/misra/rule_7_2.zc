@@ -1,0 +1,19 @@
+// MISRA Rule 7.2: A 'u' or 'U' suffix shall be applied to all integer constants 
+// that are represented in an unsigned type.
+// EXPECT: MISRA Rule 7.2
+// EXPECT: MISRA Rule 7.2
+
+fn main() {
+    let a = 0x80000000;    // FAIL (unsigned hex constant without 'u')
+    let b = 0x80000000u;   // PASS
+    
+    let c = 2147483648;    // PASS or FAIL? (Decimal constants are usually signed)
+                           // In Zen, this becomes i64. Not unsigned.
+                           
+    let d = 0x7FFFFFFF;    // PASS (fits in signed int)
+    
+    let e = 0xFFFFFFFFFFFFFFFF; // FAIL
+    let f = 0xFFFFFFFFFFFFFFFFu; // PASS
+
+    println "{a} {b} {c} {d} {e} {f}";
+}

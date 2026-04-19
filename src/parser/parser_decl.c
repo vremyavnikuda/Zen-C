@@ -16,7 +16,7 @@
 #include "analysis/move_check.h"
 
 ASTNode *parse_function(ParserContext *ctx, Lexer *l, int is_async, int is_extern,
-                        const char *link_name)
+                        const char *link_name, int is_export)
 {
     lexer_next(l);
     Token name_tok = lexer_next(l);
@@ -153,7 +153,7 @@ ASTNode *parse_function(ParserContext *ctx, Lexer *l, int is_async, int is_exter
     if (!gen_param && !ctx->current_impl_struct)
     {
         register_func(ctx, ctx->current_scope->parent, name, count, defaults, arg_types,
-                      ret_type_obj, is_varargs, is_async, 0, link_name, name_tok);
+                      ret_type_obj, is_varargs, is_async, 0, link_name, name_tok, is_export);
         // Note: required is set after return by caller (parser_core.c)
     }
 
@@ -343,7 +343,7 @@ static void replace_it_with_var(ASTNode *node, char *var_name)
     }
 }
 
-ASTNode *parse_var_decl(ParserContext *ctx, Lexer *l)
+ASTNode *parse_var_decl(ParserContext *ctx, Lexer *l, int is_export)
 {
     Token tk = lexer_next(l); // eat 'var'
 
@@ -372,11 +372,11 @@ ASTNode *parse_var_decl(ParserContext *ctx, Lexer *l)
                 Type *type_obj = parse_type_formal(ctx, l);
                 types[count] = type_to_string(type_obj);
                 type_infos[count] = type_obj;
-                add_symbol(ctx, nm, types[count], type_obj);
+                add_symbol(ctx, nm, types[count], type_obj, is_export);
             }
             else
             {
-                add_symbol(ctx, nm, "unknown", NULL);
+                add_symbol(ctx, nm, "unknown", NULL, is_export);
             }
             count++;
 
@@ -446,7 +446,7 @@ ASTNode *parse_var_decl(ParserContext *ctx, Lexer *l)
                 names[count] = ident; // Share pointer or duplicate? duplicate safer if we free
             }
             // Register symbol for variable
-            add_symbol(ctx, names[count], "unknown", NULL);
+            add_symbol(ctx, names[count], "unknown", NULL, is_export);
 
             count++;
 
@@ -534,7 +534,7 @@ ASTNode *parse_var_decl(ParserContext *ctx, Lexer *l)
         n->destruct.guard_variant = name;
         n->destruct.else_block = else_blk;
 
-        add_symbol(ctx, val_name, "unknown", NULL);
+        add_symbol(ctx, val_name, "unknown", NULL, is_export);
 
         return n;
     }
@@ -717,7 +717,7 @@ ASTNode *parse_var_decl(ParserContext *ctx, Lexer *l)
     }
 
     // Register in symbol table with actual token
-    add_symbol_with_token(ctx, name, type, type_obj, name_tok);
+    add_symbol_with_token(ctx, name, type, type_obj, name_tok, is_export);
 
     if (init && type_obj)
     {
@@ -851,7 +851,7 @@ ASTNode *parse_var_decl(ParserContext *ctx, Lexer *l)
     return n;
 }
 
-ASTNode *parse_def(ParserContext *ctx, Lexer *l)
+ASTNode *parse_def(ParserContext *ctx, Lexer *l, int is_export)
 {
     lexer_next(l); // eat def
     Token n = lexer_next(l);
@@ -875,7 +875,7 @@ ASTNode *parse_def(ParserContext *ctx, Lexer *l)
     type_obj->is_const = 1;
 
     // Use is_def flag for manifest constants
-    add_symbol_with_token(ctx, ns, type_str ? type_str : "unknown", type_obj, n);
+    add_symbol_with_token(ctx, ns, type_str ? type_str : "unknown", type_obj, n, is_export);
     ZenSymbol *sym_entry = find_symbol_entry(ctx, ns);
     if (sym_entry)
     {
@@ -957,7 +957,7 @@ ASTNode *parse_def(ParserContext *ctx, Lexer *l)
     return o;
 }
 
-ASTNode *parse_type_alias(ParserContext *ctx, Lexer *l, int is_opaque)
+ASTNode *parse_type_alias(ParserContext *ctx, Lexer *l, int is_opaque, int is_export)
 {
     lexer_next(l); // consume 'type' or 'alias'
     Token n = lexer_next(l);
@@ -986,7 +986,7 @@ ASTNode *parse_type_alias(ParserContext *ctx, Lexer *l, int is_opaque)
     node->type_alias.defined_in_file = g_current_filename ? xstrdup(g_current_filename) : NULL;
 
     register_type_alias(ctx, node->type_alias.alias, o, t, is_opaque,
-                        node->type_alias.defined_in_file, n);
+                        node->type_alias.defined_in_file, n, is_export);
 
     return node;
 }

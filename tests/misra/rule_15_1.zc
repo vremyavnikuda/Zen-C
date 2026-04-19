@@ -2,7 +2,7 @@
 // EXPECT: MISRA Rule 15.1
 
 fn main() -> int {
-    let x = 0;
+    let _x = 0;
     
     // Violation: goto used
     goto end;

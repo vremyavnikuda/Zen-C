@@ -7,13 +7,13 @@ fn test_10_8() {
     let u16_b: u16 = 20;
 
     // Violation: Casting result of composite expression to wider type
-    let fail2 = (u32)(u16_a + u16_b);
+    let _fail2 = (u32)(u16_a + u16_b);
 
     // Violation: Casting result of composite expression to different category
-    let fail3 = (i16)(u16_a + u16_b);
+    let _fail3 = (i16)(u16_a + u16_b);
     
     // OK: cast operands first
-    let ok2: u32 = (u32)u16_a + (u32)u16_b;
+    let _ok2: u32 = (u32)u16_a + (u32)u16_b;
 }
 
 fn main() {

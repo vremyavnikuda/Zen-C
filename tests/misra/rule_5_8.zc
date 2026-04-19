@@ -1,0 +1,16 @@
+// MISRA Rule 5.8 Verification: External identifiers shall be unique
+// EXPECT: MISRA Rule 5.8
+// EXPECT: MISRA Rule 5.8
+
+// 1. Duplicate exported names (even in different modules, to follow strict MISRA)
+@export fn shared_external_name() {}
+@export fn shared_external_name() {} // Violation
+
+// 2. @link_name collisions (definite violation)
+@link_name("collision_link")
+@export fn func1() {}
+
+@link_name("collision_link")
+@export fn func2() {} // Violation
+
+fn main() {}

@@ -455,11 +455,14 @@ void misra_check_loop_counter_float(TypeChecker *tc, Type *t, Token token)
     }
 }
 
-void misra_check_initializer_side_effects(TypeChecker *tc, Token token)
+void misra_check_initializer_side_effects(TypeChecker *tc, ASTNode *node)
 {
-    if (g_config.misra_mode)
+    if (g_config.misra_mode && node)
     {
-        tc_error(tc, token, "MISRA Rule 13.1");
+        if (tc_expr_has_side_effects(node))
+        {
+            tc_error(tc, node->token, "MISRA Rule 13.1");
+        }
     }
 }
 
@@ -931,5 +934,109 @@ void misra_check_identifier_collision(Token tok, const char *name1, const char *
             snprintf(msg, sizeof(msg), "MISRA Rule 5.2");
         }
         zerror_at(tok, msg);
+    }
+}
+
+/**
+ * @brief Checks for identifier uniqueness across the entire project (Rules 5.8 and 5.9).
+ */
+void misra_audit_identifier_uniqueness(TypeChecker *tc)
+{
+    if (!g_config.misra_mode || !tc->pctx->all_symbols)
+    {
+        return;
+    }
+
+    ZenSymbol *s1 = tc->pctx->all_symbols;
+    while (s1)
+    {
+        // Skip built-ins and special names
+        if (s1->decl_token.line == 0 || !s1->name || s1->name[0] == '_' ||
+            strcmp(s1->name, "main") == 0 || strcmp(s1->name, "it") == 0 ||
+            strcmp(s1->name, "self") == 0)
+        {
+            s1 = s1->next;
+            continue;
+        }
+
+        // Determine linkage of s1
+        // For Zen, we consider module-level symbols as having linkage.
+        // symbols with is_export=1 have external linkage.
+        int linkage1 = 0; // 1 = external, 2 = internal
+        if (s1->is_export || s1->link_name)
+        {
+            linkage1 = 1;
+        }
+        else if (s1->kind == SYM_FUNCTION || s1->kind == SYM_VARIABLE || s1->kind == SYM_CONSTANT)
+        {
+            // Simple heuristic for module-level: if it's in the first level or has no parent scope
+            // actually all_symbols is flat, and we don't have scope info easily here
+            // but we can assume SYM_FUNCTION/SYM_CONSTANT at top level are what we care about.
+            linkage1 = 2;
+        }
+
+        if (linkage1 == 0)
+        {
+            s1 = s1->next;
+            continue;
+        }
+
+        ZenSymbol *s2 = s1->next;
+        while (s2)
+        {
+            // Skip same checks
+            if (s2->decl_token.line == 0 || !s2->name || s2->name[0] == '_' ||
+                strcmp(s2->name, "main") == 0 || strcmp(s2->name, "it") == 0 ||
+                strcmp(s2->name, "self") == 0)
+            {
+                s2 = s2->next;
+                continue;
+            }
+
+            int linkage2 = 0;
+            if (s2->is_export || s2->link_name)
+            {
+                linkage2 = 1;
+            }
+            else if (s2->kind == SYM_FUNCTION || s2->kind == SYM_VARIABLE ||
+                     s2->kind == SYM_CONSTANT)
+            {
+                linkage2 = 2;
+            }
+
+            if (linkage2 == 0)
+            {
+                s2 = s2->next;
+                continue;
+            }
+
+            // Rule 5.8: External identifiers shall be unique
+            if (linkage1 == 1 && linkage2 == 1)
+            {
+                // Check exact name collision
+                if (strcmp(s1->name, s2->name) == 0)
+                {
+                    tc_error(tc, s2->decl_token, "MISRA Rule 5.8");
+                }
+                // Check @link_name collision specifically
+                else if (s1->link_name && s2->link_name &&
+                         strcmp(s1->link_name, s2->link_name) == 0)
+                {
+                    tc_error(tc, s2->decl_token, "MISRA Rule 5.8");
+                }
+            }
+            // Rule 5.9: Internal identifiers should be unique (Advisory)
+            else if (linkage1 == 2 && linkage2 == 2)
+            {
+                if (strcmp(s1->name, s2->name) == 0)
+                {
+                    tc_error(tc, s2->decl_token, "MISRA Rule 5.9");
+                }
+            }
+
+            s2 = s2->next;
+        }
+
+        s1 = s1->next;
     }
 }

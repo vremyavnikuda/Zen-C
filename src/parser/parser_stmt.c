@@ -449,7 +449,7 @@ ASTNode *parse_match(ParserContext *ctx, Lexer *l)
                     }
                 }
 
-                add_symbol(ctx, binding, binding_type, binding_type_info);
+                add_symbol(ctx, binding, binding_type, binding_type_info, 0);
             }
         }
 
@@ -1208,8 +1208,7 @@ ASTNode *parse_while(ParserContext *ctx, Lexer *l)
     {
         if (g_config.misra_mode)
         {
-            zerror_at(lexer_peek(l), "MISRA Rule 15.6"
-                                     "compound-statement body");
+            zerror_at(lexer_peek(l), "MISRA Rule 15.6: compound-statement body");
         }
         body = parse_statement(ctx, l);
     }
@@ -1303,10 +1302,10 @@ ASTNode *parse_for(ParserContext *ctx, Lexer *l)
                     }
 
                     enter_scope(ctx);
-                    add_symbol(ctx, n->for_range.var_name, "int", type_new(TYPE_INT));
+                    add_symbol(ctx, n->for_range.var_name, "int", type_new(TYPE_INT), 0);
                     if (enum_idx_name)
                     {
-                        add_symbol(ctx, enum_idx_name, "int", type_new(TYPE_INT));
+                        add_symbol(ctx, enum_idx_name, "int", type_new(TYPE_INT), 0);
                     }
 
                     ASTNode *user_body = NULL;
@@ -1318,7 +1317,7 @@ ASTNode *parse_for(ParserContext *ctx, Lexer *l)
                     {
                         if (g_config.misra_mode)
                         {
-                            zerror_at(lexer_peek(l), "MISRA Rule 15.6");
+                            zerror_at(lexer_peek(l), "MISRA Rule 15.6: compound-statement body");
                         }
                         user_body = parse_statement(ctx, l);
                     }
@@ -1733,10 +1732,10 @@ ASTNode *parse_for(ParserContext *ctx, Lexer *l)
 
                 // User body statements
                 enter_scope(ctx);
-                add_symbol(ctx, var_name, u_type, NULL);
+                add_symbol(ctx, var_name, u_type, NULL, 0);
                 if (enum_idx_name)
                 {
-                    add_symbol(ctx, enum_idx_name, "int", type_new(TYPE_INT));
+                    add_symbol(ctx, enum_idx_name, "int", type_new(TYPE_INT), 0);
                 }
 
                 // Body block
@@ -1835,7 +1834,7 @@ ASTNode *parse_for(ParserContext *ctx, Lexer *l)
     {
         if (lexer_peek(l).type == TOK_IDENT && strncmp(lexer_peek(l).start, "let", 3) == 0)
         {
-            init = parse_var_decl(ctx, l);
+            init = parse_var_decl(ctx, l, 0);
         }
         else if (lexer_peek(l).type == TOK_IDENT && strncmp(lexer_peek(l).start, "var", 3) == 0)
         {
@@ -3112,7 +3111,7 @@ ASTNode *parse_statement(ParserContext *ctx, Lexer *l)
         {
             zpanic_at(lexer_peek(l), "Expected 'let' after autofree");
         }
-        s = parse_var_decl(ctx, l);
+        s = parse_var_decl(ctx, l, 0);
         s->var_decl.is_autofree = 1;
         // Mark symbol as autofree to suppress unused variable warning
         ZenSymbol *sym = find_symbol_entry(ctx, s->var_decl.name);
@@ -3178,7 +3177,7 @@ ASTNode *parse_statement(ParserContext *ctx, Lexer *l)
     }
     if (tk.type == TOK_DEF)
     {
-        return parse_def(ctx, l);
+        return parse_def(ctx, l, 0);
     }
 
     // Identifiers (Keywords or Expressions)
@@ -3253,13 +3252,13 @@ ASTNode *parse_statement(ParserContext *ctx, Lexer *l)
 
         if (strncmp(tk.start, "let", 3) == 0 && tk.len == 3)
         {
-            return parse_var_decl(ctx, l);
+            return parse_var_decl(ctx, l, 0);
         }
 
         if (strncmp(tk.start, "var", 3) == 0 && tk.len == 3)
         {
             zwarn_at_diag(DIAG_STYLE_DEPRECATED_VAR, tk, "'var' is deprecated. Use 'let' instead.");
-            return parse_var_decl(ctx, l);
+            return parse_var_decl(ctx, l, 0);
         }
 
         // Static local variable: static let x = 0;
@@ -3269,7 +3268,7 @@ ASTNode *parse_statement(ParserContext *ctx, Lexer *l)
             Token next = lexer_peek(l);
             if (strncmp(next.start, "let", 3) == 0 && next.len == 3)
             {
-                ASTNode *v = parse_var_decl(ctx, l);
+                ASTNode *v = parse_var_decl(ctx, l, 0);
                 v->var_decl.is_static = 1;
                 return v;
             }
@@ -3281,7 +3280,7 @@ ASTNode *parse_statement(ParserContext *ctx, Lexer *l)
             zwarn_at_diag(DIAG_STYLE_DEPRECATED_CONST, tk,
                           "'const' for declarations is deprecated. Use 'def' for constants or 'let "
                           "x: const T' for read-only variables.");
-            return parse_var_decl(ctx, l);
+            return parse_var_decl(ctx, l, 0);
         }
         if (strncmp(tk.start, "return", 6) == 0 && tk.len == 6)
         {
@@ -4070,7 +4069,7 @@ void try_parse_c_struct_decl(ParserContext *ctx, const char *line)
                 char *name = xmalloc(name_len + 1);
                 strncpy(name, name_start, name_len);
                 name[name_len] = '\0';
-                register_type_alias(ctx, name, name, NULL, 1, NULL, (Token){0});
+                register_type_alias(ctx, name, name, NULL, 1, NULL, (Token){0}, 0);
                 register_extern_symbol(ctx, name);
                 free(name);
             }
@@ -4114,7 +4113,7 @@ void try_parse_c_struct_decl(ParserContext *ctx, const char *line)
         const char *c_keyword = is_union ? "union" : "struct";
         char *c_type = xmalloc(strlen(c_keyword) + 1 + tag_len + 1);
         sprintf(c_type, "%s %s", c_keyword, tag_name);
-        register_type_alias(ctx, tag_name, c_type, NULL, 1, NULL, (Token){0});
+        register_type_alias(ctx, tag_name, c_type, NULL, 1, NULL, (Token){0}, 0);
         register_extern_symbol(ctx, tag_name);
         free(c_type);
     }

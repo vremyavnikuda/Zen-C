@@ -5,5 +5,5 @@ fn main() {
     let arr = [1, 2, 3];
     let i = 0;
     // Violation: The result of ++ operator is used
-    let k = arr[i++]; 
+    let _k = arr[i++]; 
 }

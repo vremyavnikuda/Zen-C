@@ -1,0 +1,27 @@
+// MISRA Rule 4.1: Octal and hexadecimal escape sequences shall be terminated.
+// EXPECT: MISRA Rule 4.1
+// EXPECT: MISRA Rule 4.1
+
+fn main() {
+    let s1 = "\x41BC";   // FAIL (3+ hex digits)
+    let s2 = "\x41 G";   // PASS (2 hex digits followed by space)
+    let s3 = "\012";     // PASS (Exactly 3 octal digits)
+    let s4 = "\01";      // PASS (2 digits, followed by end of string)
+    let _s5 = "\0123";    // FAIL (3 digits followed by 4th? No, C octal is max 3 digits).
+                         // Wait, \0123 in C is \012 then '3'.
+                         // This is NOT ambiguous because octal is LIMITED to 3 digits.
+                         // But hex is UNLIMITED.
+                         
+    let s6 = "\x41";     // PASS
+    let s7 = "\012";     // PASS
+    
+    // Violation for octal: shorter than 3 followed by digit
+    let _s8 = "\01" "2";  // Wait, Zen doesn't have concatenation.
+    // If I have "\012", it's 3 digits.
+    // If I have "\01" then some other char...
+    let s9 = "\018";     // PASS (8 is not octal digit, so it terminates \01)
+    
+    let s10 = "\x41ABC"; // FAIL (More than 2 hex digits)
+    
+    println "{s1} {s2} {s3} {s4} {s6} {s7} {s9} {s10}";
+}

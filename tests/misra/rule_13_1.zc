@@ -1,15 +1,16 @@
-// MISRA Rule 13.1 Verification
+// MISRA Rule 13.1: Initializer lists shall not contain persistent side effects.
 // EXPECT: MISRA Rule 13.1
 // EXPECT: MISRA Rule 13.1
 
-fn effect() -> int {
+fn has_side_effect() -> i32 {
     return 1;
 }
 
 fn main() {
     let i = 0;
-    // Violation: Assignment side effect in initializer list
-    let arr = [i++, 2, 3];       
     // Violation: Function call side effect in initializer list
-    let tup = (effect(), 2);     
+    let _a: [i32; 3] = [has_side_effect(), 2, 3]; 
+    
+    // Violation: Assignment/Increment side effect in initializer list
+    let _b = [i++, i+1];
 }

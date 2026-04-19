@@ -1,0 +1,20 @@
+// MISRA Rule 7.3: The lowercase character 'l' shall not be used in a literal suffix.
+// EXPECT: MISRA Rule 7.3
+// EXPECT: MISRA Rule 7.3
+// EXPECT: MISRA Rule 7.3
+// EXPECT: MISRA Rule 7.3
+
+fn main() {
+    let a = 123l;    // FAIL
+    let b = 123L;    // PASS
+    let c = 123ul;   // FAIL
+    let d = 123uL;   // PASS
+    let e = 123lu;   // FAIL
+    let f = 123Lu;   // PASS
+    let g = 123ll;   // FAIL
+    let h = 123LL;   // PASS
+    let i = 123ull;  // FAIL
+    let j = 123ULL;  // PASS
+    
+    println "{a} {b} {c} {d} {e} {f} {g} {h} {i} {j}";
+}

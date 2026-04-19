@@ -10,13 +10,13 @@ fn test_misra_balancing() {
     let i32_val: i32 = 20;
 
     // OK: Same essential type category (Unsigned)
-    let u_sum = u32_val + 2u;
+    let _u_sum = u32_val + 2u;
     
     // Violation: Unsigned + Signed
-    let fail1 = u32_val + 5; 
+    let _fail1 = u32_val + 5; 
     
     // Violation: Unsigned + Signed
-    let fail2 = u32_val + i32_val;
+    let _fail2 = u32_val + i32_val;
     
     // Violation: Unsigned vs 0 (Signed)
     if (u32_val < 0) {} 

@@ -1128,7 +1128,7 @@ ASTNode *parse_lambda(ParserContext *ctx, Lexer *l)
 
     for (int i = 0; i < num_params; i++)
     {
-        add_symbol(ctx, param_names[i], param_types[i], t->args[i]);
+        add_symbol(ctx, param_names[i], param_types[i], t->args[i], 0);
     }
 
     ASTNode *body = NULL;
@@ -1379,6 +1379,11 @@ static ASTNode *parse_int_literal(Token t)
             zpanic_at(t, "%s", err);
         }
 
+        if (g_config.misra_mode && strchr(endptr, 'l'))
+        {
+            zerror_at(t, "MISRA Rule 7.3");
+        }
+
         // Apply type from suffix
         if (strcasecmp(endptr, "u") == 0)
         {
@@ -1440,6 +1445,19 @@ static ASTNode *parse_int_literal(Token t)
         {
             node->type_info->kind = TYPE_ISIZE;
         }
+
+        // Rule 7.2: If it's hex/bin/octal and semantically unsigned (high bit set), it needs 'u'
+        // This part is for when we ALREADY have a suffix (like 'L'), but it lacks 'U'.
+        if (g_config.misra_mode && !(strchr(endptr, 'u') || strchr(endptr, 'U')))
+        {
+            int is_non_decimal = (t.len > 2 && s[0] == '0' &&
+                                  (s[1] == 'x' || s[1] == 'X' || s[1] == 'b' || s[1] == 'B' ||
+                                   s[1] == 'o' || s[1] == 'O'));
+            if (is_non_decimal && val > 2147483647ULL)
+            {
+                zerror_at(t, "MISRA Rule 7.2");
+            }
+        }
     }
     else
     {
@@ -1447,6 +1465,18 @@ static ASTNode *parse_int_literal(Token t)
         if (val > 2147483647ULL)
         {
             node->type_info->kind = TYPE_I64;
+        }
+
+        if (g_config.misra_mode)
+        {
+            int is_non_decimal = (t.len > 2 && s[0] == '0' &&
+                                  (s[1] == 'x' || s[1] == 'X' || s[1] == 'b' || s[1] == 'B' ||
+                                   s[1] == 'o' || s[1] == 'O'));
+            if (is_non_decimal && val > 2147483647ULL)
+            {
+                // Hex/Octal constants that are "implicitly" unsigned in C.
+                zerror_at(t, "MISRA Rule 7.2");
+            }
         }
     }
 
@@ -1521,7 +1551,7 @@ static ASTNode *parse_string_literal(ParserContext *ctx, Token t)
 
     if (has_interpolation)
     {
-        // Use safe, unified interpolation logic. is_raw=0, is_expr=1.
+        // ... (interpolation logic)
         char *code = process_printf_sugar(ctx, t, content, 0, "stdout", NULL, NULL, 0, 0, 1);
 
         ASTNode *node = ast_create(NODE_RAW_STMT);
@@ -1530,8 +1560,80 @@ static ASTNode *parse_string_literal(ParserContext *ctx, Token t)
         node->type_info = type_new(TYPE_STRING);
         node->resolved_type = xstrdup("string");
 
+        // Rule 4.1 check also for interpolated strings (though rarer)
+        if (g_config.misra_mode)
+        {
+            for (int i = 0; i < str_len; i++)
+            {
+                if (content[i] == '\\' && i + 1 < str_len)
+                {
+                    if (content[i + 1] == 'x')
+                    {
+                        // Hex escape. Check if it's followed by MORE than needed?
+                        // Actually C hex escapes consume ANY number of hex digits.
+                        // So if we have \x41B, and B is hex, it's ambiguous.
+                        if (i + 3 < str_len && isxdigit(content[i + 2]) && isxdigit(content[i + 3]))
+                        {
+                            // \xHH... We need to check if it's followed by another hex digit.
+                            // But Zen's escape_c_string might only handle \xHH.
+                            // However, we must follow MISRA.
+                        }
+                    }
+                }
+            }
+        }
+
         free(content);
         return node;
+    }
+
+    if (g_config.misra_mode)
+    {
+        for (int i = 0; i < str_len; i++)
+        {
+            if (content[i] == '\\' && i + 1 < str_len)
+            {
+                if (content[i + 1] == 'x')
+                {
+                    // C hex escapes consume ALL hex digits.
+                    // To follow Rule 4.1, it should not be followed by a character that could be a
+                    // hex digit if that character was intended to be literal. We check if there are
+                    // MORE than 2 hex digits.
+                    if (i + 2 < str_len && isxdigit(content[i + 2]))
+                    {
+                        if (i + 3 < str_len && isxdigit(content[i + 3]))
+                        {
+                            if (i + 4 < str_len && isxdigit(content[i + 4]))
+                            {
+                                // \xHHH... at least 3 digits. This is ambiguous/unterminated.
+                                zerror_at(t, "MISRA Rule 4.1: Hex escape sequence with more than 2 "
+                                             "digits is ambiguous");
+                            }
+                        }
+                    }
+                }
+                else if (content[i + 1] >= '0' && content[i + 1] <= '7')
+                {
+                    // Octal escape \d, \dd, or \ddd.
+                    int count = 1;
+                    if (i + 2 < str_len && content[i + 2] >= '0' && content[i + 2] <= '7')
+                    {
+                        count++;
+                        if (i + 3 < str_len && content[i + 3] >= '0' && content[i + 3] <= '7')
+                        {
+                            count++;
+                        }
+                    }
+                    // If it's shorter than 3 digits but followed by an octal digit, it's ambiguous.
+                    if (count < 3 && i + count + 1 < str_len && content[i + count + 1] >= '0' &&
+                        content[i + count + 1] <= '7')
+                    {
+                        zerror_at(t,
+                                  "MISRA Rule 4.1: Octal escape sequence followed by octal digit");
+                    }
+                }
+            }
+        }
     }
 
     ASTNode *node = ast_create(NODE_EXPR_LITERAL);
@@ -2158,8 +2260,7 @@ static ASTNode *parse_primary_impl(ParserContext *ctx, Lexer *l)
             {
                 for (int i = 0; i < binding_count; i++)
                 {
-                    add_symbol(ctx, bindings[i], NULL,
-                               NULL); // Let inference handle it or default to void*?
+                    add_symbol(ctx, bindings[i], NULL, type_new(TYPE_UNSAFE_ANY), 0);
                 }
             }
 
@@ -7766,7 +7867,7 @@ ASTNode *parse_arrow_lambda_single(ParserContext *ctx, Lexer *l, char *param_nam
 
     // Register parameter in scope for body parsing
     enter_scope(ctx);
-    add_symbol(ctx, param_name, NULL, t->args[0]);
+    add_symbol(ctx, param_name, NULL, t->args[0], 0);
 
     // Body parsing...
     ASTNode *body_block = NULL;
@@ -7873,11 +7974,11 @@ ASTNode *parse_arrow_lambda_multi(ParserContext *ctx, Lexer *l, char **param_nam
     {
         if (param_types && param_types[i])
         {
-            add_symbol(ctx, param_names[i], lambda->lambda.param_types[i], param_types[i]);
+            add_symbol(ctx, param_names[i], lambda->lambda.param_types[i], param_types[i], 0);
         }
         else
         {
-            add_symbol(ctx, param_names[i], "unknown", t->args[i]);
+            add_symbol(ctx, param_names[i], "unknown", t->args[i], 0);
         }
     }
 

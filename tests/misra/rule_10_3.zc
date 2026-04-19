@@ -9,19 +9,19 @@
 fn test_narrowing() {
     let u32_val: u32 = 1000;
     // Violation: Implicit narrowing
-    let u8_val: u8 = u32_val; 
+    let _u8_val: u8 = u32_val; 
 }
 
 fn test_category() {
     let u32_val: u32 = 100;
     // Violation: signed vs unsigned category
-    let i32_val: i32 = u32_val; 
+    let _i32_val: i32 = u32_val; 
 }
 
 fn test_bool() {
     let i32_val: i32 = 1;
     // Violation: numeric to boolean
-    let b: bool = i32_val;
+    let _b: bool = i32_val;
 }
 
 fn test_composite() {
@@ -29,8 +29,8 @@ fn test_composite() {
     let u16_b: u16 = 20;
 
     // Violation: widening of composite result
-    let fail1: u32 = u16_a + u16_b;
-    let fail2: u64 = u16_a * u16_b / 2u16;
+    let _fail1: u32 = u16_a + u16_b;
+    let _fail2: u64 = u16_a * u16_b / 2u16;
 }
 
 fn test_param_passing(val: u32) {}
