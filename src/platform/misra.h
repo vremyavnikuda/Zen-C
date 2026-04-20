@@ -99,5 +99,7 @@ void misra_check_preprocessor_expression_parser(struct ParserContext *ctx, Token
                                                 const char *expression);
 void misra_check_plugin_block(struct TypeChecker *tc, Token token);
 void misra_check_reserved_identifier(struct TypeChecker *tc, const char *name, Token token);
+void misra_check_banned_function(struct TypeChecker *tc, const char *name, Token tok);
+void misra_check_file_dereference(struct TypeChecker *tc, struct Type *type, Token tok);
 
 #endif // PLATFORM_MISRA_H

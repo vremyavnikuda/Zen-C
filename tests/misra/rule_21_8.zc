@@ -1,0 +1,9 @@
+// EXPECT: Rule 21.8
+
+extern fn abort();
+extern fn exit(code: i32);
+
+fn main() {
+    abort(); // EXPECT: Rule 21.8
+    exit(1); // EXPECT: Rule 21.8
+}

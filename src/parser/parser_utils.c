@@ -25,8 +25,41 @@ void parser_audit_preprocessor(ParserContext *ctx, Token tok)
     {
         if (g_config.misra_mode)
         {
-            zerror_at(tok, "MISRA Violation: '#' directives are prohibited (Rule Zen 1.4). Use "
-                           "'def' instead.");
+            zerror_at(tok,
+                      "MISRA Violation: '#' directives are prohibited (MISRA Rule Zen 1.4). Use "
+                      "'def' instead.");
+
+            // Rule 21.1: #define of standard identifiers
+            const char *id_start = p + 6;
+            while (isspace(*id_start))
+            {
+                id_start++;
+            }
+            const char *id_end = id_start;
+            while (isalnum(*id_end) || *id_end == '_')
+            {
+                id_end++;
+            }
+            int id_len = id_end - id_start;
+            if (id_len > 0)
+            {
+                char id[128];
+                if (id_len >= 128)
+                {
+                    id_len = 127;
+                }
+                strncpy(id, id_start, id_len);
+                id[id_len] = 0;
+
+                if (strcmp(id, "errno") == 0 || strcmp(id, "assert") == 0 ||
+                    strcmp(id, "NULL") == 0 || strcmp(id, "static_assert") == 0 ||
+                    strcmp(id, "bool") == 0 || strcmp(id, "restrict") == 0 ||
+                    strcmp(id, "inline") == 0)
+                {
+                    zerror_at(
+                        tok, "MISRA Rule 21.1: #define shall not be used on a reserved macro name");
+                }
+            }
         }
         else
         {
@@ -63,10 +96,9 @@ void parser_audit_preprocessor(ParserContext *ctx, Token tok)
 
         if (g_config.misra_mode)
         {
-            zerror_at(
-                tok,
-                "MISRA Violation: '#' preprocessor conditions are prohibited (Rule Zen 1.4). Use "
-                "'@cfg(...)' instead.");
+            zerror_at(tok, "MISRA Violation: '#' preprocessor conditions are prohibited (MISRA "
+                           "Rule Zen 1.4). Use "
+                           "'@cfg(...)' instead.");
 
             // Perform specific expression audits (Rule 20.8, 20.9)
             if (is_ifdef || is_ifndef)
@@ -87,7 +119,34 @@ void parser_audit_preprocessor(ParserContext *ctx, Token tok)
                 {
                     expr_start++;
                 }
-                misra_check_preprocessor_expression_parser(ctx, tok, expr_start);
+
+                int expr_len = (tok.start + tok.len) - expr_start;
+                if (expr_len > 0)
+                {
+                    char *expr_buf = xmalloc(expr_len + 1);
+                    strncpy(expr_buf, expr_start, expr_len);
+                    expr_buf[expr_len] = 0;
+
+                    // Truncate at comment or newline to avoid Rule 20.9 false positives
+                    char *comment = strstr(expr_buf, "//");
+                    if (comment)
+                    {
+                        *comment = 0;
+                    }
+                    char *nl = strchr(expr_buf, '\n');
+                    if (nl)
+                    {
+                        *nl = 0;
+                    }
+                    char *cr = strchr(expr_buf, '\r');
+                    if (cr)
+                    {
+                        *cr = 0;
+                    }
+
+                    misra_check_preprocessor_expression_parser(ctx, tok, expr_buf);
+                    free(expr_buf);
+                }
             }
         }
         else
@@ -100,9 +159,45 @@ void parser_audit_preprocessor(ParserContext *ctx, Token tok)
     else if (strncmp(p, "undef", 5) == 0 || strncmp(p, "error", 5) == 0 ||
              strncmp(p, "warning", 7) == 0 || strncmp(p, "pragma", 6) == 0)
     {
+        int is_undef = (strncmp(p, "undef", 5) == 0);
         if (g_config.misra_mode)
         {
-            zerror_at(tok, "MISRA Violation: '#' directives are prohibited (Rule Zen 1.4).");
+            zerror_at(tok, "MISRA Violation: '#' directives are prohibited (MISRA Rule Zen 1.4).");
+
+            if (is_undef)
+            {
+                // Rule 21.1: #undef of standard identifiers
+                const char *id_start = p + 5;
+                while (isspace(*id_start))
+                {
+                    id_start++;
+                }
+                const char *id_end = id_start;
+                while (isalnum(*id_end) || *id_end == '_')
+                {
+                    id_end++;
+                }
+                int id_len = id_end - id_start;
+                if (id_len > 0)
+                {
+                    char id[128];
+                    if (id_len >= 128)
+                    {
+                        id_len = 127;
+                    }
+                    strncpy(id, id_start, id_len);
+                    id[id_len] = 0;
+
+                    // Common standard macro names that shouldn't be undefined
+                    if (strcmp(id, "errno") == 0 || strcmp(id, "assert") == 0 ||
+                        strcmp(id, "NULL") == 0 || strcmp(id, "static_assert") == 0)
+                    {
+                        zerror_at(
+                            tok,
+                            "MISRA Rule 21.1: #undef shall not be used on a reserved macro name");
+                    }
+                }
+            }
         }
         else
         {

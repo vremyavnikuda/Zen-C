@@ -665,6 +665,10 @@ static void check_expr_unary(TypeChecker *tc, ASTNode *node, int depth)
         else if (resolved->inner)
         {
             node->type_info = resolved->inner;
+            if (g_config.misra_mode)
+            {
+                misra_check_file_dereference(tc, operand_type, node->token);
+            }
         }
         return;
     }
@@ -1147,6 +1151,16 @@ static void check_expr_call(TypeChecker *tc, ASTNode *node, int depth)
 
         // Look up function signature
         sig = find_func(tc->pctx, func_name);
+
+        if (g_config.misra_mode)
+        {
+            Token t = node->call.callee->token;
+            if (t.line == 0)
+            {
+                t = node->token;
+            }
+            misra_check_banned_function(tc, func_name, t);
+        }
 
         if (g_config.misra_mode && tc->current_func)
         {
@@ -3412,7 +3426,7 @@ static void check_node(TypeChecker *tc, ASTNode *node, int depth)
         misra_check_raw_block(tc, node->token);
         break;
     case NODE_PREPROC_DIRECTIVE:
-        misra_check_preprocessor_directive(tc, node->token);
+        // Rule Zen 1.4 is already handled by parser_audit_preprocessor
         break;
     case NODE_PLUGIN:
         misra_check_plugin_block(tc, node->token);

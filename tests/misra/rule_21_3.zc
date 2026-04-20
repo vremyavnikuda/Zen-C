@@ -1,0 +1,9 @@
+// EXPECT: Rule 21.3
+
+extern fn malloc(size: usize) -> void*;
+extern fn free(ptr: void*);
+
+fn main() {
+    let p = malloc(10); // EXPECT: Rule 21.3
+    free(p);            // EXPECT: Rule 21.3
+}

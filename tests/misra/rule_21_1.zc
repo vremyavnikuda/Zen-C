@@ -1,0 +1,7 @@
+// EXPECT: Rule Zen 1.4
+// EXPECT: Rule 21.1
+
+#define errno 1 // EXPECT: Rule 21.1
+#undef NULL    // EXPECT: Rule 21.1
+
+fn main() { }

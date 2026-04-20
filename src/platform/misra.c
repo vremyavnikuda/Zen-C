@@ -1363,3 +1363,57 @@ void misra_check_external_array_size(TypeChecker *tc, Type *t, Token token, int 
         tc_error(tc, token, "MISRA Rule 8.11: External array shall have explicit size");
     }
 }
+
+static struct
+{
+    const char *name;
+    const char *rule;
+} banned_funcs[] = {{"malloc", "Rule 21.3"},     {"calloc", "Rule 21.3"},  {"realloc", "Rule 21.3"},
+                    {"free", "Rule 21.3"},       {"printf", "Rule 21.6"},  {"fprintf", "Rule 21.6"},
+                    {"scanf", "Rule 21.6"},      {"fscanf", "Rule 21.6"},  {"atof", "Rule 21.7"},
+                    {"atoi", "Rule 21.7"},       {"atol", "Rule 21.7"},    {"atoll", "Rule 21.7"},
+                    {"abort", "Rule 21.8"},      {"exit", "Rule 21.8"},    {"getenv", "Rule 21.8"},
+                    {"system", "Rule 21.8"},     {"bsearch", "Rule 21.9"}, {"qsort", "Rule 21.9"},
+                    {"asctime", "Rule 21.10"},   {"ctime", "Rule 21.10"},  {"gmtime", "Rule 21.10"},
+                    {"localtime", "Rule 21.10"}, {"time", "Rule 21.10"},   {NULL, NULL}};
+
+void misra_check_banned_function(struct TypeChecker *tc, const char *name, Token tok)
+{
+    if (!g_config.misra_mode || !name)
+    {
+        return;
+    }
+
+    for (int i = 0; banned_funcs[i].name != NULL; i++)
+    {
+        if (strcmp(name, banned_funcs[i].name) == 0)
+        {
+            char msg[128];
+            snprintf(msg, sizeof(msg), "MISRA %s: Use of banned standard library function '%s'",
+                     banned_funcs[i].rule, name);
+            tc_error(tc, tok, msg);
+            return;
+        }
+    }
+}
+
+void misra_check_file_dereference(struct TypeChecker *tc, struct Type *type, Token tok)
+{
+    if (!g_config.misra_mode || !type)
+    {
+        return;
+    }
+
+    Type *resolved = resolve_alias(type);
+    if (resolved->kind == TYPE_POINTER && resolved->inner)
+    {
+        Type *inner = resolve_alias(resolved->inner);
+        // rule 22.5: FILE object shall not be dereferenced
+        // In Zen, we check if the inner type's name is 'FILE'
+        // as it's typically an opaque struct imported from C
+        if (inner->kind == TYPE_STRUCT && inner->name && strcmp(inner->name, "FILE") == 0)
+        {
+            tc_error(tc, tok, "MISRA Rule 22.5: FILE object should not be dereferenced");
+        }
+    }
+}

@@ -1,0 +1,11 @@
+// EXPECT: Rule 22.5
+
+extern struct FILE;
+extern fn fopen(path: byte*, mode: byte*) -> FILE*;
+
+fn main() {
+    let f: FILE* = fopen(null, null);
+    if f != null {
+        let x = *f; // EXPECT: Rule 22.5
+    }
+}
