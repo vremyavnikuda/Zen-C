@@ -13,6 +13,78 @@ static void audit_section_5(ParserContext *ctx, Scope *scope, const char *name,
 
 static int is_unmangle_primitive(const char *base);
 
+void parser_audit_preprocessor(ParserContext *ctx, Token tok)
+{
+    const char *p = tok.start;
+    while (isspace(*p) || *p == '#')
+    {
+        p++;
+    }
+
+    if (strncmp(p, "define", 6) == 0)
+    {
+        if (g_config.misra_mode)
+        {
+            zerror_at(tok, "MISRA Violation: '#' directives are prohibited (Rule Zen 1.4). Use "
+                           "'def' instead.");
+        }
+        else
+        {
+            zwarn_at_diag(0, tok,
+                          "Preprocessor directive '#define' is deprecated. Use 'def' instead.");
+        }
+        // still try to parse it for constant extraction (backward compat)
+        char *content = xmalloc(tok.len + 1);
+        strncpy(content, tok.start, tok.len);
+        content[tok.len] = 0;
+        try_parse_macro_const(ctx, content);
+        free(content);
+    }
+    else if (strncmp(p, "include", 7) == 0)
+    {
+        if (g_config.misra_mode)
+        {
+            zerror_at(
+                tok,
+                "MISRA Violation: '#include' is prohibited (Rule Zen 1.4). Use 'import' instead.");
+        }
+        else
+        {
+            zwarn_at_diag(0, tok,
+                          "Preprocessor directive '#include' is deprecated. Use 'import' instead.");
+        }
+    }
+    else if (strncmp(p, "if", 2) == 0 || strncmp(p, "elif", 4) == 0 ||
+             strncmp(p, "ifdef", 5) == 0 || strncmp(p, "ifndef", 6) == 0)
+    {
+        if (g_config.misra_mode)
+        {
+            zerror_at(
+                tok,
+                "MISRA Violation: '#' preprocessor conditions are prohibited (Rule Zen 1.4). Use "
+                "'@cfg(...)' instead.");
+        }
+        else
+        {
+            zwarn_at_diag(0, tok,
+                          "Preprocessor directive '#' conditions are deprecated. Use "
+                          "'@cfg(...)' instead.");
+        }
+    }
+    else if (strncmp(p, "undef", 5) == 0 || strncmp(p, "error", 5) == 0 ||
+             strncmp(p, "warning", 7) == 0 || strncmp(p, "pragma", 6) == 0)
+    {
+        if (g_config.misra_mode)
+        {
+            zerror_at(tok, "MISRA Violation: '#' directives are prohibited (Rule Zen 1.4).");
+        }
+        else
+        {
+            zwarn_at_diag(0, tok, "Preprocessor directive '#' is deprecated.");
+        }
+    }
+}
+
 void try_parse_macro_const(ParserContext *ctx, const char *content)
 {
     Lexer l;

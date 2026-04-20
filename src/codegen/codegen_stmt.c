@@ -1793,6 +1793,7 @@ void codegen_node_single(ParserContext *ctx, ASTNode *node, FILE *out)
         }
         break;
     }
+
     case NODE_ASM:
     {
         int is_extended = (node->asm_stmt.num_outputs > 0 || node->asm_stmt.num_inputs > 0 ||
@@ -2402,6 +2403,11 @@ void codegen_node_single(ParserContext *ctx, ASTNode *node, FILE *out)
         }
 
         fprintf(out, ");\n");
+        break;
+    }
+    case NODE_PREPROC_DIRECTIVE:
+    {
+        fprintf(out, "%s\n", node->raw_stmt.content);
         break;
     }
     case NODE_RAW_STMT:

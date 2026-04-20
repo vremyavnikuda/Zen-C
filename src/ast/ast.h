@@ -179,6 +179,7 @@ typedef enum
     NODE_VA_END,             ///< va_end intrinsic.
     NODE_VA_COPY,            ///< va_copy intrinsic.
     NODE_VA_ARG,             ///< va_arg intrinsic.
+    NODE_PREPROC_DIRECTIVE,  ///< C-style preprocessor directive (#define, etc).
     NODE_AST_COMMENT         ///< Comment node.
 } NodeType;
 
@@ -410,6 +411,7 @@ struct ASTNode
         {
             char *name;
             char *suggestion;
+            struct ZenSymbol *symbol;
         } var_ref;
 
         struct

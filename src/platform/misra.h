@@ -48,6 +48,8 @@ void misra_check_condition_boolean(struct TypeChecker *tc, struct Type *t, Token
 void misra_check_invariant_condition(struct TypeChecker *tc, Token token);
 void misra_check_loop_counter_float(struct TypeChecker *tc, struct Type *t, Token token);
 void misra_check_initializer_side_effects(struct TypeChecker *tc, struct ASTNode *node);
+void misra_check_evaluation_order_collision(struct TypeChecker *tc, struct ASTNode *left,
+                                            struct ASTNode *right, Token token);
 
 // Section 16: Match/Switch
 void misra_check_match_stmt(struct TypeChecker *tc, struct ASTNode *node);
@@ -93,6 +95,7 @@ void misra_check_assignment_overlap(struct TypeChecker *tc, struct ASTNode *left
 
 // Zen C Extensions
 void misra_check_raw_block(struct TypeChecker *tc, Token token);
+void misra_check_preprocessor_directive(struct TypeChecker *tc, Token token);
 void misra_check_plugin_block(struct TypeChecker *tc, Token token);
 void misra_check_reserved_identifier(struct TypeChecker *tc, const char *name, Token token);
 

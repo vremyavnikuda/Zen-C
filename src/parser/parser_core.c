@@ -656,12 +656,12 @@ ASTNode *parse_program_nodes(ParserContext *ctx, Lexer *l)
             strncpy(content, t.start, t.len);
             content[t.len] = '\n';
             content[t.len + 1] = 0;
-            s = ast_create(NODE_RAW_STMT);
+            s = ast_create(NODE_PREPROC_DIRECTIVE);
             s->token = t;
             s->raw_stmt.content = content;
 
-            // Attempt to parse simple integer/constant macros
-            try_parse_macro_const(ctx, content);
+            // Audit and potentially deprecate preprocessor directives
+            parser_audit_preprocessor(ctx, t);
         }
         else if (t.type == TOK_DEF)
         {

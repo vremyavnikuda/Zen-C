@@ -122,6 +122,215 @@ int tc_expr_has_side_effects(ASTNode *node)
 }
 
 static int is_expression_invariant(TypeChecker *tc, ASTNode *node, int *val);
+
+typedef struct
+{
+    ZenSymbol *syms[32];
+    int count;
+} SymbolSet;
+
+static void collect_symbols(ASTNode *node, SymbolSet *reads, SymbolSet *writes)
+{
+    if (!node)
+    {
+        return;
+    }
+
+    switch (node->type)
+    {
+    case NODE_EXPR_BINARY:
+        if (node->binary.op && strstr(node->binary.op, "="))
+        {
+            // LHS is a write
+            if (node->binary.left->type == NODE_EXPR_VAR)
+            {
+                if (writes->count < 32)
+                {
+                    writes->syms[writes->count++] = node->binary.left->var_ref.symbol;
+                }
+            }
+            collect_symbols(node->binary.left, reads, writes); // In case of complex LHS
+            collect_symbols(node->binary.right, reads, writes);
+        }
+        else
+        {
+            collect_symbols(node->binary.left, reads, writes);
+            collect_symbols(node->binary.right, reads, writes);
+        }
+        break;
+
+    case NODE_EXPR_UNARY:
+        if (node->unary.op &&
+            (strcmp(node->unary.op, "++") == 0 || strcmp(node->unary.op, "--") == 0 ||
+             strcmp(node->unary.op, "_post++") == 0 || strcmp(node->unary.op, "_post--") == 0))
+        {
+            if (node->unary.operand->type == NODE_EXPR_VAR)
+            {
+                if (writes->count < 32)
+                {
+                    writes->syms[writes->count++] = node->unary.operand->var_ref.symbol;
+                }
+            }
+        }
+        collect_symbols(node->unary.operand, reads, writes);
+        break;
+
+    case NODE_EXPR_VAR:
+        if (reads->count < 32)
+        {
+            reads->syms[reads->count++] = node->var_ref.symbol;
+        }
+        break;
+
+    case NODE_EXPR_CALL:
+        collect_symbols(node->call.callee, reads, writes);
+        ASTNode *arg = node->call.args;
+        while (arg)
+        {
+            collect_symbols(arg, reads, writes);
+            arg = arg->next;
+        }
+        break;
+
+    default:
+        // Generic traversal? For now just handle these.
+        break;
+    }
+}
+static void check_side_effect_collision(TypeChecker *tc, ASTNode *left, ASTNode *right, Token token)
+{
+    if (!g_config.misra_mode || !left || !right)
+    {
+        return;
+    }
+
+    SymbolSet l_reads = {0}, l_writes = {0};
+    SymbolSet r_reads = {0}, r_writes = {0};
+
+    collect_symbols(left, &l_reads, &l_writes);
+    collect_symbols(right, &r_reads, &r_writes);
+
+    // Rule 13.2: Modification collision
+    for (int i = 0; i < l_writes.count; i++)
+    {
+        ZenSymbol *s = l_writes.syms[i];
+        if (!s)
+        {
+            continue;
+        }
+
+        // Check against other writes
+        for (int j = 0; j < r_writes.count; j++)
+        {
+            if (s == r_writes.syms[j])
+            {
+                tc_error(tc, token, "MISRA Rule 13.2: symbol modified in multiple sub-expressions");
+                return;
+            }
+        }
+
+        // Check against other reads
+        for (int j = 0; j < r_reads.count; j++)
+        {
+            if (s == r_reads.syms[j])
+            {
+                tc_error(tc, token,
+                         "MISRA Rule 13.2: symbol both read and modified in same expression");
+                return;
+            }
+        }
+    }
+
+    // Vice versa for r_writes against l_reads
+    for (int i = 0; i < r_writes.count; i++)
+    {
+        ZenSymbol *s = r_writes.syms[i];
+        if (!s)
+        {
+            continue;
+        }
+
+        for (int j = 0; j < l_reads.count; j++)
+        {
+            if (s == l_reads.syms[j])
+            {
+                tc_error(tc, token,
+                         "MISRA Rule 13.2: symbol both read and modified in same expression");
+                return;
+            }
+        }
+    }
+}
+
+static void check_all_args_side_effects(TypeChecker *tc, ASTNode *receiver, ASTNode *args,
+                                        Token token)
+{
+    if (!g_config.misra_mode)
+    {
+        return;
+    }
+
+    SymbolSet reads = {0}, writes = {0};
+
+    if (receiver)
+    {
+        collect_symbols(receiver, &reads, &writes);
+    }
+
+    ASTNode *arg = args;
+    while (arg)
+    {
+        SymbolSet next_reads = {0}, next_writes = {0};
+        collect_symbols(arg, &next_reads, &next_writes);
+
+        // Check against cumulative sets
+        for (int i = 0; i < next_writes.count; i++)
+        {
+            ZenSymbol *s = next_writes.syms[i];
+            for (int r = 0; r < reads.count; r++)
+            {
+                if (s == reads.syms[r])
+                {
+                    tc_error(tc, token, "MISRA Rule 13.2: argument read and modified in same call");
+                    return;
+                }
+            }
+            for (int w = 0; w < writes.count; w++)
+            {
+                if (s == writes.syms[w])
+                {
+                    tc_error(tc, token, "MISRA Rule 13.2: symbol modified in multiple arguments");
+                    return;
+                }
+            }
+        }
+        for (int i = 0; i < next_reads.count; i++)
+        {
+            ZenSymbol *s = next_reads.syms[i];
+            for (int w = 0; w < writes.count; w++)
+            {
+                if (s == writes.syms[w])
+                {
+                    tc_error(tc, token, "MISRA Rule 13.2: argument read and modified in same call");
+                    return;
+                }
+            }
+        }
+
+        // Add to cumulative sets
+        for (int i = 0; i < next_reads.count && reads.count < 32; i++)
+        {
+            reads.syms[reads.count++] = next_reads.syms[i];
+        }
+        for (int i = 0; i < next_writes.count && writes.count < 32; i++)
+        {
+            writes.syms[writes.count++] = next_writes.syms[i];
+        }
+
+        arg = arg->next;
+    }
+}
+
 // Internal MISRA helpers moved to platform/misra.c
 
 void tc_error(TypeChecker *tc, Token t, const char *msg)
@@ -553,6 +762,12 @@ static void check_expr_binary(TypeChecker *tc, ASTNode *node, int depth)
         check_node(tc, node->binary.left, depth + 1);
         check_node(tc, node->binary.right, depth + 1);
         tc->is_stmt_context = old_stmt_ctx;
+
+        // Rule 13.2: Side effect collision detection
+        if (strcmp(op, "&&") != 0 && strcmp(op, "||") != 0 && strcmp(op, ",") != 0)
+        {
+            check_side_effect_collision(tc, node->binary.left, node->binary.right, node->token);
+        }
     }
 
     Type *left_type = node->binary.left->type_info;
@@ -1209,6 +1424,12 @@ static void check_expr_call(TypeChecker *tc, ASTNode *node, int depth)
     {
         misra_check_function_return_usage(tc, node);
     }
+
+    // Rule 13.2: Side effect collision detection in arguments
+    ASTNode *receiver = (node->call.callee && node->call.callee->type == NODE_EXPR_MEMBER)
+                            ? node->call.callee->member.target
+                            : NULL;
+    check_all_args_side_effects(tc, receiver, node->call.args, node->token);
 }
 
 static void check_block(TypeChecker *tc, ASTNode *block, int depth)
@@ -1817,6 +2038,7 @@ static void check_expr_var(TypeChecker *tc, ASTNode *node)
     }
 
     ZenSymbol *sym = tc_lookup(tc, node->var_ref.name);
+    node->var_ref.symbol = sym; // Store for MISRA audits
 
     if (sym && sym->type_info)
     {
@@ -2101,11 +2323,11 @@ static void check_loop_passes(TypeChecker *tc, ASTNode *node, int depth)
                 {
                     misra_check_condition_boolean(tc, node->while_stmt.condition->type_info,
                                                   node->while_stmt.condition->token);
-                    int inv;
-                    if (is_expression_invariant(tc, node->while_stmt.condition, &inv))
-                    {
-                        misra_check_invariant_condition(tc, node->while_stmt.condition->token);
-                    }
+                }
+                int inv;
+                if (is_expression_invariant(tc, node->while_stmt.condition, &inv))
+                {
+                    misra_check_invariant_condition(tc, node->while_stmt.condition->token);
                 }
             }
             else if (cond_type->kind != TYPE_BOOL && !is_integer_type(cond_type) &&
@@ -2144,11 +2366,11 @@ static void check_loop_passes(TypeChecker *tc, ASTNode *node, int depth)
                 {
                     misra_check_condition_boolean(tc, node->for_stmt.condition->type_info,
                                                   node->for_stmt.condition->token);
-                    int inv;
-                    if (is_expression_invariant(tc, node->for_stmt.condition, &inv))
-                    {
-                        misra_check_invariant_condition(tc, node->for_stmt.condition->token);
-                    }
+                }
+                int inv;
+                if (is_expression_invariant(tc, node->for_stmt.condition, &inv))
+                {
+                    misra_check_invariant_condition(tc, node->for_stmt.condition->token);
                 }
             }
             else if (cond_type->kind != TYPE_BOOL && !is_integer_type(cond_type) &&
@@ -2217,11 +2439,11 @@ static void check_loop_passes(TypeChecker *tc, ASTNode *node, int depth)
                 {
                     misra_check_condition_boolean(tc, node->do_while_stmt.condition->type_info,
                                                   node->do_while_stmt.condition->token);
-                    int inv;
-                    if (is_expression_invariant(tc, node->do_while_stmt.condition, &inv))
-                    {
-                        misra_check_invariant_condition(tc, node->do_while_stmt.condition->token);
-                    }
+                }
+                int inv;
+                if (is_expression_invariant(tc, node->do_while_stmt.condition, &inv))
+                {
+                    misra_check_invariant_condition(tc, node->do_while_stmt.condition->token);
                 }
             }
             else if (cond_type->kind != TYPE_BOOL && !is_integer_type(cond_type) &&
@@ -3188,6 +3410,9 @@ static void check_node(TypeChecker *tc, ASTNode *node, int depth)
 
     case NODE_RAW_STMT:
         misra_check_raw_block(tc, node->token);
+        break;
+    case NODE_PREPROC_DIRECTIVE:
+        misra_check_preprocessor_directive(tc, node->token);
         break;
     case NODE_PLUGIN:
         misra_check_plugin_block(tc, node->token);

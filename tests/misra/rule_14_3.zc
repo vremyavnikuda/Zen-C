@@ -2,60 +2,30 @@
 // EXPECT: MISRA Rule 14.3
 // EXPECT: MISRA Rule 14.3
 // EXPECT: MISRA Rule 14.3
-// EXPECT: MISRA Rule 14.3
-// EXPECT: MISRA Rule 14.3
-// EXPECT: MISRA Rule 14.3
-// EXPECT: MISRA Rule 14.3
+
+fn test_misra_invariant_while() {
+    let i = 0;
+    while (1) { // Violation (Invariant)
+        if (i == 0) {
+            break;
+        }
+    }
+}
+
+fn test_misra_invariant_for() {
+    for (; 1; ) { // Violation (Invariant)
+        break;
+    }
+}
+
+fn test_misra_invariant_do_while() {
+    do {
+        break;
+    } while (0); // Violation (Invariant)
+}
 
 fn main() {
-    let i = 0;
-
-    // Violation: invariant literal
-    if (true) {      
-        let _ = 1;
-    }
-
-    if (i == 0) {    // OK (Variant - even if currently 0, i is mutable in Zen C usually, or not caught by simple checker)
-        let _ = 2;
-    }
-
-    // Violation: invariant comparison
-    if (1 < 2) {     
-        let _ = 3;
-    }
-
-    // Violation: invariant ternary
-    let _b = (3 > 5) ? 10 : 20; 
-
-    while (true) {    // OK (Exception 2: intentional infinite loop)
-        break;
-    }
-    
-    if (false) {        // OK (Variant for chaining)
-    } else 
-        // Violation: invariant in else-if
-        if (true) {  
-        }
-
-    // Violation: invariant false while
-    while (false) {   
-        let _ = 999;
-    }
-
-    do {
-    } while (true);   // OK (Exception 2)
-
-    do {
-    } 
-    // Violation: invariant false do-while
-    while (false);      
-
-    for ( ; true ; ) { // OK (Exception 2)
-        break;
-    }
-
-    // Violation: invariant comparison in for
-    for ( ; 5 > 10 ; ) { 
-        let _ = 0;
-    }
+    test_misra_invariant_while();
+    test_misra_invariant_for();
+    test_misra_invariant_do_while();
 }

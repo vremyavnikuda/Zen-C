@@ -698,8 +698,12 @@ char *parse_and_convert_args(ParserContext *ctx, Lexer *l, char ***defaults_out,
 void scan_build_directives(struct ParserContext *ctx, const char *src);
 
 /**
+ * @brief Audit and potentially deprecate C-style preprocessor directives.
+ */
+void parser_audit_preprocessor(struct ParserContext *ctx, Token tok);
+
+/**
  * @brief Attempt to parse a #define macro as a constant integer.
- * Used for simple macros in headers to allow array sizes etc.
  */
 void try_parse_macro_const(struct ParserContext *ctx, const char *content);
 

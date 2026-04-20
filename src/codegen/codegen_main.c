@@ -598,7 +598,8 @@ void codegen_node(ParserContext *ctx, ASTNode *node, FILE *out)
         ASTNode *raw_iter = kids;
         while (raw_iter)
         {
-            if (raw_iter->type == NODE_RAW_STMT && raw_iter->raw_stmt.content)
+            if ((raw_iter->type == NODE_RAW_STMT || raw_iter->type == NODE_PREPROC_DIRECTIVE) &&
+                raw_iter->raw_stmt.content)
             {
                 const char *content = raw_iter->raw_stmt.content;
                 // Skip leading whitespace
@@ -628,7 +629,8 @@ void codegen_node(ParserContext *ctx, ASTNode *node, FILE *out)
         raw_iter = kids;
         while (raw_iter)
         {
-            if (raw_iter->type == NODE_RAW_STMT && raw_iter->raw_stmt.content)
+            if ((raw_iter->type == NODE_RAW_STMT || raw_iter->type == NODE_PREPROC_DIRECTIVE) &&
+                raw_iter->raw_stmt.content)
             {
                 const char *content = raw_iter->raw_stmt.content;
                 while (*content == ' ' || *content == '\t' || *content == '\n')

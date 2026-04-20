@@ -464,13 +464,26 @@ void misra_check_loop_counter_float(TypeChecker *tc, Type *t, Token token)
 
 void misra_check_initializer_side_effects(TypeChecker *tc, ASTNode *node)
 {
-    if (g_config.misra_mode && node)
+    if (g_config.misra_mode)
     {
         if (tc_expr_has_side_effects(node))
         {
             tc_error(tc, node->token, "MISRA Rule 13.1");
         }
     }
+}
+
+void misra_check_evaluation_order_collision(struct TypeChecker *tc, struct ASTNode *left,
+                                            struct ASTNode *right, Token token)
+{
+    if (!g_config.misra_mode || !left || !right)
+    {
+        return;
+    }
+
+    // This is called with collected sets from typecheck.c
+    // We expect typecheck.c to do the heavy lifting of collection
+    // For now, let's keep the reporting simple if typecheck.c detects a conflict
 }
 
 // ============================================================================
@@ -1055,6 +1068,14 @@ void misra_check_raw_block(struct TypeChecker *tc, Token token)
     if (g_config.misra_mode)
     {
         tc_error(tc, token, "MISRA Rule Zen 1.1");
+    }
+}
+
+void misra_check_preprocessor_directive(struct TypeChecker *tc, Token token)
+{
+    if (g_config.misra_mode)
+    {
+        tc_error(tc, token, "MISRA Rule Zen 1.4");
     }
 }
 

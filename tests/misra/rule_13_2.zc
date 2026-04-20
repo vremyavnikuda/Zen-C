@@ -1,0 +1,22 @@
+// MISRA Rule 13.2 Verification
+// EXPECT: MISRA Rule 13.2
+// EXPECT: MISRA Rule 13.2
+
+fn test_misra_evaluation_order_binary() {
+    let i = 0;
+    // Violation: symbol both read and modified in same expression
+    let _x = i + i++; 
+}
+
+fn foo(a: int, b: int) { (void)a; (void)b; }
+
+fn test_misra_evaluation_order_call() {
+    let i = 0;
+    // Violation: symbol modified in multiple arguments
+    foo(i++, i++); 
+}
+
+fn main() {
+    test_misra_evaluation_order_binary();
+    test_misra_evaluation_order_call();
+}
