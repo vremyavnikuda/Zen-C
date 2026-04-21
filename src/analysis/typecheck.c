@@ -2427,8 +2427,16 @@ static void check_struct_init(TypeChecker *tc, ASTNode *node, int depth)
         }
         else if (expected_type && field_init->var_decl.init_expr->type_info)
         {
-            check_type_compatibility(tc, expected_type, field_init->var_decl.init_expr->type_info,
-                                     field_init->token, NULL, 0);
+            // Localize expected field type depth for initialization check.
+            // A local struct's fields expect lifetimes compatible with the struct's own scope.
+            Type *localized_expected = type_clone(expected_type);
+            if (localized_expected && tc->current_func)
+            {
+                localized_expected->lifetime_depth = tc->current_depth;
+            }
+            check_type_compatibility(tc, localized_expected,
+                                     field_init->var_decl.init_expr->type_info, field_init->token,
+                                     NULL, 0);
         }
 
         // Move Analysis: Check if the initializer moves a non-copy value.
@@ -3171,7 +3179,12 @@ static void check_node(TypeChecker *tc, ASTNode *node, int depth)
                         t->inner = def->strct.fields->type_info;
                     }
                 }
-                node->type_info = t->inner;
+                // Propagate lifetime from array/slice to the indexed element
+                node->type_info = type_clone(t->inner);
+                if (node->type_info && node->index.array->type_info)
+                {
+                    node->type_info->lifetime_depth = node->index.array->type_info->lifetime_depth;
+                }
             }
         }
 
@@ -3210,7 +3223,16 @@ static void check_node(TypeChecker *tc, ASTNode *node, int depth)
                         if (field->type == NODE_FIELD && field->field.name &&
                             strcmp(field->field.name, node->member.field) == 0)
                         {
-                            node->type_info = field->type_info;
+                            // Propagate lifetime from struct container to the member access result
+                            node->type_info = type_clone(field->type_info);
+                            if (node->type_info && node->member.target->type_info)
+                            {
+                                // Depth must be at least that of the container.
+                                // (If field itself is static/global, it will be 0, but container's
+                                // depth will override)
+                                node->type_info->lifetime_depth =
+                                    node->member.target->type_info->lifetime_depth;
+                            }
                             break;
                         }
                         field = field->next;
