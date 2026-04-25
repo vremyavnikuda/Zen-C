@@ -8,8 +8,6 @@ struct TcpStream {
     handle: isize;
 }
 
-
-
 impl TcpStream {
     fn read(self, buf: char*, len: usize) -> Result<usize> {
         let n = _z_read(self.handle - 1, (void*)buf, len);

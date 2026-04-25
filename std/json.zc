@@ -27,7 +27,6 @@ struct JsonValue {
     object_val: Map<JsonValue*>*;
 }
 
-
 alias JsonValuePtr = JsonValue*;
 
 raw {
@@ -204,9 +203,7 @@ impl JsonValue {
         return JsonValue { kind: JsonType::JSON_OBJECT(), string_val: NULL, number_val: 0.0, bool_val: false, array_val: NULL, object_val: m };
     }
 
-    // ============================================
     // Heap-allocated factory methods (returns pointers)
-    // ============================================
 
     fn null_ptr() -> JsonValue* {
         let p: JsonValue* = alloc<JsonValue>();
@@ -279,9 +276,7 @@ impl JsonValue {
         return Result<JsonValue>::Err("JSON parse error");
     }
 
-    // ============================================
     // Type checking helpers
-    // ============================================
 
     fn is_null(self) -> bool {
         return self.kind.tag == JsonType::JSON_NULL().tag;
@@ -307,9 +302,7 @@ impl JsonValue {
         return self.kind.tag == JsonType::JSON_OBJECT().tag;
     }
 
-    // ============================================
     // Direct value extractors
-    // ============================================
 
     fn as_string(self) -> Option<char*> {
         if self.kind.tag == JsonType::JSON_STRING().tag {
@@ -339,9 +332,7 @@ impl JsonValue {
         return Option<bool>::None();
     }
 
-    // ============================================
     // Object key accessors
-    // ============================================
 
     fn get(self, key: char*) -> Option<JsonValue*> {
         if self.kind.tag != JsonType::JSON_OBJECT().tag {
@@ -413,9 +404,7 @@ impl JsonValue {
         return Option<JsonValue*>::None();
     }
 
-    // ============================================
     // Array accessors
-    // ============================================
 
     fn at(self, index: usize) -> Option<JsonValue*> {
         if self.kind.tag != JsonType::JSON_ARRAY().tag {

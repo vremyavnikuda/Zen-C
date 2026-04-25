@@ -61,6 +61,7 @@ void codegen_expression_with_move(ParserContext *ctx, ASTNode *node, FILE *out);
 int is_struct_return_type(const char *ret_type);
 int z_is_struct_type(Type *t);
 void emit_mangled_name(ParserContext *ctx, FILE *out, const char *base, const char *method);
+int is_simple_enum(ParserContext *ctx, const char *enum_name);
 
 // Declaration emission  (codegen_decl.c).
 /**

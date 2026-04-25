@@ -149,7 +149,6 @@ impl WebSocket {
         // Debug
         // println "WS Recv: {(char*)buf}";
 
-        
         let s = String::new((char*)buf);
         dealloc<u8>(buf);
         return Result<String>::Ok(s);

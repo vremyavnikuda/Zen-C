@@ -5,16 +5,12 @@
 
 #include "repl_state.h"
 
-/* ── Keyword / command tables for completion ───────────────────────── */
-
 extern const char *REPL_KEYWORDS[];
 
 static const char *COMMANDS[] = {":help",    ":reset", ":imports", ":vars",  ":funcs",   ":structs",
                                  ":history", ":type",  ":time",    ":c",     ":doc",     ":run",
                                  ":edit",    ":save",  ":load",    ":watch", ":unwatch", ":undo",
                                  ":delete",  ":clear", ":quit",    ":show",  NULL};
-
-/* ── Tab completion ────────────────────────────────────────────────── */
 
 char *repl_complete(ReplState *state, const char *buf, int pos)
 {
@@ -111,8 +107,6 @@ static int skip_word_backward(const char *buf, int pos)
     }
     return pos;
 }
-
-/* ── Line editor ───────────────────────────────────────────────────── */
 
 char *repl_readline(ReplState *state, const char *prompt, int indent_level)
 {

@@ -10,13 +10,11 @@ def Z_SEEK_SET = 0;
 def Z_SEEK_END = 2;
 def Z_F_OK = 0;
 
-
 extern fn _z_fs_mkdir(path: const char*) -> c_int;
 extern fn _z_fs_get_metadata(path: const char*, size: U64*, is_dir: c_int*, is_file: c_int*) -> c_int;
 extern fn _z_fs_read_entry(dir: void*, out_name: char*, buf_size: c_int, is_dir: c_int*) -> c_int;
 extern fn _z_fs_opendir(name: const char*) -> void*;
 extern fn _z_fs_closedir(dir: void*) -> c_int;
-
 
 struct File {
     handle: void*;

@@ -183,7 +183,6 @@ impl Server {
     }
 }
 
-
 import "./url.zc"
 import "./dns.zc"
 
@@ -243,8 +242,6 @@ fn fetch(url: String) -> Response {
     req_line.append_c("\r\nConnection: close\r\n\r\n");
     
     stream.write((u8*)req_line.c_str(), req_line.length());
-    
-
     
     // Read Response
     let buf: char[4096];

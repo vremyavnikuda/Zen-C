@@ -1115,8 +1115,6 @@ static const ReplCommand command_table[] = {
     {"plot", "Render bar chart of data", 1, cmd_plot},
     {NULL, NULL, 0, NULL}};
 
-/* ── Help printer ──────────────────────────────────────────────────── */
-
 void repl_print_help(void)
 {
     printf("REPL Commands:\n");
@@ -1141,8 +1139,6 @@ void repl_print_help(void)
     printf("  Ctrl+U      Clear line to start\n");
     printf("  Ctrl+K      Clear line to end\n");
 }
-
-/* ── Command dispatcher ────────────────────────────────────────────── */
 
 int repl_dispatch_command(ReplState *state, const char *cmd_buf)
 {

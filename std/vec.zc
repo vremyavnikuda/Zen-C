@@ -360,7 +360,6 @@ impl Vec<T> {
         }
     }
 
-
     fn clone(self) -> Vec<T> {
         if (self.len == 0) {
             return Vec<T> { data: NULL, len: 0, cap: 0 };

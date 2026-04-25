@@ -1095,10 +1095,28 @@ static ASTNode *generate_derive_impls(ParserContext *ctx, ASTNode *strct, char *
 
             if (strct->type == NODE_ENUM)
             {
-                // Simple Enum equality (tag comparison)
-                // Generate Eq impl for Enum
+                // Check if enum has payloads
+                int has_payload = 0;
+                ASTNode *ev = strct->enm.variants;
+                while (ev)
+                {
+                    if (ev->variant.payload)
+                    {
+                        has_payload = 1;
+                        break;
+                    }
+                    ev = ev->next;
+                }
 
-                sprintf(body, "return self.tag == other.tag;");
+                if (has_payload)
+                {
+                    sprintf(body, "return self.tag == other.tag;");
+                }
+                else
+                {
+                    // Simple enum: direct comparison via raw C (no .tag)
+                    sprintf(body, "raw { return *self == *other; }");
+                }
             }
             else
             {
@@ -1134,8 +1152,27 @@ static ASTNode *generate_derive_impls(ParserContext *ctx, ASTNode *strct, char *
 
                         if (!is_ptr && fdef && fdef->type == NODE_ENUM)
                         {
-                            // Enum field: compare tags
-                            sprintf(cmp, "self.%s.tag == other.%s.tag", fn, fn);
+                            // Check if enum is simple (no payloads)
+                            int ep = 0;
+                            ASTNode *ev2 = fdef->enm.variants;
+                            while (ev2)
+                            {
+                                if (ev2->variant.payload)
+                                {
+                                    ep = 1;
+                                    break;
+                                }
+                                ev2 = ev2->next;
+                            }
+                            if (ep)
+                            {
+                                sprintf(cmp, "self.%s.tag == other.%s.tag", fn, fn);
+                            }
+                            else
+                            {
+                                // Simple enum: direct comparison
+                                sprintf(cmp, "self.%s == other.%s", fn, fn);
+                            }
                         }
                         else if (!is_ptr && fdef && fdef->type == NODE_STRUCT)
                         {

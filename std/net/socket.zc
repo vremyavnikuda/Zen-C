@@ -14,8 +14,6 @@ extern fn _z_read(fd: isize, buf: void*, count: usize) -> isize;
 extern fn strerror(errnum: c_int) -> char*;
 extern fn _z_net_ensure_init() -> void;
 
-
-
 extern fn _z_net_bind(fd: isize, host: const char*, port: c_int) -> c_int;
 extern fn _z_net_connect(fd: isize, host: const char*, port: c_int) -> c_int;
 extern fn _z_net_accept(fd: isize) -> isize;

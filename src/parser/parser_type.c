@@ -612,8 +612,8 @@ Type *parse_type_formal(ParserContext *ctx, Lexer *l)
         // Parse Return Type (-> Type)
         if (lexer_peek(l).type == TOK_ARROW)
         {
-            lexer_next(l);                              // eat ->
-            fn_type->inner = parse_type_formal(ctx, l); // Return type stored in inner
+            lexer_next(l); // eat ->
+            fn_type->inner = parse_type_formal(ctx, l);
         }
         else
         {

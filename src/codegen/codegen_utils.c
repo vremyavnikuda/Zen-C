@@ -316,6 +316,13 @@ char *infer_type(ParserContext *ctx, ASTNode *node)
             {
                 return node->call.callee->var_ref.name;
             }
+
+            // Check for enum variants (constructors)
+            EnumVariantReg *ev = find_enum_variant(ctx, node->call.callee->var_ref.name);
+            if (ev)
+            {
+                return ev->enum_name;
+            }
         }
         // Method call: target.method() - look up Type_method signature.
         if (node->call.callee->type == NODE_EXPR_MEMBER)
@@ -1142,4 +1149,34 @@ int z_is_struct_type(Type *t)
     }
     Type *base = get_inner_type(t);
     return (base->kind == TYPE_STRUCT || base->kind == TYPE_ENUM);
+}
+
+// Helper: check if an enum is "simple" (no variant has a payload).
+// Simple enums are emitted as plain C enums, not struct+tag+union.
+int is_simple_enum(ParserContext *ctx, const char *enum_name)
+{
+    if (!ctx || !enum_name)
+    {
+        return 0;
+    }
+    const char *clean = enum_name;
+    if (strncmp(clean, "struct ", 7) == 0)
+    {
+        clean += 7;
+    }
+    ASTNode *def = find_struct_def(ctx, clean);
+    if (!def || def->type != NODE_ENUM)
+    {
+        return 0;
+    }
+    ASTNode *v = def->enm.variants;
+    while (v)
+    {
+        if (v->variant.payload)
+        {
+            return 0;
+        }
+        v = v->next;
+    }
+    return 1;
 }

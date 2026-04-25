@@ -12,8 +12,6 @@ extern fn _z_net_ensure_init() -> void;
 struct Dns {
 }
 
-
-
 extern fn _z_dns_resolve(host: const char*, out_buf: char*, out_len: usize) -> int;
 
 impl Dns {

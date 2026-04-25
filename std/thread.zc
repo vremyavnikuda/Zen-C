@@ -72,8 +72,6 @@ extern fn _z_thread_detach(handle: void*) -> c_int;
 extern fn _z_thread_cancel(handle: void*) -> c_int;
 extern fn _z_usleep(micros: c_int);
 
-
-
 struct Thread {
     handle: void*;
 }

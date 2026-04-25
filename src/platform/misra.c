@@ -18,9 +18,7 @@ void emit_misra_preamble(FILE *out)
     fputs("#include <stdbool.h>\n", out);
 }
 
-// ============================================================================
 // SECTION 10/11/12: Essential Type Model & Conversions
-// ============================================================================
 
 typedef enum
 {
@@ -446,9 +444,7 @@ void misra_check_binary_op_essential_types(TypeChecker *tc, struct ASTNode *left
     }
 }
 
-// ============================================================================
 // SECTION 13/14/15: Expressions & Control Flow
-// ============================================================================
 
 void misra_check_side_effects_sizeof(TypeChecker *tc, ASTNode *expr)
 {
@@ -515,7 +511,6 @@ void misra_check_initializer_side_effects(TypeChecker *tc, ASTNode *node)
 }
 
 // SECTION 16: Match/Switch
-// ============================================================================
 
 /**
  * @brief Enforces Rules 16.4, 16.5, 16.6, and 16.7 for match statements.
@@ -572,9 +567,7 @@ void misra_check_match_stmt(TypeChecker *tc, ASTNode *node)
     }
 }
 
-// ============================================================================
 // SECTION 17: Functions
-// ============================================================================
 
 /**
  * @brief Rule 17.2 (Required): Functions shall not call themselves, either directly or indirectly.
@@ -657,9 +650,7 @@ void misra_check_param_modified(TypeChecker *tc, ASTNode *left, Token token)
     }
 }
 
-// ============================================================================
 // SECTION 18: Pointers & Arrays
-// ============================================================================
 
 /**
  * @brief Rule 18.4 (Advisory): The +, -, += and -= operators should not be applied to an
@@ -676,7 +667,6 @@ void misra_check_pointer_arithmetic(TypeChecker *tc, Type *t, Token token)
         }
     }
 }
-// ============================================================================
 
 static int get_pointer_nesting_depth(Type *t)
 {

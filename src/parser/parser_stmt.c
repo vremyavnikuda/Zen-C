@@ -1676,7 +1676,6 @@ ASTNode *parse_for(ParserContext *ctx, Lexer *l)
                 call_is_none->call.args = NULL;
                 call_is_none->call.arg_count = 0;
 
-                // if (__opt.is_none()) break;
                 ASTNode *if_break = ast_create(NODE_IF);
                 if_break->token = tk;
                 if_break->if_stmt.condition = call_is_none;
@@ -3778,7 +3777,6 @@ ASTNode *parse_block(ParserContext *ctx, Lexer *l)
 
         if (tk.type == TOK_COMPTIME)
         {
-            // lexer_next(l); // don't eat here, run_comptime_block expects it
             char *src = run_comptime_block(ctx, l);
             Lexer new_l;
             lexer_init(&new_l, src);

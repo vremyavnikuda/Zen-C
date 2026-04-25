@@ -88,7 +88,7 @@ impl Sha1 {
         let i: usize = 0;
         let j: usize = (usize)((self.count >> 3) & 0x3F);
         
-        self.count = self.count + (len << 3); // Add bits
+        self.count = self.count + (len << 3);
         
         if ((j + len) > 63) {
             let dst = &self.buffer[j];

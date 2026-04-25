@@ -537,7 +537,24 @@ void codegen_expression(ParserContext *ctx, ASTNode *node, FILE *out)
             int is_basic = IS_BASIC_TYPE(fully_resolved);
             ASTNode *def = t1 ? find_struct_def(ctx, t1) : NULL;
 
-            if (t1 && (def || found_opaque) && !is_basic && !is_ptr)
+            // Simple enums (no payloads) are plain C integers, use direct comparison
+            int is_simple_enum = 0;
+            if (def && def->type == NODE_ENUM)
+            {
+                is_simple_enum = 1;
+                ASTNode *v = def->enm.variants;
+                while (v)
+                {
+                    if (v->variant.payload)
+                    {
+                        is_simple_enum = 0;
+                        break;
+                    }
+                    v = v->next;
+                }
+            }
+
+            if (t1 && (def || found_opaque) && !is_basic && !is_ptr && !is_simple_enum)
             {
                 char *base = mangle_base;
                 if (strncmp(base, "struct ", 7) == 0)
@@ -1488,6 +1505,23 @@ void codegen_expression(ParserContext *ctx, ASTNode *node, FILE *out)
             return;
         }
 
+        // Special handling for .tag on enums
+        if (strcmp(node->member.field, "tag") == 0)
+        {
+            char *tname = infer_type(ctx, node->member.target);
+            if (tname)
+            {
+                if (is_simple_enum(ctx, tname))
+                {
+                    // Simple enum: no .tag member exists, the value IS the tag.
+                    codegen_expression(ctx, node->member.target, out);
+                    free(tname);
+                    break;
+                }
+                free(tname);
+            }
+        }
+
         if (node->member.is_pointer_access == 2)
         {
             fprintf(out, "({ ");
@@ -2068,8 +2102,42 @@ void codegen_expression(ParserContext *ctx, ASTNode *node, FILE *out)
         }
 
         fprintf(out, "((%s)(", mapped);
-        codegen_expression(ctx, node->cast.expr, out);
+        Type *src_type = node->cast.expr->type_info;
+        int cast_tag = 0;
+        if (src_type && src_type->kind == TYPE_ENUM)
+        {
+            const char *clean_name = src_type->name;
+            if (strncmp(clean_name, "struct ", 7) == 0)
+            {
+                clean_name += 7;
+            }
+            ASTNode *def = find_struct_def(ctx, clean_name);
+            if (def && def->type == NODE_ENUM)
+            {
+                ASTNode *v = def->enm.variants;
+                while (v)
+                {
+                    if (v->variant.payload)
+                    {
+                        cast_tag = 1;
+                        break;
+                    }
+                    v = v->next;
+                }
+            }
+        }
+
+        if (cast_tag)
+        {
+            codegen_expression(ctx, node->cast.expr, out);
+            fprintf(out, ".tag");
+        }
+        else
+        {
+            codegen_expression(ctx, node->cast.expr, out);
+        }
         fprintf(out, "))");
+
         break;
     }
     case NODE_EXPR_SIZEOF:

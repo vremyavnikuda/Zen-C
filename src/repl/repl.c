@@ -148,8 +148,6 @@ static void repl_load_init_script(ReplState *state)
     fclose(f);
 }
 
-/* ── Main loop ─────────────────────────────────────────────────────── */
-
 void run_repl(const char *self_path, int argc, char **argv)
 {
     ReplState state;

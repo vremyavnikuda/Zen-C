@@ -2180,7 +2180,6 @@ static void check_function(TypeChecker *tc, ASTNode *node, int depth)
         if (node->func.elide_from_idx == -1)
         {
             // Simple re-run if needed
-            // infer_node_lifetime(tc, node); // Wait, I'll define it below
         }
     }
 

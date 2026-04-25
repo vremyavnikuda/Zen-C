@@ -43,7 +43,6 @@ impl Path {
         return Path { str: new_s }; 
     }
 
-    
     fn extension(self) -> Option<String> {
         let s = self.c_str();
         let len = self.str.length();

@@ -1536,9 +1536,9 @@ void register_enum_variant(ParserContext *ctx, const char *vname, const char *en
     // Record entry in the enum variant registry for global lookup
     audit_section_5(ctx, ctx->global_scope, vname, NULL, (Token){0});
 
-    EnumVariantReg *r = xmalloc(sizeof(EnumVariantReg));
-    r->enum_name = xstrdup(ename);
-    r->variant_name = xstrdup(vname);
+    EnumVariantReg *r = xcalloc(1, sizeof(EnumVariantReg));
+    r->enum_name = ename ? xstrdup(ename) : NULL;
+    r->variant_name = vname ? xstrdup(vname) : NULL;
     r->tag_id = tag;
     r->next = ctx->enum_variants;
     ctx->enum_variants = r;

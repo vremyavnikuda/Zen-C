@@ -119,7 +119,6 @@ fn cuda_ok() -> bool {
     return cuda_last_error() == 0;
 }
 
-
 // Minimal raw block: required for cudaDeviceProp struct field access
 // The cudaDeviceProp struct cannot be declared in Zen-C without type conflicts
 raw {

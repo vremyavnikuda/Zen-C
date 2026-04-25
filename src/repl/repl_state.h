@@ -24,23 +24,19 @@
 /* Forward declaration */
 ASTNode *parse_program(ParserContext *ctx, Lexer *l);
 
-/* ── Limits ────────────────────────────────────────────────────────── */
 #define REPL_MAX_WATCHES 16
 #define REPL_MAX_SYMBOLS 512
 
-/* ── Dispatch return codes ─────────────────────────────────────────── */
 #define REPL_HANDLED 0  /**< Command was handled, continue loop.     */
 #define REPL_QUIT 1     /**< User requested exit.                    */
 #define REPL_UNKNOWN -1 /**< Not a recognized command.               */
 
-/* ── Docs ──────────────────────────────────────────────────────────── */
 typedef struct
 {
     char *name;
     char *doc;
 } ReplDoc;
 
-/* ── Session state ─────────────────────────────────────────────────── */
 typedef struct
 {
     /* History */
@@ -70,7 +66,6 @@ typedef struct
     int aborted; /**< Flag set if user hit Ctrl+C to abort line. */
 } ReplState;
 
-/* ── Command dispatch table entry ──────────────────────────────────── */
 typedef struct
 {
     const char *name; /**< Command name without leading ':'.        */
@@ -79,15 +74,12 @@ typedef struct
     int (*handler)(ReplState *state, const char *args);
 } ReplCommand;
 
-/* ── repl_highlight.c ──────────────────────────────────────────────── */
 void repl_highlight(const char *buf, int cursor_pos);
 int get_visible_length(const char *str);
 
-/* ── repl_readline.c ───────────────────────────────────────────────── */
 char *repl_readline(ReplState *state, const char *prompt, int indent_level);
 char *repl_complete(ReplState *state, const char *buf, int pos);
 
-/* ── repl_eval.c ───────────────────────────────────────────────────── */
 int is_header_line(const char *line);
 int is_definition_of(const char *code, const char *name);
 int is_command(const char *buf, const char *cmd);
@@ -101,11 +93,9 @@ char *repl_generate_plot_code(const char *expr);
 char *repl_transpile(const char *zen_c_code);
 int repl_jit_execute(const char *c_code);
 
-/* ── repl_commands.c ───────────────────────────────────────────────── */
 int repl_dispatch_command(ReplState *state, const char *cmd_buf);
 void repl_print_help(void);
 
-/* ── State lifecycle (implemented in repl.c) ───────────────────────── */
 void repl_state_init(ReplState *state, const char *self_path);
 void repl_state_free(ReplState *state);
 void repl_save_history(ReplState *state);

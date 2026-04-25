@@ -24,7 +24,6 @@ fn _z_internal_str_case_cmp(s1: char*, s2: char*) -> int {
     return 0;
 }
 
-
 struct String {
     vec: Vec<char>;
 }
@@ -703,7 +702,6 @@ impl String {
             return self.substring(0, self.length()); // clone
         }
         
-
         let s_len = self.length();
         let result = String::new("");
         

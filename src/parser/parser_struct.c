@@ -365,7 +365,7 @@ ASTNode *parse_impl(ParserContext *ctx, Lexer *l)
             }
         }
 
-        ctx->current_impl_struct = name2; // Set context to prevent duplicate emission and prefixing
+        ctx->current_impl_struct = name2;
 
         lexer_next(l); // eat {
         ASTNode *h = 0, *tl = 0;

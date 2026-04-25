@@ -3392,7 +3392,7 @@ static ASTNode *parse_primary_impl(ParserContext *ctx, Lexer *l)
                 ASTNode *callee = ast_create(NODE_EXPR_VAR);
                 callee->var_ref.name = xstrdup("_z_scan_helper");
                 node->call.callee = callee;
-                node->type_info = type_new(TYPE_INT); // Returns count
+                node->type_info = type_new(TYPE_INT);
 
                 ASTNode *fmt_node = ast_create(NODE_EXPR_LITERAL);
                 fmt_node->literal.type_kind = LITERAL_STRING; // string
@@ -3635,7 +3635,7 @@ static ASTNode *parse_primary_impl(ParserContext *ctx, Lexer *l)
             }
 
             node = ast_create(NODE_EXPR_CALL);
-            node->token = t; // Set source token
+            node->token = t;
             ASTNode *callee = ast_create(NODE_EXPR_VAR);
             callee->var_ref.name = acc;
             node->call.callee = callee;
@@ -3907,7 +3907,7 @@ static ASTNode *parse_primary_impl(ParserContext *ctx, Lexer *l)
             else
             {
                 node = ast_create(NODE_EXPR_VAR);
-                node->token = t; // Set source token
+                node->token = t;
                 node->var_ref.name = acc;
                 node->type_info = find_symbol_type_info(ctx, acc);
 
@@ -5825,7 +5825,7 @@ static ASTNode *parse_expr_prec_impl(ParserContext *ctx, Lexer *l, Precedence mi
             {
                 if (PREC_TERNARY < min_prec)
                 {
-                    break; // Return to caller to handle precedence
+                    break;
                 }
 
                 lexer_next(l); // consume ?
@@ -6731,7 +6731,7 @@ static ASTNode *parse_expr_prec_impl(ParserContext *ctx, Lexer *l, Precedence mi
                         // type
                         Type *ft = type_new(TYPE_FUNCTION);
                         ft->name = xstrdup(mangled);
-                        ft->inner = sig->ret_type; // Return type
+                        ft->inner = sig->ret_type;
                         node->type_info = ft;
                     }
                 }
@@ -7861,7 +7861,7 @@ ASTNode *parse_arrow_lambda_single(ParserContext *ctx, Lexer *l, char *param_nam
 
     // Create Type Info: unknown -> unknown
     Type *t = type_new(TYPE_FUNCTION);
-    t->inner = type_new(TYPE_INT); // Return (default to int)
+    t->inner = type_new(TYPE_INT);
     t->args = xmalloc(sizeof(Type *));
     t->args[0] = type_new(TYPE_UNKNOWN); // Arg
     t->arg_count = 1;

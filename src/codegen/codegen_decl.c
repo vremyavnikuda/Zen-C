@@ -395,54 +395,70 @@ void emit_enum_protos(ParserContext *ctx, ASTNode *node, FILE *out)
     {
         if (node->type == NODE_ENUM && !node->enm.is_template)
         {
-            const char *final_name = node->link_name ? node->link_name : node->enm.name;
-            if (node->cfg_condition)
+            // Only emit prototypes for ADT-style enums (with payloads)
+            int has_payload = 0;
+            ASTNode *v_ptr = node->enm.variants;
+            while (v_ptr)
             {
-                fprintf(out, "#if %s\n", node->cfg_condition);
-            }
-            ASTNode *v = node->enm.variants;
-            while (v)
-            {
-                if (v->variant.payload)
+                if (v_ptr->variant.payload)
                 {
-                    Type *pt = v->variant.payload;
-                    ASTNode *tuple_def = NULL;
-                    if (pt->kind == TYPE_STRUCT && strncmp(pt->name, "Tuple__", 7) == 0)
-                    {
-                        tuple_def = find_struct_def(ctx, pt->name);
-                    }
+                    has_payload = 1;
+                    break;
+                }
+                v_ptr = v_ptr->next;
+            }
 
-                    if (tuple_def)
+            if (has_payload)
+            {
+                const char *final_name = node->link_name ? node->link_name : node->enm.name;
+                if (node->cfg_condition)
+                {
+                    fprintf(out, "#if %s\n", node->cfg_condition);
+                }
+                ASTNode *v = node->enm.variants;
+                while (v)
+                {
+                    if (v->variant.payload)
                     {
-                        fprintf(out, "%s %s__%s(", final_name, final_name, v->variant.name);
-                        ASTNode *f = tuple_def->strct.fields;
-                        int i = 0;
-                        while (f)
+                        Type *pt = v->variant.payload;
+                        ASTNode *tuple_def = NULL;
+                        if (pt->kind == TYPE_STRUCT && strncmp(pt->name, "Tuple__", 7) == 0)
                         {
-                            char *at = f->field.type;
-                            fprintf(out, "%s _%d%s", at, i, (f->next) ? ", " : "");
-                            f = f->next;
-                            i++;
+                            tuple_def = find_struct_def(ctx, pt->name);
                         }
-                        fprintf(out, ");\n");
+
+                        if (tuple_def)
+                        {
+                            fprintf(out, "%s %s__%s(", final_name, final_name, v->variant.name);
+                            ASTNode *f = tuple_def->strct.fields;
+                            int i = 0;
+                            while (f)
+                            {
+                                char *at = f->field.type;
+                                fprintf(out, "%s _%d%s", at, i, (f->next) ? ", " : "");
+                                f = f->next;
+                                i++;
+                            }
+                            fprintf(out, ");\n");
+                        }
+                        else
+                        {
+                            char *tstr = type_to_c_string(v->variant.payload);
+                            fprintf(out, "%s %s__%s(%s v);\n", final_name, final_name,
+                                    v->variant.name, tstr);
+                            free(tstr);
+                        }
                     }
                     else
                     {
-                        char *tstr = type_to_c_string(v->variant.payload);
-                        fprintf(out, "%s %s__%s(%s v);\n", final_name, final_name, v->variant.name,
-                                tstr);
-                        free(tstr);
+                        fprintf(out, "%s %s__%s();\n", final_name, final_name, v->variant.name);
                     }
+                    v = v->next;
                 }
-                else
+                if (node->cfg_condition)
                 {
-                    fprintf(out, "%s %s__%s();\n", final_name, final_name, v->variant.name);
+                    fprintf(out, "#endif\n");
                 }
-                v = v->next;
-            }
-            if (node->cfg_condition)
-            {
-                fprintf(out, "#endif\n");
             }
         }
         node = node->next;
@@ -798,121 +814,160 @@ void emit_struct_defs(ParserContext *ctx, ASTNode *node, FILE *out)
             {
                 fprintf(out, "#if %s\n", node->cfg_condition);
             }
-            fprintf(out, "typedef enum { ");
-            v = node->enm.variants;
-            while (v)
-            {
-                fprintf(out, "%s__%s_Tag, ", final_name, v->variant.name);
-                v = v->next;
-            }
-            fprintf(out, "} %s_Tag;\n", final_name);
-            fprintf(out, "struct %s { %s_Tag tag; union { ", final_name, final_name);
-            v = node->enm.variants;
-            while (v)
-            {
-                if (v->variant.payload)
-                {
-                    char *tstr = type_to_c_string(v->variant.payload);
-                    fprintf(out, "%s %s; ", tstr, v->variant.name);
-                    free(tstr);
-                }
-                v = v->next;
-            }
-            fprintf(out, "} data; };\n\n");
-            v = node->enm.variants;
-            while (v)
-            {
-                if (v->variant.payload)
-                {
-                    Type *pt = v->variant.payload;
-                    char *tstr = type_to_c_string(pt);
-                    ASTNode *tuple_def = NULL;
-                    if (pt->kind == TYPE_STRUCT && strncmp(pt->name, "Tuple__", 7) == 0)
-                    {
-                        tuple_def = find_struct_def(ctx, pt->name);
-                    }
 
-                    if (tuple_def)
-                    {
-                        // Generate multi-argument constructor for tuple variants
-                        fprintf(out, "%s %s__%s(", final_name, final_name, v->variant.name);
-                        ASTNode *f = tuple_def->strct.fields;
-                        int i = 0;
-                        while (f)
-                        {
-                            char *at =
-                                f->field.type; // Fields in generated tuples have C type strings
-                            fprintf(out, "%s _%d%s", at, i, (f->next) ? ", " : "");
-                            f = f->next;
-                            i++;
-                        }
-                        fprintf(out, ") {\n");
-                        if (g_config.use_cpp)
-                        {
-                            fprintf(out, "    %s _res = {}; _res.tag = %s__%s_Tag; ", final_name,
-                                    final_name, v->variant.name);
-                            for (int j = 0; j < i; j++)
-                            {
-                                fprintf(out, "_res.data.%s.v%d = _%d; ", v->variant.name, j, j);
-                            }
-                            fprintf(out, "return _res; }\n");
-                        }
-                        else
-                        {
-                            fprintf(out, "    return (%s){.tag=%s__%s_Tag, .data.%s={", final_name,
-                                    final_name, v->variant.name, v->variant.name);
-                            for (int j = 0; j < i; j++)
-                            {
-                                fprintf(out, ".v%d=_%d%s", j, j, (j == i - 1) ? "" : ", ");
-                            }
-                            fprintf(out, "}}; }\n");
-                        }
-                    }
-                    else
-                    {
-                        // Single payload variant (or non-tuple struct payload)
-                        if (g_config.use_cpp)
-                        {
-                            fprintf(out,
-                                    "%s %s__%s(%s v) { %s _res = {}; _res.tag=%s__%s_Tag; "
-                                    "_res.data.%s=v; return _res; }\n",
-                                    final_name, final_name, v->variant.name, tstr, final_name,
-                                    final_name, v->variant.name, v->variant.name);
-                        }
-                        else
-                        {
-                            fprintf(out,
-                                    "%s %s__%s(%s v) { return (%s){.tag=%s__%s_Tag, "
-                                    ".data.%s=v}; }\n",
-                                    final_name, final_name, v->variant.name, tstr, final_name,
-                                    final_name, v->variant.name, v->variant.name);
-                        }
-                    }
-                    free(tstr);
-                }
-                else
+            int has_payload = 0;
+            v = node->enm.variants;
+            while (v)
+            {
+                if (v->variant.payload)
                 {
-                    if (g_config.use_cpp)
-                    {
-                        fprintf(out,
-                                "%s %s__%s() { %s _res = {}; _res.tag=%s__%s_Tag; return _res; }\n",
-                                final_name, final_name, v->variant.name, final_name, final_name,
-                                v->variant.name);
-                    }
-                    else
-                    {
-                        fprintf(out, "%s %s__%s() { return (%s){.tag=%s__%s_Tag}; }\n", final_name,
-                                final_name, v->variant.name, final_name, final_name,
-                                v->variant.name);
-                    }
+                    has_payload = 1;
+                    break;
                 }
                 v = v->next;
+            }
+
+            if (!has_payload)
+            {
+                fprintf(out, "typedef enum { ");
+                v = node->enm.variants;
+                while (v)
+                {
+                    fprintf(out, "%s__%s_Tag, ", final_name, v->variant.name);
+                    v = v->next;
+                }
+                fprintf(out, "} %s;\n\n", final_name);
+
+                v = node->enm.variants;
+                while (v)
+                {
+                    fprintf(out, "static inline %s %s__%s() { return %s__%s_Tag; }\n", final_name,
+                            final_name, v->variant.name, final_name, v->variant.name);
+                    v = v->next;
+                }
+                fprintf(out, "\n");
+            }
+
+            else
+            {
+                fprintf(out, "typedef enum { ");
+                v = node->enm.variants;
+                while (v)
+                {
+                    fprintf(out, "%s__%s_Tag, ", final_name, v->variant.name);
+                    v = v->next;
+                }
+                fprintf(out, "} %s_Tag;\n", final_name);
+                fprintf(out, "struct %s { %s_Tag tag; union { ", final_name, final_name);
+                v = node->enm.variants;
+                while (v)
+                {
+                    if (v->variant.payload)
+                    {
+                        char *tstr = type_to_c_string(v->variant.payload);
+                        fprintf(out, "%s %s; ", tstr, v->variant.name);
+                        free(tstr);
+                    }
+                    v = v->next;
+                }
+                fprintf(out, "} data; };\n\n");
+
+                v = node->enm.variants;
+                while (v)
+                {
+                    if (v->variant.payload)
+                    {
+                        Type *pt = v->variant.payload;
+                        char *tstr = type_to_c_string(pt);
+                        ASTNode *tuple_def = NULL;
+                        if (pt->kind == TYPE_STRUCT && strncmp(pt->name, "Tuple__", 7) == 0)
+                        {
+                            tuple_def = find_struct_def(ctx, pt->name);
+                        }
+
+                        if (tuple_def)
+                        {
+                            fprintf(out, "%s %s__%s(", final_name, final_name, v->variant.name);
+                            ASTNode *f = tuple_def->strct.fields;
+                            int i = 0;
+                            while (f)
+                            {
+                                char *at = f->field.type;
+                                fprintf(out, "%s _%d%s", at, i, (f->next) ? ", " : "");
+                                f = f->next;
+                                i++;
+                            }
+                            fprintf(out, ") {\n");
+                            if (g_config.use_cpp)
+                            {
+                                fprintf(out, "    %s _res = {}; _res.tag = %s__%s_Tag; ",
+                                        final_name, final_name, v->variant.name);
+                                for (int j = 0; j < i; j++)
+                                {
+                                    fprintf(out, "_res.data.%s.v%d = _%d; ", v->variant.name, j, j);
+                                }
+                                fprintf(out, "return _res; }\n");
+                            }
+                            else
+                            {
+                                fprintf(out, "    return (%s){.tag=%s__%s_Tag, .data.%s={",
+                                        final_name, final_name, v->variant.name, v->variant.name);
+                                for (int j = 0; j < i; j++)
+                                {
+                                    fprintf(out, ".v%d=_%d%s", j, j, (j == i - 1) ? "" : ", ");
+                                }
+                                fprintf(out, "}}; }\n");
+                            }
+                        }
+                        else
+                        {
+                            if (g_config.use_cpp)
+                            {
+                                fprintf(out,
+                                        "%s %s__%s(%s v) { %s _res = {}; "
+                                        "_res.tag=%s__%s_Tag; _res.data.%s=v; return _res; }\n",
+                                        final_name, final_name, v->variant.name, tstr, final_name,
+                                        final_name, v->variant.name, v->variant.name);
+                            }
+                            else
+                            {
+                                fprintf(out,
+                                        "%s %s__%s(%s v) { return "
+                                        "(%s){.tag=%s__%s_Tag, .data.%s=v}; }\n",
+                                        final_name, final_name, v->variant.name, tstr, final_name,
+                                        final_name, v->variant.name, v->variant.name);
+                            }
+                        }
+                        free(tstr);
+                    }
+                    else
+                    {
+                        if (g_config.use_cpp)
+                        {
+                            fprintf(out,
+                                    "%s %s__%s() { %s _res = {}; "
+                                    "_res.tag=%s__%s_Tag; return _res; }\n",
+                                    final_name, final_name, v->variant.name, final_name, final_name,
+                                    v->variant.name);
+                        }
+                        else
+                        {
+                            fprintf(out,
+                                    "%s %s__%s() { return "
+                                    "(%s){.tag=%s__%s_Tag}; }\n",
+                                    final_name, final_name, v->variant.name, final_name, final_name,
+                                    v->variant.name);
+                        }
+                    }
+                    v = v->next;
+                }
             }
             if (node->cfg_condition)
             {
                 fprintf(out, "#endif\n");
             }
         }
+
         node = node->next;
     }
 }
@@ -1727,8 +1782,27 @@ void print_type_defs(ParserContext *ctx, FILE *out, ASTNode *nodes)
         if (local->type == NODE_ENUM && !local->enm.is_template && local->enm.name)
         {
             const char *final_name = local->link_name ? local->link_name : local->enm.name;
-            fprintf(out, "typedef struct %s %s;\n", final_name, final_name);
+
+            // Only forward-declare as struct if it's an ADT-style enum (has payloads)
+            int has_payload = 0;
+            ASTNode *v = local->enm.variants;
+            while (v)
+            {
+                if (v->variant.payload)
+                {
+                    has_payload = 1;
+                    break;
+                }
+                v = v->next;
+            }
+
+            if (has_payload)
+            {
+                fprintf(out, "typedef struct %s %s;\n", final_name, final_name);
+            }
+            // Simple enums will be emitted as 'typedef enum' later in emit_struct_defs
         }
+
         local = local->next;
     }
     fprintf(out, "\n");

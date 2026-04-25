@@ -109,13 +109,28 @@ static void emit_pattern_condition(ParserContext *ctx, const char *pattern, int 
             EnumVariantReg *reg = find_enum_variant(ctx, part);
             if (reg)
             {
-                if (is_ptr)
+                int simple = is_simple_enum(ctx, reg->enum_name);
+                if (simple)
                 {
-                    fprintf(out, "_m_%d->tag == %d", id, reg->tag_id);
+                    if (is_ptr)
+                    {
+                        fprintf(out, "*_m_%d == %d", id, reg->tag_id);
+                    }
+                    else
+                    {
+                        fprintf(out, "_m_%d == %d", id, reg->tag_id);
+                    }
                 }
                 else
                 {
-                    fprintf(out, "_m_%d.tag == %d", id, reg->tag_id);
+                    if (is_ptr)
+                    {
+                        fprintf(out, "_m_%d->tag == %d", id, reg->tag_id);
+                    }
+                    else
+                    {
+                        fprintf(out, "_m_%d.tag == %d", id, reg->tag_id);
+                    }
                 }
             }
             else
@@ -134,13 +149,28 @@ static void emit_pattern_condition(ParserContext *ctx, const char *pattern, int 
         EnumVariantReg *reg = find_enum_variant(ctx, pattern);
         if (reg)
         {
-            if (is_ptr)
+            int simple = is_simple_enum(ctx, reg->enum_name);
+            if (simple)
             {
-                fprintf(out, "_m_%d->tag == %d", id, reg->tag_id);
+                if (is_ptr)
+                {
+                    fprintf(out, "*_m_%d == %d", id, reg->tag_id);
+                }
+                else
+                {
+                    fprintf(out, "_m_%d == %d", id, reg->tag_id);
+                }
             }
             else
             {
-                fprintf(out, "_m_%d.tag == %d", id, reg->tag_id);
+                if (is_ptr)
+                {
+                    fprintf(out, "_m_%d->tag == %d", id, reg->tag_id);
+                }
+                else
+                {
+                    fprintf(out, "_m_%d.tag == %d", id, reg->tag_id);
+                }
             }
         }
         else
@@ -306,7 +336,7 @@ void codegen_match_internal(ParserContext *ctx, ASTNode *node, FILE *out, int us
         EnumVariantReg *v = ctx->enum_variants;
         while (v)
         {
-            if (strcmp(v->enum_name, enum_name) == 0)
+            if (v->enum_name && strcmp(v->enum_name, enum_name) == 0)
             {
                 int covered = 0;
                 ASTNode *c2 = node->match_stmt.cases;
