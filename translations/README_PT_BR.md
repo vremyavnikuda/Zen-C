@@ -172,6 +172,10 @@ zc repl
 zc build hello.zc --zen
 ```
 
+#### Características
+
+*   **Execução JIT**: O código é compilado na memória e executado diretamente dentro do processo REPL para um feedback instantâneo.
+
 ### Variáveis de Ambiente
 
 Você pode configurar `ZC_ROOT` para especificar a localização da Biblioteca Padrão (imports padrões como `import "std/vec.zc"`). Isso permite que você execute `zc` de qualquer diretório.
@@ -205,7 +209,7 @@ O Zen C inclui a biblioteca padrão (`std`), que cobre as funcionalidades essenc
 | **`std/complex.zc`** | Aritmética de números complexos `Complex`. | [Docs](../docs/std/complex.md) |
 | **`std/vec.zc`** | Growable dynamic array `Vec<T>`. | [Docs](../docs/std/vec.md) |
 | **`std/string.zc`** | Heap-allocated `String` type with UTF-8 support. | [Docs](../docs/std/string.md) |
-| **`std/queue.zc`** | FIFO queue (Ring Buffer). | [Docs](../docs/std/queue.md) |
+| **`std/queue.zc`** | FIFO queue (Ring Buffer). | [Docs](../docs/queue.md) |
 | **`std/map.zc`** | Generic Hash Map `Map<V>`. | [Docs](../docs/std/map.md) |
 | **`std/fs.zc`** | File system operations. | [Docs](../docs/std/fs.md) |
 | **`std/io.zc`** | Standard Input/Output (`print`/`println`). | [Docs](../docs/std/io.md) |
@@ -253,7 +257,7 @@ Ele se comunica via I/O padrão (JSON-RPC 2.0).
 
 ### REPL
 
-O Read-Eval-Print Loop permite que você experimente seu código Zen C interativamente.
+O loop Read-Eval-Print (REPL) permite que você experimente o código Zen C interativamente usando a moderna **compilação JIT em processo** (alimentada por LibTCC).
 
 #### Funcionalidades:
 
@@ -589,6 +593,7 @@ Este projeto usa bibliotecas de terceiros. Textos completos de licença podem se
 *   **[Cosmopolitan Libc](https://github.com/jart/cosmopolitan)** (Licença ISC): A biblioteca fundadora que torna APE possível.
 *   **[TRE](https://github.com/laurikari/tre)** (Licença BSD): Usado para o motor de expressões regulares na biblioteca padrão.
 *   **[zenc.vim](https://github.com/zenc-lang/zenc.vim)** (Licença MIT): O plugin oficial para Vim/Neovim, escrito principalmente por **[davidscholberg](https://github.com/davidscholberg)**.
+*   **[TinyCC](https://github.com/TinyCC/tinycc)** (Licença LGPL): O mecanismo JIT fundamental usado para a avaliação do REPL de alto desempenho.
 
 ---
 

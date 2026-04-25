@@ -253,13 +253,15 @@ zc lsp
 
 ### REPL
 
-Read-Eval-Print Loop 允許你交互式地嘗試 Zen C 代碼。
+Read-Eval-Print Loop (REPL) 允許您使用現代的**程序內 JIT 編譯**（由 LibTCC 提供支持）互動式地嘗試 Zen C 程式碼。
 
 ```bash
 zc repl
 ```
 
 #### 特性
+
+*   **JIT 執行**：程式碼在記憶體中編譯並直接在 REPL 程序中執行，以實現極速的快反饋。
 
 *   **交互式編碼**：輸入表達式或語句以立即求值。
 *   **持久歷史**：命令保存在 `~/.zprep_history` 中。
@@ -595,7 +597,8 @@ zc run my_file.zc
 *   **[zc-ape](https://github.com/OEvgeny/zc-ape)** (MIT 許可證)：由 [Eugene Olonov](https://github.com/OEvgeny) 開發的原版 Zen-C 實際上便攜的可執行文件 (APE) 端口。
 *   **[Cosmopolitan Libc](https://github.com/jart/cosmopolitan)** (ISC 許可證)：使 APE 成為可能納基礎庫。
 *   **[TRE](https://github.com/laurikari/tre)** (BSD 許可證)：用於標準庫中的正則表達式引擎。
-*   **[zenc.vim](https://github.com/zenc-lang/zenc.vim)** (MIT 許可證)：官方 Vim/Neovim 插件，主要作者為 **[davidscholberg](https://github.com/davidscholberg)**。
+*   **[zenc.vim](https://github.com/zenc-lang/zenc.vim)** (MIT 許可證)：官方 Vim/Neovim 插件，主要由 **[davidscholberg](https://github.com/davidscholberg)** 編寫。
+*   **[TinyCC](https://github.com/TinyCC/tinycc)** (LGPL 許可證)：用於高效能 REPL 評估的基礎 JIT 引擎。
 
 ---
 

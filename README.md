@@ -283,13 +283,15 @@ It communicates via standard I/O (JSON-RPC 2.0).
 
 ### REPL
 
-The Read-Eval-Print Loop allows you to experiment with Zen C code interactively.
+The Read-Eval-Print Loop allows you to experiment with Zen C code interactively using modern **In-Process JIT Compilation** (powered by LibTCC).
 
 ```bash
 zc repl
 ```
 
 #### Features
+
+*   **JIT Execution**: Code is compiled in-memory and executed directly within the REPL process for lightning-fast feedback.
 
 *   **Interactive Coding**: Type expressions or statements for immediate evaluation.
 *   **Persistent History**: Commands are saved to `~/.zprep_history`.
@@ -598,6 +600,7 @@ This project uses third-party libraries. Full license texts can be found in the 
 *   **[Cosmopolitan Libc](https://github.com/jart/cosmopolitan)** (ISC License): The foundational library that makes APE possible.
 *   **[TRE](https://github.com/laurikari/tre)** (BSD License): Used for the regular expression engine in the standard library.
 *   **[zenc.vim](https://github.com/zenc-lang/zenc.vim)** (MIT License): The official Vim/Neovim plugin, primarily authored by **[davidscholberg](https://github.com/davidscholberg)**.
+*   **[TinyCC](https://github.com/TinyCC/tinycc)** (LGPL License): The foundational JIT engine used for the high-performance REPL evaluation.
 
 ---
 

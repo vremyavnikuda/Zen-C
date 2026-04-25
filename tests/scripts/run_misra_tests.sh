@@ -31,7 +31,7 @@ for test_file in "$TEST_DIR"/*.zc; do
     expect_pass=$(grep -c "// EXPECT: PASS" "$test_file")
     
     # Run compiler with --misra
-    output=$($ZC build "$test_file" --misra 2>&1)
+    output=$($ZC build "$test_file" --misra -o /dev/null 2>&1)
     exit_code=$?
     
     file_failed=0

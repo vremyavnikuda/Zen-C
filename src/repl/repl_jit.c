@@ -16,6 +16,7 @@ static void tcc_error_handler(void *opaque, const char *msg)
     fprintf(stderr, "\033[1;31mtcc error:\033[0m %s\n", msg);
 }
 
+#ifdef ZC_HAS_JIT
 int repl_jit_execute(const char *c_code)
 {
     TCCState *s = tcc_new();
@@ -36,7 +37,7 @@ int repl_jit_execute(const char *c_code)
         tcc_add_include_path(s, path);
     }
 
-    /* Add /usr/local/include and /usr/include for system headers */
+    /* Add common system header paths */
     tcc_add_include_path(s, "/usr/local/include");
     tcc_add_include_path(s, "/usr/include");
 
@@ -58,3 +59,34 @@ int repl_jit_execute(const char *c_code)
     tcc_delete(s);
     return 0;
 }
+#else
+int repl_jit_execute(const char *c_code)
+{
+    /* Fallback for systems without libtcc: write to tmp, compile and run */
+    const char *tmp_c = ".repl_fallback.c";
+    const char *tmp_exe = ".repl_fallback.exe";
+
+    FILE *f = fopen(tmp_c, "w");
+    if (!f)
+    {
+        return 1;
+    }
+    fprintf(f, "%s", c_code);
+    fclose(f);
+
+    char cmd[1024];
+    /* Try to use the same compiler used for building zc or just system cc */
+    snprintf(cmd, sizeof(cmd), "cc %s -o %s -lws2_32 && ./%s", tmp_c, tmp_exe, tmp_exe);
+#ifdef _WIN32
+    snprintf(cmd, sizeof(cmd), "gcc %s -o %s -lws2_32 && .\\%s", tmp_c, tmp_exe, tmp_exe);
+#endif
+
+    int res = system(cmd);
+
+    /* Cleanup */
+    remove(tmp_c);
+    remove(tmp_exe);
+
+    return res;
+}
+#endif

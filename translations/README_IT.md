@@ -255,15 +255,15 @@ Il server comunica via lo Standard I/o (JSON-RPC 2.0).
 
 ### REPL
 
-Il Read-Eval-Print-Loop (REPL, lett. _Leggi-Esegui-Stampa-Ripeti_) ti permette ti sperimentare con il codice Zen C in maniera interattiva.
+Il ciclo Read-Eval-Print (REPL) ti consente di sperimentare con il codice Zen C in modo interattivo utilizzando la moderna **compilazione JIT in-process** (alimentata da LibTCC).
 
 ```bash
 zc repl
 ```
 
-#### Funzionalità
+#### Caratteristiche
 
-*   **Coding interattivo**: Scrivi espressioni o istruzioni per una esecuzione immediata.
+*   **Esecuzione JIT**: Il codice viene compilato in memoria ed eseguito direttamente all'interno del processo REPL per un feedback istantaneo.
 *   **Storia persistente**: I comandi vengono salvati in `~/.zprep_history`.
 *   **Script di avvio**: I comandi di avvio (auto-load) sono salvati in `~/.zprep_init.zc`.
 
@@ -570,6 +570,7 @@ Questo progetto utilizza librerie esterne. I testi di licenza completi possono e
 * **[Cosmopolitan Libc](https://github.com/jart/cosmopolitan)** (Licenza ISC): La libreria fondamentale che rende possibile APE.
 * **[TRE](https://github.com/laurikari/tre)** (Licenza BSD): Usato per il motore di espressioni regolari nella libreria standard.
 * **[zenc.vim](https://github.com/zenc-lang/zenc.vim)** (Licenza MIT): Il plugin ufficiale per Vim/Neovim, scritto principalmente da **[davidscholberg](https://github.com/davidscholberg)**.
+* **[TinyCC](https://github.com/TinyCC/tinycc)** (Licenza LGPL): Il motore JIT fondamentale utilizzato per la valutazione REPL ad alte prestazioni.
 
 ---
 

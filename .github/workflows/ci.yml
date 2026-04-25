@@ -73,6 +73,21 @@ jobs:
       with:
         version: master
 
+    - name: Install LibTCC (Linux)
+      if: runner.os == 'Linux' && !matrix.install_tcc
+      run: sudo apt-get update && sudo apt-get install -y libtcc-dev
+
+    - name: Install LibTCC (macOS)
+      if: runner.os == 'macOS'
+      run: brew install tcc
+
+    - name: Install LibTCC (Windows)
+      if: runner.os == 'Windows'
+      shell: powershell
+      run: |
+        scoop install tinycc
+        echo "C:\tools\scoop\shims" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
     - name: Install TCC (Source)
       if: matrix.install_tcc
       run: |
@@ -143,7 +158,7 @@ jobs:
       run: |
         export PATH="$HOME/cosmocc/bin:$PATH"
         make clean
-        make ape
+        make ape ZC_HAS_JIT=0
 
     - name: Upload zc.com Artifact
       uses: actions/upload-artifact@v4

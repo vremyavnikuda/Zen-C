@@ -246,10 +246,10 @@ echo "----------------------------------------"
 
 if [ $FAILED -ne 0 ]; then
     echo -e "Failed tests:$FAILED_TESTS"
-    rm -f test_out_*.out test_out_*.out.c test_out_*.out.cpp test_out_*.out.m out.c out.cpp out.m
+    rm -f test_out_*.out test_out_*.out.c test_out_*.out.cpp test_out_*.out.m out.c out.cpp out.m rule_*
     exit 1
 else
     echo "All tests passed!"
-    rm -f test_out_*.out test_out_*.out.c test_out_*.out.cpp test_out_*.out.m out.c out.cpp out.m
+    rm -f test_out_*.out test_out_*.out.c test_out_*.out.cpp test_out_*.out.m out.c out.cpp out.m rule_*
     exit 0
 fi

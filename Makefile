@@ -19,14 +19,25 @@ endif
 # Default: gcc
 # To build with clang: make CC=clang
 # To build with zig:   make CC="zig cc"
-# Version synchronization
 GIT_VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo "0.1.0")
 CFLAGS = -std=gnu11 -Wall -Wextra -Wshadow -g -I./src -I./src/ast -I./src/parser -I./src/codegen -I./plugins -I./src/zen -I./src/utils -I./src/lexer -I./src/analysis -I./src/lsp -I./src/diagnostics -I./std/third-party/tre/include -DZEN_VERSION=\"$(GIT_VERSION)\" -DZEN_SHARE_DIR=\"$(SHAREDIR)\"
+
+ZC_HAS_JIT ?= 1
+ifeq ($(ZC_HAS_JIT), 1)
+    CFLAGS += -DZC_HAS_JIT
+endif
+
 TARGET = zc$(EXE)
 ifeq ($(OS),Windows_NT)
     LIBS = -lws2_32
+    ifeq ($(ZC_HAS_JIT), 1)
+        LIBS += -ltcc
+    endif
 else
-    LIBS = -lm -lpthread -ldl -ltcc
+    LIBS = -lm -lpthread -ldl
+    ifeq ($(ZC_HAS_JIT), 1)
+        LIBS += -ltcc
+    endif
 endif
 
 SRCS = src/main.c \
@@ -234,7 +245,7 @@ uninstall-ape:
 
 # Clean
 clean:
-	$(RM) $(OBJ_DIR) obj-ape $(TARGET) out.c out.cpp out.m plugins/*.so a.out* out test_out_*
+	$(RM) $(OBJ_DIR) obj-ape $(TARGET) out.c out.cpp out.m plugins/*.so a.out* out test_out_* rule_*
 	@echo "=> Clean complete!"
 
 # Test

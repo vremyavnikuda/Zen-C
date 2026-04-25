@@ -6,7 +6,9 @@
 #ifndef REPL_JIT_H
 #define REPL_JIT_H
 
+#ifdef ZC_HAS_JIT
 #include <libtcc.h>
+#endif
 
 /**
  * @brief Executes C code in-process using LibTCC.

@@ -282,13 +282,15 @@ Es kommuniziert über Standard I/O (JSON-RPC 2.0).
 
 ### REPL
 
-Die Read-Eval-Print-Schleife ermöglicht es, interaktiv mit Zen C-Code zu experimentieren.
+Die Read-Eval-Print-Schleife (REPL) ermöglicht es Ihnen, mit Zen C-Code interaktiv zu experimentieren, unter Verwendung der modernen **In-Process-JIT-Kompilierung** (unterstützt von LibTCC).
 
 ```bash
 zc repl
 ```
 
 #### Features
+
+*   **JIT-Ausführung**: Der Code wird im Speicher kompiliert und direkt im REPL-Prozess ausgeführt, für blitzschnelles Feedback.
 
 *   **Interaktives Coden**: Ausdrücke oder Statements sofort auswerten.
 *   **Persistente Historie**: Befehle werden in `~/.zprep_history` gespeichert.
@@ -597,6 +599,7 @@ Dieses Projekt verwendet Bibliotheken von Drittanbietern. Die vollständigen Liz
 *   **[Cosmopolitan Libc](https://github.com/jart/cosmopolitan)** (ISC-Lizenz): Die zugrunde liegende Bibliothek, die APE ermöglicht.
 *   **[TRE](https://github.com/laurikari/tre)** (BSD-Lizenz): Wird für die Regex-Engine der Standardbibliothek verwendet.
 *   **[zenc.vim](https://github.com/zenc-lang/zenc.vim)** (MIT-Lizenz): Das offizielle Vim/Neovim-Plugin, hauptsächlich entwickelt von **[davidscholberg](https://github.com/davidscholberg)**.
+*   **[TinyCC](https://github.com/TinyCC/tinycc)** (LGPL-Lizenz): Die fundamentale JIT-Engine, die für die Hochleistungs-REPL-Auswertung verwendet wird.
 
 ---
 

@@ -13,7 +13,15 @@ set CFLAGS=-Wall -Wextra -g ^
  -I./src -I./src/ast -I./src/parser -I./src/codegen -I./plugins -I./src/zen ^
  -I./src/utils -I./src/lexer -I./src/analysis -I./src/lsp -I./src/diagnostics ^
  -I./std/third-party/tre/include ^
- -DZEN_VERSION=\"%ZEN_VERSION%\" -DZEN_SHARE_DIR=\".\"
+set CFLAGS=%CFLAGS% -DZEN_VERSION=\"%ZEN_VERSION%\" -DZEN_SHARE_DIR=\".\"
+
+if "%ZC_HAS_JIT%"=="" set ZC_HAS_JIT=1
+if "%ZC_HAS_JIT%"=="1" (
+    set CFLAGS=%CFLAGS% -DZC_HAS_JIT
+    set LIBS=-lws2_32 -ltcc
+) else (
+    set LIBS=-lws2_32
+)
 
 rem Source files
 set SRCS=src\main.c ^
@@ -77,7 +85,7 @@ set SRCS=src\main.c ^
 
 rem Build
 echo Building Zen C (%ZEN_VERSION%)...
-%CC% %CFLAGS% %SRCS% -o zc.exe -lws2_32 -ltcc
+%CC% %CFLAGS% %SRCS% -o zc.exe %LIBS%
 if %ERRORLEVEL% NEQ 0 (
     echo Build failed!
     exit /b %ERRORLEVEL%
