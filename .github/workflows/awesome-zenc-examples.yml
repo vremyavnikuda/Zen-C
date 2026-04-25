@@ -28,9 +28,12 @@ jobs:
         repository: zenc-lang/awesome-zenc
         path: awesome-zenc
 
+    - name: Install Dependencies
+      run: sudo apt-get update && sudo apt-get install -y libtcc-dev
+
     - name: Build zenc
       working-directory: zenc
-      run: make -j$(nproc)
+      run: make -j$(nproc) ZC_HAS_JIT=1
 
     - name: Run Awesome Examples
       run: |

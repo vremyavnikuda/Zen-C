@@ -58,9 +58,16 @@ jobs:
         shell: bash
         run: |
           if [ "${{ runner.os }}" = "Windows" ]; then
+             export ZC_HAS_JIT=0
              ./build.bat
+          elif [ "${{ runner.os }}" = "macOS" ]; then
+             make ZC_HAS_JIT=0
           else
-             make
+             # On Linux we try to install libtcc-dev first if we want JIT, 
+             # but to be safe and fast for manual tests we can also disable it 
+             # unless the user passed it in extra_flags.
+             # For now let's just use ZC_HAS_JIT=0 for breadth-first stability.
+             make ZC_HAS_JIT=0
           fi
 
       - name: Run Tests
