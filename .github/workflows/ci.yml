@@ -83,11 +83,20 @@ jobs:
       if: runner.os == 'Linux' && !matrix.install_tcc
       run: sudo apt-get update && sudo apt-get install -y libtcc-dev
 
+    - name: Cache TCC Source
+      if: matrix.install_tcc
+      uses: actions/cache@v4
+      with:
+        path: tinycc
+        key: tcc-source-${{ hashFiles('**/ci.yml') }}
+
     - name: Install TCC (Source)
       if: matrix.install_tcc
       run: |
-        sudo apt-get update && sudo apt-get install -y git make gcc
-        git clone -b mob https://github.com/TinyCC/tinycc.git
+        if [ ! -d "tinycc" ]; then
+          sudo apt-get update && sudo apt-get install -y git make gcc
+          git clone -b mob https://github.com/TinyCC/tinycc.git
+        fi
         cd tinycc
         ./configure
         make
@@ -109,9 +118,9 @@ jobs:
       shell: bash
       run: |
         if [ "${{ runner.os }}" = "Windows" ]; then
-          ./tests/scripts/run_tests.sh --cc "gcc" --no-source
+          ./tests/scripts/run_tests.sh --cc "gcc" --no-source -j 2
         else
-          ./tests/scripts/run_tests.sh --cc "${{ matrix.cc }}" --no-source
+          ./tests/scripts/run_tests.sh --cc "${{ matrix.cc }}" --no-source -j 2
         fi
 
     - name: Upload Failed Test Artifacts
@@ -131,12 +140,32 @@ jobs:
     - name: Build
       run: make ZC_HAS_JIT=1
     - name: Run C++ Tests
-      run: ./tests/scripts/run_tests.sh --cpp --no-source
+      run: ./tests/scripts/run_tests.sh --cpp --no-source -j 2
     - name: Upload Failed Test Artifacts
       if: failure()
       uses: actions/upload-artifact@v4
       with:
         name: failed-test-artifacts-cpp
+        path: "**/test_out_*"
+
+  test-sanitizers:
+    name: Sanitizers (ASAN/UBSAN)
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install libtcc-dev
+      run: sudo apt-get update && sudo apt-get install -y libtcc-dev
+    - name: Build with Sanitizers
+      run: make asan ZC_HAS_JIT=1
+    - name: Run Tests with Sanitizers
+      run: |
+        export ASAN_OPTIONS=detect_leaks=0
+        ./tests/scripts/run_tests.sh --no-source -j 2
+    - name: Upload Failed Test Artifacts
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: failed-test-artifacts-sanitizers
         path: "**/test_out_*"
 
   test-lsp:

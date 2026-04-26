@@ -8,12 +8,14 @@
 #   --cc <compiler>         Use a specific C compiler
 #   --check                 Enable typechecking
 #   --no-source             Don't print generated source code on failure
+#   -j, --jobs <n>          Run <n> tests in parallel (default: 1)
 #   -- file1.zc file2.zc    Any file listed after postfix `--` will be run
 #                           If empty, scan for and run all tests
 #
 # Examples:
 #   ./tests/scripts/run_tests.sh                                        # Test in C mode (default)
 #   ./tests/scripts/run_tests.sh --cpp                                  # Test in C++ mode
+#   ./tests/scripts/run_tests.sh -j 4                                   # Test with 4 parallel jobs
 #   ./tests/scripts/run_tests.sh --cc clang                             # Test with clang
 #   ./tests/scripts/run_tests.sh --cc clang --cpp                       # Test in C++ mode with clang
 #   ./tests/scripts/run_tests.sh -- std/test_hash.zc std/test_arena.zc  # Test only these files
@@ -34,6 +36,10 @@ PASSED=0
 FAILED=0
 SKIPPED=0
 FAILED_TESTS=""
+JOBS=1
+if [ -n "$ZC_TEST_JOBS" ]; then
+    JOBS="$ZC_TEST_JOBS"
+fi
 
 # Parse arguments
 CC_NAME="gcc (default)"
@@ -76,6 +82,15 @@ for arg in "$@"; do
         SHOW_SOURCE=0
         continue
     fi
+    if [ "$arg" = "-j" ] || [ "$arg" = "--jobs" ]; then
+        prev_arg="--jobs"
+        continue
+    fi
+    if [ "$prev_arg" = "--jobs" ]; then
+        JOBS="$arg"
+        prev_arg=""
+        continue
+    fi
 
     zc_args+=("$arg")
     prev_arg="$arg"
@@ -109,152 +124,164 @@ if [ ${#TEST_LIST[@]} -eq 0 ]; then
     exit 0
 fi
 
-echo "** Running Zen C test suite (mode: $MODE, compiler: $CC_NAME) **"
+echo "** Running Zen C test suite (mode: $MODE, compiler: $CC_NAME, jobs: $JOBS) **"
 
-while read -r test_file; do
-    [ -e "$test_file" ] || continue
+# Create temp dir for parallel results
+RESULTS_DIR=$(mktemp -d)
+trap 'rm -rf "$RESULTS_DIR"' EXIT
 
-    # Skip tests known to fail with TCC
+run_test() {
+    local test_file="$1"
+    local job_id="$2"
+    local result_file="$RESULTS_DIR/$job_id"
+    local output_buf=""
+    
+    # Skip tests logic (duplicated for subprocess context)
     if [[ "$CC_NAME" == *"tcc"* ]]; then
-        if [[ "$test_file" == *"test_intel.zc"* ]]; then
-            echo "Skipping $test_file (Intel assembly not supported by TCC)"
-            ((SKIPPED++))
-            continue
-        fi
-        if [[ "$test_file" == *"test_attributes.zc"* ]]; then
-            echo "Skipping $test_file (Constructor attribute not supported by TCC)"
-            ((SKIPPED++))
-            continue
-        fi
-        if [[ "$test_file" == *"test_simd_native.zc"* ]]; then
-            echo "Skipping $test_file (SIMD vector extensions not supported by TCC)"
-            ((SKIPPED++))
-            continue
+        if [[ "$test_file" == *"test_intel.zc"* ]] || [[ "$test_file" == *"test_attributes.zc"* ]] || [[ "$test_file" == *"test_simd_native.zc"* ]]; then
+            echo "SKIP" > "$result_file.status"
+            return
         fi
     fi
-
-    # Skip tests known to fail with Zig
-    if [[ "$CC_NAME" == *"zig"* ]]; then
-        if [[ "$test_file" == *"plugins_suite.zc"* ]]; then
-            echo "Skipping $test_file (Plugins not fully supported by zig cc yet)"
-            ((SKIPPED++))
-            continue
-        fi
+    if [[ "$CC_NAME" == *"zig"* ]] && [[ "$test_file" == *"plugins_suite.zc"* ]]; then
+        echo "SKIP" > "$result_file.status"
+        return
     fi
-
-    # Skip C++-incompatible tests
     if [ $USE_CPP -eq 1 ]; then
-        # Inline assembly tests use C-only syntax
-        if [[ "$test_file" == *"test_asm.zc"* ]] || \
-           [[ "$test_file" == *"test_asm_clobber.zc"* ]] || \
-           [[ "$test_file" == *"test_asm_arm64.zc"* ]] || \
-           [[ "$test_file" == *"test_asm_clobber_arm64.zc"* ]] || \
-           [[ "$test_file" == *"test_intel.zc"* ]]; then
-            echo "Skipping $test_file (inline assembly not tested in C++ mode)"
-            ((SKIPPED++))
-            continue
+        if [[ "$test_file" == *"test_asm.zc"* ]] || [[ "$test_file" == *"test_asm_clobber.zc"* ]] || [[ "$test_file" == *"test_asm_arm64.zc"* ]] || [[ "$test_file" == *"test_asm_clobber_arm64.zc"* ]] || [[ "$test_file" == *"test_intel.zc"* ]]; then
+            echo "SKIP" > "$result_file.status"
+            return
         fi
     fi
-
-    # Skip architecture-specific tests
     if [[ "$sys_arch" != *"86"* && "$sys_arch" != "amd64" ]]; then
-        if [[ "$test_file" == *"test_asm.zc"* ]] || \
-           [[ "$test_file" == *"test_asm_clobber.zc"* ]] || \
-           [[ "$test_file" == *"test_intel.zc"* ]]; then
-            echo "Skipping $test_file (x86 assembly not supported on $sys_arch)"
-            ((SKIPPED++))
-            continue
+        if [[ "$test_file" == *"test_asm.zc"* ]] || [[ "$test_file" == *"test_asm_clobber.zc"* ]] || [[ "$test_file" == *"test_intel.zc"* ]]; then
+            echo "SKIP" > "$result_file.status"
+            return
         fi
     fi
-
-    if [[ "$test_file" == *"_arm64.zc"* ]]; then
-        if [[ "$sys_arch" != *"arm64"* && "$sys_arch" != "aarch64" ]]; then
-            echo "Skipping $test_file (ARM64 assembly not supported on $sys_arch)"
-            ((SKIPPED++))
-            continue
-        fi
+    if [[ "$test_file" == *"_arm64.zc"* ]] && [[ "$sys_arch" != *"arm64"* && "$sys_arch" != "aarch64" ]]; then
+        echo "SKIP" > "$result_file.status"
+        return
     fi
-
-    # Skip MISRA tests (handled by run_misra_tests.sh)
     if [[ "$test_file" == *"tests/misra/"* ]]; then
-        echo "Skipping $test_file (MISRA compliance test managed separately)"
-        ((SKIPPED++))
-        continue
+        echo "SKIP" > "$result_file.status"
+        return
+    fi
+    if grep -q "// REQUIRE: CHECK" "$test_file" && [ $USE_TYPECHECK -eq 0 ]; then
+        echo "SKIP" > "$result_file.status"
+        return
     fi
 
-    # Skip tests that require typechecking if not enabled
-    if grep -q "// REQUIRE: CHECK" "$test_file"; then
-        if [ $USE_TYPECHECK -eq 0 ]; then
-             echo "Skipping $test_file (requires --check)"
-             ((SKIPPED++))
-             continue
-        fi
-    fi
-
-    echo -n "Testing $test_file... "
+    local tmp_out="test_out_parallel_${job_id}.out"
+    local cmd_str="$ZC run \"$test_file\" -o \"$tmp_out\" -w --emit-c \"${zc_args[@]}\""
+    local output=$(set -o pipefail; $ZC run "$test_file" -o "$tmp_out" -w --emit-c "${zc_args[@]}" 2>&1 | tr -d '\0')
+    local exit_code=$?
     
-    # Add -w to suppress warnings as requested
-    tmp_out="test_out_$$.out"
-    cmd_str="$ZC run \"$test_file\" -o \"$tmp_out\" -w --emit-c \"${zc_args[@]}\""
-    output=$(set -o pipefail; $ZC run "$test_file" -o "$tmp_out" -w --emit-c "${zc_args[@]}" 2>&1 | tr -d '\0')
-    exit_code=$?
-    
-    # Check for expected failure annotation
     if grep -q "// EXPECT: FAIL" "$test_file"; then
         if [ $exit_code -ne 0 ]; then
-            echo "PASS (Expected Failure)"
-            ((PASSED++))
+            echo "PASS_EXPECTED_FAIL" > "$result_file.status"
         else
-            echo "FAIL (Unexpected Success)"
-            ((FAILED++))
-            FAILED_TESTS="$FAILED_TESTS\n- $test_file (Unexpected Success)"
+            echo "FAIL_UNEXPECTED_SUCCESS" > "$result_file.status"
+            {
+                echo "FAIL (Unexpected Success)"
+                echo "----------------------------------------"
+                echo "Exit Code: $exit_code"
+                echo "Command: $cmd_str"
+                echo "Output:"
+                echo "$output"
+                echo "----------------------------------------"
+            } > "$result_file.details"
         fi
     else
         if [ $exit_code -eq 0 ]; then
-            echo "PASS"
-            ((PASSED++))
+            echo "PASS" > "$result_file.status"
+            rm -f "$tmp_out" "${tmp_out}.c" "${tmp_out}.cpp" "${tmp_out}.m"
         else
-            echo "FAIL"
-            echo "----------------------------------------"
-            echo "Exit Code: $exit_code"
-            echo "Command: $cmd_str"
-            echo "Output:"
-            echo "$output"
-            # Keep the output file for debugging
-            if [ -f "$tmp_out" ]; then
-                echo "Program output preserved at: $tmp_out"
-            fi
-            if [ $SHOW_SOURCE -eq 1 ]; then
-                if [ -f "$tmp_out.c" ]; then
-                    echo "Generated C source preserved at: $tmp_out.c"
-                    echo "--- Source Begin ---"
-                    cat "$tmp_out.c"
-                    echo "--- Source End ---"
-                elif [ -f "$tmp_out.cpp" ]; then
-                    echo "Generated C++ source preserved at: $tmp_out.cpp"
-                    echo "--- Source Begin ---"
-                    cat "$tmp_out.cpp"
-                    echo "--- Source End ---"
+            echo "FAIL" > "$result_file.status"
+            {
+                echo "FAIL"
+                echo "----------------------------------------"
+                echo "Exit Code: $exit_code"
+                echo "Command: $cmd_str"
+                echo "Output:"
+                echo "$output"
+                if [ -f "$tmp_out" ]; then
+                    echo "Program output preserved at: $tmp_out"
                 fi
-            else
-                if [ -f "$tmp_out.c" ]; then
-                    echo "Generated C source preserved at: $tmp_out.c"
-                elif [ -f "$tmp_out.cpp" ]; then
-                    echo "Generated C++ source preserved at: $tmp_out.cpp"
+                if [ $SHOW_SOURCE -eq 1 ]; then
+                    if [ -f "$tmp_out.c" ]; then
+                        echo "Generated C source preserved at: $tmp_out.c"
+                        echo "--- Source Begin ---"
+                        cat "$tmp_out.c"
+                        echo "--- Source End ---"
+                    elif [ -f "$tmp_out.cpp" ]; then
+                        echo "Generated C++ source preserved at: $tmp_out.cpp"
+                        echo "--- Source Begin ---"
+                        cat "$tmp_out.cpp"
+                        echo "--- Source End ---"
+                    fi
+                else
+                    if [ -f "$tmp_out.c" ]; then
+                        echo "Generated C source preserved at: $tmp_out.c"
+                    elif [ -f "$tmp_out.cpp" ]; then
+                        echo "Generated C++ source preserved at: $tmp_out.cpp"
+                    fi
+                    echo "(Source printing suppressed. Log noise reduced.)"
                 fi
-                echo "(Source printing suppressed. Log noise reduced.)"
-            fi
-            echo "----------------------------------------"
-            ((FAILED++))
-            FAILED_TESTS="$FAILED_TESTS\n- $test_file"
+                echo "----------------------------------------"
+            } > "$result_file.details"
         fi
     fi
+}
+
+job_count=0
+while read -r test_file; do
+    [ -e "$test_file" ] || continue
     
-    # If passed, clean up. If failed, let the user see the file.
-    if [ $exit_code -eq 0 ]; then
-        rm -f "$tmp_out" "${tmp_out}.c" "${tmp_out}.cpp" "${tmp_out}.m"
-    fi
+    run_test "$test_file" "$job_count" &
+    ((job_count++))
+    
+    # Simple job control
+    while [ "$(jobs -r -p | wc -l)" -ge "$JOBS" ]; do
+        sleep 0.05
+    done
 done <<< "$TEST_LIST"
+
+wait
+
+# Aggregate results
+for ((i=0; i<job_count; i++)); do
+    status=$(cat "$RESULTS_DIR/$i.status" 2>/dev/null)
+    test_file=$(echo "$TEST_LIST" | sed -n "$((i+1))p")
+    
+    case "$status" in
+        PASS)
+            echo "Testing $test_file... PASS"
+            ((PASSED++))
+            ;;
+        PASS_EXPECTED_FAIL)
+            echo "Testing $test_file... PASS (Expected Failure)"
+            ((PASSED++))
+            ;;
+        FAIL*)
+            echo "Testing $test_file... FAIL"
+            cat "$RESULTS_DIR/$i.details"
+            ((FAILED++))
+            if [ "$status" == "FAIL_UNEXPECTED_SUCCESS" ]; then
+                FAILED_TESTS="$FAILED_TESTS\n- $test_file (Unexpected Success)"
+            else
+                FAILED_TESTS="$FAILED_TESTS\n- $test_file"
+            fi
+            ;;
+        SKIP)
+            ((SKIPPED++))
+            ;;
+        *)
+            echo "Testing $test_file... ERROR (Unknown status: $status)"
+            ((FAILED++))
+            ;;
+    esac
+done
 
 echo "----------------------------------------"
 echo "Results ($MODE mode):"
