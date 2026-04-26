@@ -36,7 +36,15 @@ docs/latex/
 *.db
 build_dir_env.txt 
 build_dir_linux.txt
-fuzz/
+# Fuzzing
+!fuzz/
+fuzz/corpus/
+fuzz/out/
+crash-*
+leak-*
+timeout-*
+oom-*
+zc-fuzz-*
 scratch/
 test_out_*.out.c
 trace.txt

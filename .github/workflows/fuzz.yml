@@ -1,0 +1,40 @@
+name: Scheduled Fuzzing
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # Daily at midnight
+  workflow_dispatch:      # Allow manual trigger
+
+permissions:
+  contents: read
+
+jobs:
+  fuzz:
+    name: LibFuzzer (15m)
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install libtcc-dev
+      run: sudo apt-get update && sudo apt-get install -y libtcc-dev
+      
+    - name: Build Fuzzer
+      run: make fuzz-libfuzzer-build
+      
+    - name: Prepare Corpus
+      run: make fuzz-corpus
+      
+    - name: Run Fuzzer
+      run: |
+        # Run for 15 minutes (900 seconds)
+        # -rss_limit_mb=2048 to prevent huge memory usage on bad inputs
+        ./zc-fuzz-libfuzzer fuzz/corpus -max_total_time=900 -rss_limit_mb=2048 || {
+          echo "----------------------------------------------------------------"
+          echo "SECURITY ALERT: Fuzzer found a crash or memory safety issue."
+          echo "The crashing input has NOT been uploaded for security reasons."
+          echo "Please run the fuzzer locally to reproduce and fix this issue:"
+          echo "  make fuzz-libfuzzer-build"
+          echo "  ./zc-fuzz-libfuzzer fuzz/corpus"
+          echo "----------------------------------------------------------------"
+          exit 1
+        }

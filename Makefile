@@ -313,6 +313,18 @@ fuzz-cmplog-build:
 	AFL_LLVM_CMPLOG=1 $(MAKE) CC=$(FUZZ_CC) CFLAGS='$(CFLAGS) $(FUZZ_CFLAGS)' OBJ_DIR=obj-fuzz-cmplog TARGET=$(FUZZ_CMPLOG_TARGET) SRCS="$(filter-out src/main.c,$(SRCS)) fuzz/harness.c"
 	@echo "=> CmpLog target built: $(FUZZ_CMPLOG_TARGET)"
 
+# LibFuzzer targets
+fuzz-libfuzzer-build:
+	@$(MKDIR) $(OBJ_DIR)/fuzz-libfuzzer
+	clang $(CFLAGS) -fsanitize=fuzzer,address,undefined $(filter-out src/main.c,$(SRCS)) fuzz/harness.c -o zc-fuzz-libfuzzer $(LIBS)
+	@echo "=> LibFuzzer target built: zc-fuzz-libfuzzer"
+
+fuzz-corpus:
+	@$(MKDIR) $(FUZZ_CORPUS)
+	@cp tests/*.zc $(FUZZ_CORPUS)/ 2>/dev/null || true
+	@cp tests/std/*.zc $(FUZZ_CORPUS)/ 2>/dev/null || true
+	@echo "=> Seed corpus created from existing tests"
+
 fuzz-run: fuzz-build
 	@if [ ! -d "$(FUZZ_CORPUS)" ]; then sh $(FUZZ_DIR)/scripts/generate_corpus.sh; fi
 	@$(MKDIR) $(FUZZ_OUT)

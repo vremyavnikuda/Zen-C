@@ -146,6 +146,18 @@ char *sanitize_path_for_c_string(const char *path)
     return sanitized;
 }
 
+char *z_realpath_arena(const char *path)
+{
+    char *real = realpath(path, NULL);
+    if (real)
+    {
+        char *res = xstrdup(real);
+        free(real);
+        return res;
+    }
+    return xstrdup(path);
+}
+
 char *z_resolve_path(const char *fn, const char *relative_to)
 {
     if (!fn)
@@ -158,8 +170,7 @@ char *z_resolve_path(const char *fn, const char *relative_to)
     {
         if (access(fn, R_OK) == 0)
         {
-            char *real = realpath(fn, NULL);
-            return real ? real : xstrdup(fn);
+            return z_realpath_arena(fn);
         }
         return NULL;
     }
@@ -178,8 +189,7 @@ char *z_resolve_path(const char *fn, const char *relative_to)
             if (access(path, R_OK) == 0)
             {
                 free(dir);
-                char *real = realpath(path, NULL);
-                return real ? real : xstrdup(path);
+                return z_realpath_arena(path);
             }
         }
         free(dir);
@@ -188,8 +198,7 @@ char *z_resolve_path(const char *fn, const char *relative_to)
     // 3. Current directory
     if (access(fn, R_OK) == 0)
     {
-        char *real = realpath(fn, NULL);
-        return real ? real : xstrdup(fn);
+        return z_realpath_arena(fn);
     }
 
     // 4. Include paths (-I)
@@ -198,8 +207,7 @@ char *z_resolve_path(const char *fn, const char *relative_to)
         snprintf(path, sizeof(path), "%s/%s", g_config.include_paths[i], fn);
         if (access(path, R_OK) == 0)
         {
-            char *real = realpath(path, NULL);
-            return real ? real : xstrdup(path);
+            return z_realpath_arena(path);
         }
     }
 
@@ -210,16 +218,14 @@ char *z_resolve_path(const char *fn, const char *relative_to)
         snprintf(path, sizeof(path), "%s/std/%s", g_config.root_path, fn);
         if (access(path, R_OK) == 0)
         {
-            char *real = realpath(path, NULL);
-            return real ? real : xstrdup(path);
+            return z_realpath_arena(path);
         }
 
         // Try as-is relative to root_path
         snprintf(path, sizeof(path), "%s/%s", g_config.root_path, fn);
         if (access(path, R_OK) == 0)
         {
-            char *real = realpath(path, NULL);
-            return real ? real : xstrdup(path);
+            return z_realpath_arena(path);
         }
     }
 
@@ -237,16 +243,14 @@ char *z_resolve_path(const char *fn, const char *relative_to)
         snprintf(path, sizeof(path), "%s/%s", system_paths[i], fn);
         if (access(path, R_OK) == 0)
         {
-            char *real = realpath(path, NULL);
-            return real ? real : xstrdup(path);
+            return z_realpath_arena(path);
         }
 
         // Also try with std/ prefix in system paths
         snprintf(path, sizeof(path), "%s/std/%s", system_paths[i], fn);
         if (access(path, R_OK) == 0)
         {
-            char *real = realpath(path, NULL);
-            return real ? real : xstrdup(path);
+            return z_realpath_arena(path);
         }
     }
 
