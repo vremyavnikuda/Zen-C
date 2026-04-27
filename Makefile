@@ -162,7 +162,11 @@ $(ZC_COM_BIN): $(ZC_ENTRY_O) $(SRCS)
 $(ZC_COM): $(ZC_COM_BIN)
 	@$(MKDIR) $(@D)
 	@$(CP) $(ZC_COM_BIN) $(wildcard $(ZC_COM_BIN).*) "$(@D)"; \
-	zip -r "$(abspath $@)" std.zc std LICENSE;
+	cp src/misc/zenc.json zenc.json; \
+	cp src/zen/facts.json facts.json; \
+	cp src/repl/docs.json docs.json; \
+	zip -r "$(abspath $@)" std.zc std LICENSE zenc.json facts.json docs.json; \
+	rm -f zenc.json facts.json docs.json
 
 $(ZC_BOOT_COM_BIN): $(ZC_BOOT_SRC) $(ZC_COM)
 	@$(MKDIR) $(@D)
@@ -171,8 +175,12 @@ $(ZC_BOOT_COM_BIN): $(ZC_BOOT_SRC) $(ZC_COM)
 $(ZC_BOOT_COM): $(ZC_BOOT_COM_BIN) ape/boot/.args
 	@$(MKDIR) $(@D)
 	@$(CP) $(ZC_BOOT_COM_BIN) $(wildcard $(ZC_BOOT_COM_BIN).*) "$(@D)"; \
+	cp src/misc/zenc.json zenc.json; \
+	cp src/zen/facts.json facts.json; \
+	cp src/repl/docs.json docs.json; \
 	(cd ape/boot && zip "$(abspath $@)" .args hello.zc instructions.txt Makefile); \
-	zip "$(abspath $@)" LICENSE;
+	zip "$(abspath $@)" LICENSE zenc.json facts.json docs.json; \
+	rm -f zenc.json facts.json docs.json
 
 # Install
 install: $(TARGET)

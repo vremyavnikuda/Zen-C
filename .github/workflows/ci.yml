@@ -229,6 +229,13 @@ jobs:
         name: zc-boot-portable
         path: out/bin/zc-boot.com
 
+    - name: Smoke Test APE
+      run: |
+        chmod +x out/bin/zc.com
+        ./out/bin/zc.com --version
+        echo 'fn main() { print f"Hello from APE!\n"; }' > smoke.zc
+        ./out/bin/zc.com run smoke.zc
+
     - name: Create Release
       if: startsWith(github.ref, 'refs/tags/v')
       uses: softprops/action-gh-release@v2
