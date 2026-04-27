@@ -703,11 +703,6 @@ char *parse_and_convert_args(ParserContext *ctx, Lexer *l, char ***defaults_out,
                              char ***names_out, int *is_varargs_out, char ***ctype_overrides_out);
 
 /**
- * @brief Scan build directives.
- */
-void scan_build_directives(struct ParserContext *ctx, const char *src);
-
-/**
  * @brief Audit and potentially deprecate C-style preprocessor directives.
  */
 void parser_audit_preprocessor(struct ParserContext *ctx, Token tok);

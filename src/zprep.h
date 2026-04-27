@@ -280,18 +280,6 @@ typedef struct
 } CompilerConfig;
 
 extern CompilerConfig g_config;
-extern char g_link_flags[];
-extern char g_cflags[];
-
-struct ParserContext;
-
-/**
- * @brief Scan build directives.
- */
-/**
- * @brief Scan build directives.
- */
-void scan_build_directives(struct ParserContext *ctx, const char *src);
 
 /**
  * @brief Load all configurations (system, hidden project, visible project).

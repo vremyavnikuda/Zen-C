@@ -1745,7 +1745,7 @@ void lsp_signature_help(const char *uri, int line, int col, int id)
     send_json_response(root);
 }
 
-static char *get_symbol_at(ProjectFile *pf, int line, int col)
+static LSPRange *get_symbol_range_at(ProjectFile *pf, int line, int col)
 {
     if (!pf || !pf->index)
     {
@@ -1759,33 +1759,7 @@ static char *get_symbol_at(ProjectFile *pf, int line, int col)
 
         if (over_start && under_end && r->node)
         {
-            if (r->node->type == NODE_FUNCTION)
-            {
-                return strdup(r->node->func.name);
-            }
-            if (r->node->type == NODE_VAR_DECL)
-            {
-                return strdup(r->node->var_decl.name);
-            }
-            if (r->node->type == NODE_CONST)
-            {
-                return strdup(r->node->var_decl.name);
-            }
-            if (r->node->type == NODE_STRUCT)
-            {
-                return strdup(r->node->strct.name);
-            }
-            if (r->node->type == NODE_EXPR_VAR)
-            {
-                return strdup(r->node->var_ref.name);
-            }
-            if (r->node->type == NODE_EXPR_CALL)
-            {
-                if (r->node->call.callee && r->node->call.callee->type == NODE_EXPR_VAR)
-                {
-                    return strdup(r->node->call.callee->var_ref.name);
-                }
-            }
+            return r;
         }
         r = r->next;
     }
@@ -1799,7 +1773,41 @@ void lsp_rename(const char *uri, int line, int col, const char *new_name, int id
     cJSON_AddStringToObject(root, "jsonrpc", "2.0");
     cJSON_AddNumberToObject(root, "id", id);
 
-    char *name = get_symbol_at(pf, line, col);
+    LSPRange *r = get_symbol_range_at(pf, line, col);
+    if (!r || !r->node)
+    {
+        cJSON_AddNullToObject(root, "result");
+        send_json_response(root);
+        return;
+    }
+
+    char *name = NULL;
+    if (r->node->type == NODE_FUNCTION)
+    {
+        name = r->node->func.name;
+    }
+    else if (r->node->type == NODE_VAR_DECL)
+    {
+        name = r->node->var_decl.name;
+    }
+    else if (r->node->type == NODE_CONST)
+    {
+        name = r->node->var_decl.name;
+    }
+    else if (r->node->type == NODE_STRUCT)
+    {
+        name = r->node->strct.name;
+    }
+    else if (r->node->type == NODE_EXPR_VAR)
+    {
+        name = r->node->var_ref.name;
+    }
+    else if (r->node->type == NODE_EXPR_CALL && r->node->call.callee &&
+             r->node->call.callee->type == NODE_EXPR_VAR)
+    {
+        name = r->node->call.callee->var_ref.name;
+    }
+
     if (!name)
     {
         cJSON_AddNullToObject(root, "result");
@@ -1808,7 +1816,6 @@ void lsp_rename(const char *uri, int line, int col, const char *new_name, int id
     }
 
     ReferenceResult *refs = lsp_project_find_references(name);
-    free(name);
 
     if (!refs)
     {

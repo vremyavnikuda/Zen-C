@@ -11,11 +11,12 @@ Checks: >
   -readability-magic-numbers,
   -readability-braces-around-statements,
   -readability-else-after-return,
-  -readability-function-cognitive-complexity
+  -readability-function-cognitive-complexity,
+  -misc-no-recursion
 
 WarningsAsErrors: ''
 
-HeaderFilterExpression: 'src/.*'
+HeaderFilterRegex: 'src/.*'
 
 CheckOptions:
   - key:             readability-identifier-naming.FunctionCase
