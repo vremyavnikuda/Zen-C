@@ -23,6 +23,10 @@ if "%ZC_HAS_JIT%"=="1" (
     set LIBS=-lws2_32
 )
 
+if "%NO_PLUGINS%"=="1" (
+    set CFLAGS=%CFLAGS% -DZC_NO_PLUGINS
+)
+
 rem Source files
 set SRCS=src\main.c ^
  src\parser\parser_core.c ^
@@ -70,6 +74,7 @@ set SRCS=src\main.c ^
  src\repl\repl_jit.c ^
  src\repl\repl_commands.c ^
  src\plugins\plugin_manager.c ^
+ src\plugins\static_plugins.c ^
  std\third-party\tre\lib\regcomp.c ^
  std\third-party\tre\lib\regerror.c ^
  std\third-party\tre\lib\regexec.c ^
@@ -95,9 +100,15 @@ if %ERRORLEVEL% NEQ 0 (
 echo Build success! zc.exe created.
 
 rem Build plugins
+if "%NO_PLUGINS%"=="1" (
+    echo Plugins disabled by NO_PLUGINS flag.
+    goto end
+)
 echo Building plugins...
 if not exist plugins mkdir plugins
 for %%f in (plugins\*.zc) do (
     echo Compiling native plugin %%f...
     .\zc.exe build %%f -shared -o %%~dpnf.dll
 )
+
+:end

@@ -22,6 +22,15 @@ endif
 GIT_VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo "0.1.0")
 CFLAGS = -std=gnu11 -Wall -Wextra -Wshadow -g -I./src -I./src/ast -I./src/parser -I./src/codegen -I./plugins -I./src/zen -I./src/utils -I./src/lexer -I./src/analysis -I./src/lsp -I./src/diagnostics -I./std/third-party/tre/include -DZEN_VERSION=\"$(GIT_VERSION)\" -DZEN_SHARE_DIR=\"$(SHAREDIR)\"
 
+# Toggle plugins
+ifeq ($(NO_PLUGINS), 1)
+    CFLAGS += -DZC_NO_PLUGINS
+    PLUGINS =
+    LIBS = -lm -lpthread
+else
+    LIBS = -lm -lpthread -ldl
+endif
+
 ZC_HAS_JIT ?= 1
 ifeq ($(ZC_HAS_JIT), 1)
     CFLAGS += -DZC_HAS_JIT
@@ -34,7 +43,6 @@ ifeq ($(OS),Windows_NT)
         LIBS += -ltcc
     endif
 else
-    LIBS = -lm -lpthread -ldl
     ifeq ($(ZC_HAS_JIT), 1)
         LIBS += -ltcc
     endif
@@ -86,6 +94,7 @@ SRCS = src/main.c \
        src/repl/repl_jit.c \
        src/repl/repl_commands.c \
        src/plugins/plugin_manager.c \
+       src/plugins/static_plugins.c \
        std/third-party/tre/lib/regcomp.c \
        std/third-party/tre/lib/regerror.c \
        std/third-party/tre/lib/regexec.c \
@@ -123,6 +132,15 @@ ZC_BOOT_SRC = ape/boot/boot.zc
 ZC_BOOT_COM_BIN = $(OUT_STAGE)/zc-boot.com
 ZC_BOOT_COM = $(OUT_BIN)/zc-boot.com
 
+# Discover plugins for static linking
+PLUGIN_FILES = $(wildcard plugins/*.zc)
+PLUGIN_NAMES = $(patsubst plugins/%.zc,%,$(PLUGIN_FILES))
+PLUGIN_APE_OBJS = $(patsubst plugins/%.zc,obj-ape/plugins/%.o,$(PLUGIN_FILES))
+
+# Function to sanitize plugin names for C identifiers
+# Usage: $(call sanitize_name,name)
+sanitize_name = $(shell echo $(1) | sed 's/[^a-zA-Z0-9]/_/g')
+
 # Default target
 all: $(TARGET) $(PLUGINS)
 
@@ -150,15 +168,46 @@ $(ZC_ENTRY_O): ape/zc_entry.c
 	@$(MKDIR) $(@D)
 	$(COSMOCC) -c $< -o $@
 
-$(ZC_COM_BIN): $(ZC_ENTRY_O) $(SRCS)
+$(ZC_COM_BIN): $(ZC_ENTRY_O) $(SRCS) src/plugins/static_plugins.c $(PLUGIN_APE_OBJS)
 	@$(MKDIR) $(@D)
 	$(MAKE) \
 		PLUGINS= \
 		CC=$(COSMOCC) \
 		OBJ_DIR=obj-ape \
 		ZEN_VERSION="$(GIT_VERSION)" \
-		LIBS="$(abspath $(ZC_ENTRY_O)) -Wl,--wrap=main" \
+		LIBS="$(abspath $(ZC_ENTRY_O)) $(PLUGIN_APE_OBJS) -Wl,--wrap=main" \
+		CFLAGS="$(CFLAGS) -DZC_STATIC_PLUGINS" \
+		SRCS="$(SRCS) src/plugins/static_plugins.c" \
 		TARGET="$(abspath $@)";
+
+src/plugins/static_plugins.c: $(PLUGIN_FILES)
+	@echo "=> Generating static plugin registry: $@"
+	@echo '#include "plugin_manager.h"' > $@
+	@echo '#include <string.h>' >> $@
+	@echo '#ifdef ZC_STATIC_PLUGINS' >> $@
+	@for p in $(PLUGIN_NAMES); do \
+		psafe=$$(echo $$p | sed 's/[^a-zA-Z0-9]/_/g'); \
+		echo "extern ZPlugin *z_plugin_init_$$psafe(void);" >> $@; \
+	done
+	@echo 'ZPlugin *zptr_get_static_plugin(const char *name) {' >> $@
+	@for p in $(PLUGIN_NAMES); do \
+		psafe=$$(echo $$p | sed 's/[^a-zA-Z0-9]/_/g'); \
+		echo "  if (strcmp(name, \"$$p\") == 0 || strcmp(name, \"plugins/$$p\") == 0) return z_plugin_init_$$psafe();" >> $@; \
+	done
+	@echo '  return NULL;' >> $@
+	@echo '}' >> $@
+	@echo '#else' >> $@
+	@echo 'ZPlugin *zptr_get_static_plugin(const char *name) { (void)name; return NULL; }' >> $@
+	@echo '#endif' >> $@
+
+obj-ape/plugins/%.c: plugins/%.zc $(TARGET)
+	@$(MKDIR) $(@D)
+	./$(TARGET) transpile $< -o $@
+
+obj-ape/plugins/%.o: obj-ape/plugins/%.c
+	@$(MKDIR) $(@D)
+	@psafe=$$(echo $* | sed 's/[^a-zA-Z0-9]/_/g'); \
+	$(COSMOCC) $(CFLAGS) -DZC_STATIC_PLUGIN -Dz_plugin_init=z_plugin_init_$$psafe -c $< -o $@
 
 $(ZC_COM): $(ZC_COM_BIN)
 	@$(MKDIR) $(@D)

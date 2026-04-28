@@ -118,6 +118,7 @@ set(SRCS
     src/platform/console.c
     src/platform/dylib.c
     src/plugins/plugin_manager.c
+    src/plugins/static_plugins.c
     std/third-party/tre/lib/regcomp.c
     std/third-party/tre/lib/regerror.c
     std/third-party/tre/lib/regexec.c
@@ -147,6 +148,13 @@ if(ZC_USE_JIT)
     endif()
 endif()
 
+# --- Plugin System Toggle ---
+option(ZC_NO_PLUGINS "Disable the plugin system entirely" OFF)
+if(ZC_NO_PLUGINS)
+    add_compile_definitions(ZC_NO_PLUGINS)
+    message(STATUS "Plugin system disabled.")
+endif()
+
 # Platform-specific library logic
 set(PLATFORM_LIBS Threads::Threads)
 if(ZC_USE_JIT)
@@ -167,7 +175,10 @@ elseif(APPLE)
     set(PLUGIN_EXT ".dylib")
 else()
     # Linux/BSD: Link with libdl for zc_dlopen and libm for math
-    list(APPEND PLATFORM_LIBS ${CMAKE_DL_LIBS} m)
+    if(NOT ZC_NO_PLUGINS)
+        list(APPEND PLATFORM_LIBS ${CMAKE_DL_LIBS})
+    endif()
+    list(APPEND PLATFORM_LIBS m)
     set(SHARED_FLAGS "-fPIC")
     set(BINARY_EXT "")
     set(PLUGIN_EXT ".so")

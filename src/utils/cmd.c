@@ -257,10 +257,12 @@ void build_compile_arg_list(ArgList *list, const char *outfile, const char *temp
     // Include paths
     if (g_config.root_path && g_config.root_path[0])
     {
-        arg_list_add_fmt(list, "-I%s", g_config.root_path);
+        char abs_root[MAX_PATH_LEN];
+        z_get_absolute_path(g_config.root_path, abs_root, sizeof(abs_root));
+        arg_list_add_fmt(list, "-I%s", abs_root);
 
         char tre_path[MAX_PATH_LEN];
-        snprintf(tre_path, sizeof(tre_path), "%s/std/third-party/tre/include", g_config.root_path);
+        snprintf(tre_path, sizeof(tre_path), "%s/std/third-party/tre/include", abs_root);
 
         if (!g_config.is_freestanding && access(tre_path, F_OK) == 0)
         {
@@ -271,13 +273,17 @@ void build_compile_arg_list(ArgList *list, const char *outfile, const char *temp
     // User-defined include paths
     for (int i = 0; i < g_config.include_path_count; i++)
     {
-        arg_list_add_fmt(list, "-I%s", g_config.include_paths[i]);
+        char abs_inc[MAX_PATH_LEN];
+        z_get_absolute_path(g_config.include_paths[i], abs_inc, sizeof(abs_inc));
+        arg_list_add_fmt(list, "-I%s", abs_inc);
     }
 
     // Input directory (to resolve relative includes in raw blocks)
     if (g_config.input_dir)
     {
-        arg_list_add_fmt(list, "-I%s", g_config.input_dir);
+        char abs_input_dir[MAX_PATH_LEN];
+        z_get_absolute_path(g_config.input_dir, abs_input_dir, sizeof(abs_input_dir));
+        arg_list_add_fmt(list, "-I%s", abs_input_dir);
 
         // Only use -iquote for GCC, Clang, and Emscripten (TCC does not support it)
         if (z_path_match_compiler(g_config.cc, "gcc") ||
@@ -286,7 +292,7 @@ void build_compile_arg_list(ArgList *list, const char *outfile, const char *temp
             z_path_match_compiler(g_config.cc, "emcc"))
         {
             arg_list_add(list, "-iquote");
-            arg_list_add(list, g_config.input_dir);
+            arg_list_add(list, abs_input_dir);
         }
     }
 }

@@ -7,6 +7,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifndef ZC_NO_PLUGINS
+
 // Linked list node for plugins.
 typedef struct PluginNode
 {
@@ -165,6 +167,16 @@ ZPlugin *zptr_find_plugin(const char *name)
         }
         curr = curr->next;
     }
+
+    // Try finding in static built-ins if enabled
+#ifdef ZC_STATIC_PLUGINS
+    ZPlugin *p = zptr_get_static_plugin(name);
+    if (p)
+    {
+        return p;
+    }
+#endif
+
     return NULL;
 }
 
@@ -214,3 +226,46 @@ int zptr_unload_plugin(const char *name)
     }
     return 0;
 }
+
+#else
+
+void zptr_plugin_mgr_init(void)
+{
+}
+void zptr_register_plugin(ZPlugin *plugin)
+{
+    (void)plugin;
+}
+ZPlugin *zptr_load_plugin(const char *path)
+{
+    (void)path;
+    return NULL;
+}
+ZPlugin *zptr_find_plugin(const char *name)
+{
+    (void)name;
+    return NULL;
+}
+void zptr_init_api(ZApi *api, const char *filename, int line, FILE *out, FILE *hoist_out)
+{
+    (void)api;
+    (void)filename;
+    (void)line;
+    (void)out;
+    (void)hoist_out;
+}
+void zptr_plugin_mgr_cleanup(void)
+{
+}
+int zptr_unload_plugin(const char *name)
+{
+    (void)name;
+    return 0;
+}
+ZPlugin *zptr_get_static_plugin(const char *name)
+{
+    (void)name;
+    return NULL;
+}
+
+#endif

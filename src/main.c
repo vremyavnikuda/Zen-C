@@ -74,10 +74,38 @@ int main(int argc, char **argv)
     set_diag_by_name("style", 1);
 
     z_get_executable_path(self_path, sizeof(self_path));
-
     if (self_path[0])
     {
         g_config.root_path = xstrdup(self_path);
+
+        // Improve root_path discovery: look for std.zc in root_path or its parents
+        char current_root[MAX_PATH_SIZE];
+        strncpy(current_root, self_path, sizeof(current_root) - 1);
+        current_root[sizeof(current_root) - 1] = '\0';
+
+        while (current_root[0])
+        {
+            char check_path[MAX_PATH_SIZE];
+            snprintf(check_path, sizeof(check_path), "%s/std.zc", current_root);
+            if (access(check_path, F_OK) == 0)
+            {
+                // Found it!
+                free(g_config.root_path);
+                g_config.root_path = xstrdup(current_root);
+                break;
+            }
+
+            // Try parent
+            char *last_slash = strrchr(current_root, '/');
+            if (last_slash && last_slash != current_root)
+            {
+                *last_slash = '\0';
+            }
+            else
+            {
+                break; // Reached root or no more slashes
+            }
+        }
     }
     else
     {
@@ -87,6 +115,10 @@ int main(int argc, char **argv)
     env_root = getenv("ZC_ROOT");
     if (env_root && env_root[0])
     {
+        if (g_config.root_path)
+        {
+            free(g_config.root_path);
+        }
         g_config.root_path = xstrdup(env_root);
     }
 
@@ -570,8 +602,10 @@ int main(int argc, char **argv)
     init_builtins();
     zen_init();
 
+#ifndef ZC_NO_PLUGINS
     // Initialize Plugin Manager
     zptr_plugin_mgr_init();
+#endif
 
     // Load all configurations (system, hidden project, visible project)
     load_all_configs();
@@ -1003,7 +1037,9 @@ int main(int argc, char **argv)
             printf(COLOR_BOLD COLOR_CYAN "   Cleaning up" COLOR_RESET " plugins...\n");
             fflush(stdout);
         }
+#ifndef ZC_NO_PLUGINS
         zptr_plugin_mgr_cleanup();
+#endif
 
         if (g_config.verbose)
         {
@@ -1023,7 +1059,9 @@ int main(int argc, char **argv)
         printf(COLOR_BOLD COLOR_CYAN "   Cleaning up" COLOR_RESET " plugins...\n");
         fflush(stdout);
     }
+#ifndef ZC_NO_PLUGINS
     zptr_plugin_mgr_cleanup();
+#endif
 
     if (g_config.verbose)
     {

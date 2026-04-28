@@ -199,7 +199,7 @@ void emit_preamble(ParserContext *ctx, FILE *out)
             fputs("#define z_malloc malloc\n#define z_realloc realloc\n", out);
         }
         fputs("#define z_free free\n#define z_print printf\n", out);
-        fputs("void __zenc_panic(const char* msg) { fprintf(stderr, \"Panic: %s\\n\", "
+        fputs("static void __zenc_panic(const char* msg) { fprintf(stderr, \"Panic: %s\\n\", "
               "msg); exit(1); }\n",
               out);
         fputs("#if defined(__APPLE__)\n"
@@ -217,7 +217,7 @@ void emit_preamble(ParserContext *ctx, FILE *out)
               "0x73,0x71};\n",
               out);
 
-        fputs("void _z_autofree_impl(void *p) { void **pp = (void**)p; if(*pp) { "
+        fputs("static void _z_autofree_impl(void *p) { void **pp = (void**)p; if(*pp) { "
               "z_free(*pp); *pp "
               "= NULL; } }\n",
               out);
@@ -230,7 +230,7 @@ void emit_preamble(ParserContext *ctx, FILE *out)
         if (g_config.use_cpp)
         {
             fputs(
-                "string _z_readln_raw() { "
+                "static string _z_readln_raw() { "
                 "size_t cap = 64; size_t len = 0; "
                 "char *line = static_cast<char*>(malloc(cap)); "
                 "if(!line) return NULL; "
@@ -246,7 +246,7 @@ void emit_preamble(ParserContext *ctx, FILE *out)
         }
         else
         {
-            fputs("string _z_readln_raw() { "
+            fputs("static string _z_readln_raw() { "
                   "size_t cap = 64; size_t len = 0; "
                   "char *line = z_malloc(cap); "
                   "if(!line) return NULL; "
@@ -260,7 +260,7 @@ void emit_preamble(ParserContext *ctx, FILE *out)
                   "line[len] = 0; return line; }\n",
                   out);
         }
-        fputs("int _z_scan_helper(const char *fmt, ...) { char *l = "
+        fputs("static int _z_scan_helper(const char *fmt, ...) { char *l = "
               "_z_readln_raw(); if(!l) return "
               "0; va_list ap; va_start(ap, fmt); int r = vsscanf(l, fmt, ap); "
               "va_end(ap); "
@@ -268,15 +268,15 @@ void emit_preamble(ParserContext *ctx, FILE *out)
               out);
 
         // REPL helpers: suppress/restore stdout.
-        fputs("int _z_orig_stdout = -1;\n", out);
-        fputs("void _z_suppress_stdout() {\n", out);
+        fputs("static int _z_orig_stdout = -1;\n", out);
+        fputs("static void _z_suppress_stdout() {\n", out);
         fputs("    fflush(stdout);\n", out);
         fputs("    if (_z_orig_stdout == -1) _z_orig_stdout = dup(STDOUT_FILENO);\n", out);
         fputs("    int nullfd = open(\"/dev/null\", O_WRONLY);\n", out);
         fputs("    dup2(nullfd, STDOUT_FILENO);\n", out);
         fputs("    close(nullfd);\n", out);
         fputs("}\n", out);
-        fputs("void _z_restore_stdout() {\n", out);
+        fputs("static void _z_restore_stdout() {\n", out);
         fputs("    fflush(stdout);\n", out);
         fputs("    if (_z_orig_stdout != -1) {\n", out);
         fputs("        dup2(_z_orig_stdout, STDOUT_FILENO);\n", out);

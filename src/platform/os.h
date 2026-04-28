@@ -143,6 +143,14 @@ int z_get_pid(void);
 void z_get_executable_path(char *buffer, size_t size);
 
 /**
+ * @brief Resolve a path to an absolute path.
+ * @param path The path to resolve.
+ * @param buffer Buffer to store the absolute path.
+ * @param size Size of the buffer.
+ */
+void z_get_absolute_path(const char *path, char *buffer, size_t size);
+
+/**
  * @brief Check if file descriptor refers to a terminal.
  */
 int z_isatty(int fd);

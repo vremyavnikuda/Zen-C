@@ -132,7 +132,13 @@ int z_get_pid(void)
 void z_get_executable_path(char *buffer, size_t size)
 {
     memset(buffer, 0, size);
-#if ZC_OS_WINDOWS
+#ifdef __COSMOPOLITAN__
+    const char *exe = GetProgramExecutableName();
+    if (exe)
+    {
+        strncpy(buffer, exe, size - 1);
+    }
+#elif ZC_OS_WINDOWS
     GetModuleFileNameA(NULL, buffer, (DWORD)size);
 #elif ZC_OS_LINUX
     ssize_t len = readlink("/proc/self/exe", buffer, size - 1);
@@ -159,6 +165,42 @@ void z_get_executable_path(char *buffer, size_t size)
     {
         *last_sep = '\0';
     }
+}
+
+void z_get_absolute_path(const char *path, char *buffer, size_t size)
+{
+    if (!path || !path[0])
+    {
+        memset(buffer, 0, size);
+        return;
+    }
+
+#if ZC_OS_WINDOWS
+    _fullpath(buffer, path, (int)size);
+    // Convert backslashes to forward slashes for consistency
+    for (char *p = buffer; *p; p++)
+    {
+        if (*p == '\\')
+        {
+            *p = '/';
+        }
+    }
+#else
+    char *real = realpath(path, NULL);
+    if (real)
+    {
+        strncpy(buffer, real, size - 1);
+        buffer[size - 1] = '\0';
+        free(real);
+    }
+    else
+    {
+        // realpath failed (e.g. path doesn't exist yet or /zip path on host)
+        // Just copy it as-is
+        strncpy(buffer, path, size - 1);
+        buffer[size - 1] = '\0';
+    }
+#endif
 }
 
 int z_isatty(int fd)

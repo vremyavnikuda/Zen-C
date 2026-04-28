@@ -47,4 +47,11 @@ void zptr_plugin_mgr_cleanup(void);
  */
 int zptr_unload_plugin(const char *name);
 
+/**
+ * @brief Get a static built-in plugin by name.
+ * @param name The name of the plugin.
+ * @return ZPlugin* Pointer to the plugin or NULL if not found.
+ */
+ZPlugin *zptr_get_static_plugin(const char *name);
+
 #endif
