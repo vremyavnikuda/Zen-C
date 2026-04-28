@@ -6,7 +6,7 @@
 #ifndef REPL_JIT_H
 #define REPL_JIT_H
 
-#ifdef ZC_HAS_JIT
+#if ZC_HAS_JIT
 #include <libtcc.h>
 #endif
 

@@ -261,13 +261,56 @@ void build_compile_arg_list(ArgList *list, const char *outfile, const char *temp
         z_get_absolute_path(g_config.root_path, abs_root, sizeof(abs_root));
         arg_list_add_fmt(list, "-I%s", abs_root);
 
-        char tre_path[MAX_PATH_LEN + 64];
+        char tre_path[MAX_PATH_LEN + 128];
         snprintf(tre_path, sizeof(tre_path), "%s/std/third-party/tre/include", abs_root);
 
+        int tre_found = 0;
         if (!g_config.is_freestanding && access(tre_path, F_OK) == 0)
         {
             arg_list_add_fmt(list, "-I%s", tre_path);
+            tre_found = 1;
         }
+
+        // Robust fallback: if not found via root_path, try relative to the executable's physical
+        // location
+        if (!tre_found && !g_config.is_freestanding)
+        {
+            char self_exe[MAX_PATH_SIZE];
+            z_get_executable_path(self_exe, sizeof(self_exe));
+            // z_get_executable_path gives the directory.
+            // If we are in out/bin, the repo root is ../..
+            snprintf(tre_path, sizeof(tre_path), "%s/../../std/third-party/tre/include", self_exe);
+            if (access(tre_path, F_OK) == 0)
+            {
+                char abs_tre[MAX_PATH_SIZE];
+                z_get_absolute_path(tre_path, abs_tre, sizeof(abs_tre));
+                arg_list_add_fmt(list, "-I%s", abs_tre);
+                tre_found = 1;
+            }
+        }
+
+        // Heuristic: try current directory if all else fails
+        if (!tre_found && !g_config.is_freestanding)
+        {
+            if (access("std/third-party/tre/include", F_OK) == 0)
+            {
+                arg_list_add(list, "-Istd/third-party/tre/include");
+                tre_found = 1;
+            }
+        }
+
+        // Final fallback: Always add the relative path just in case,
+        // as the backend compiler is usually run from the same directory as zc.
+        if (!tre_found && !g_config.is_freestanding)
+        {
+            arg_list_add(list, "-Istd/third-party/tre/include");
+        }
+    }
+
+    // Always add standard library root as an include path for convenience
+    if (g_config.root_path)
+    {
+        arg_list_add_fmt(list, "-I%s", g_config.root_path);
     }
 
     // User-defined include paths

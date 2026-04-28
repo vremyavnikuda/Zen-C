@@ -116,6 +116,34 @@ ZPlugin *zptr_load_plugin(const char *path)
     void *handle = z_dlopen(path);
     if (!handle)
     {
+#ifdef ZC_STATIC_PLUGINS
+        // Try to resolve path to a static plugin name
+        // Path might be "plugins/name", "plugins/name.so", "plugins/name.zc" etc.
+        const char *name_start = z_path_last_sep(path);
+        if (name_start)
+        {
+            name_start++;
+        }
+        else
+        {
+            name_start = path;
+        }
+
+        char name[256];
+        strncpy(name, name_start, sizeof(name) - 1);
+        name[sizeof(name) - 1] = '\0';
+        char *dot = strchr(name, '.');
+        if (dot)
+        {
+            *dot = '\0';
+        }
+
+        ZPlugin *sp = zptr_find_plugin(name);
+        if (sp)
+        {
+            return sp;
+        }
+#endif
         return NULL;
     }
 

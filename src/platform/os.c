@@ -189,6 +189,50 @@ void z_get_absolute_path(const char *path, char *buffer, size_t size)
     char *real = realpath(path, NULL);
     if (real)
     {
+#ifdef __COSMOPOLITAN__
+        // If we are in APE and got a /zip path, but we need to pass this to a sub-process (like
+        // cc), we MUST use a physical path because sub-processes can't see into our zip.
+        if (strncmp(real, "/zip", 4) == 0)
+        {
+            // Try to see if the path exists on the physical disk relative to the executable.
+            const char *exe_path = GetProgramExecutableName();
+            if (exe_path)
+            {
+                char exe_dir[MAX_PATH_SIZE];
+                strncpy(exe_dir, exe_path, sizeof(exe_dir) - 1);
+                char *last_slash = strrchr(exe_dir, '/');
+                if (last_slash)
+                {
+                    *last_slash = '\0';
+                    // We heuristicly assume that if we are in APE and got a /zip path,
+                    // we want the equivalent path in the directory where the APE resides.
+                    // This is true for the Zen C repository structure.
+                    char physical[MAX_PATH_SIZE];
+                    if (strlen(real) >= 5)
+                    {
+                        snprintf(physical, sizeof(physical), "%s/%s", exe_dir,
+                                 real + 5); // real+5 skips "/zip/"
+                        if (access(physical, F_OK) == 0)
+                        {
+                            strncpy(buffer, physical, size - 1);
+                            buffer[size - 1] = '\0';
+                            free(real);
+                            return;
+                        }
+                    }
+
+                    // Fallback: if it was just "/zip", then it's exe_dir.
+                    if (strcmp(real, "/zip") == 0)
+                    {
+                        strncpy(buffer, exe_dir, size - 1);
+                        buffer[size - 1] = '\0';
+                        free(real);
+                        return;
+                    }
+                }
+            }
+        }
+#endif
         strncpy(buffer, real, size - 1);
         buffer[size - 1] = '\0';
         free(real);
@@ -200,6 +244,16 @@ void z_get_absolute_path(const char *path, char *buffer, size_t size)
         strncpy(buffer, path, size - 1);
         buffer[size - 1] = '\0';
     }
+#endif
+}
+
+int z_is_zip_path(const char *path)
+{
+#ifdef __COSMOPOLITAN__
+    return path && strncmp(path, "/zip", 4) == 0;
+#else
+    (void)path;
+    return 0;
 #endif
 }
 

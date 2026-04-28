@@ -149,6 +149,7 @@ void z_get_executable_path(char *buffer, size_t size);
  * @param size Size of the buffer.
  */
 void z_get_absolute_path(const char *path, char *buffer, size_t size);
+int z_is_zip_path(const char *path);
 
 /**
  * @brief Check if file descriptor refers to a terminal.

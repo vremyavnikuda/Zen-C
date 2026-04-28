@@ -174,6 +174,7 @@ $(ZC_COM_BIN): $(ZC_ENTRY_O) $(SRCS) src/plugins/static_plugins.c $(PLUGIN_APE_O
 	@$(MKDIR) $(@D)
 	$(MAKE) \
 		PLUGINS= \
+		ZC_HAS_JIT=0 \
 		CC=$(COSMOCC) \
 		OBJ_DIR=obj-ape \
 		DEFINES='$(DEFINES) -DZC_STATIC_PLUGINS' \

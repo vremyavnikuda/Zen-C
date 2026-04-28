@@ -5811,8 +5811,14 @@ void register_plugin(ParserContext *ctx, const char *name, const char *alias)
     // If not found, try to load it dynamically
     if (!plugin)
     {
-        plugin = zptr_load_plugin(name);
-
+#ifdef ZC_STATIC_PLUGINS
+        plugin = zptr_find_plugin(name);
+        if (!plugin && strchr(name, '/'))
+        {
+            const char *last_slash = strrchr(name, '/');
+            plugin = zptr_find_plugin(last_slash + 1);
+        }
+#endif
         if (!plugin)
         {
             char path[MAX_PATH_LEN];
