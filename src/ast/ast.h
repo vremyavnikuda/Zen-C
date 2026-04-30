@@ -729,4 +729,10 @@ char *type_to_string(Type *t);
 char *type_to_c_string(Type *t);
 Type *get_inner_type(Type *t);
 
+typedef struct TraitReg
+{
+    char *name;
+    struct TraitReg *next;
+} TraitReg;
+
 #endif

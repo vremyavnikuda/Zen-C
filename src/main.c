@@ -613,6 +613,7 @@ int main(int argc, char **argv)
     // Parse context init
     ParserContext ctx;
     memset(&ctx, 0, sizeof(ctx));
+    g_parser_ctx = &ctx;
 
     // Scan for build directives (e.g. //> link: -lm)
     scan_build_directives(&ctx, src);
@@ -626,7 +627,6 @@ int main(int argc, char **argv)
         perror("tmpfile for hoisting");
         return 1;
     }
-    g_parser_ctx = &ctx;
 
     start_time = z_get_monotonic_time();
 

@@ -5,25 +5,24 @@
 #include <stdlib.h>
 #include <string.h>
 
-typedef struct TraitReg
-{
-    char *name;
-    struct TraitReg *next;
-} TraitReg;
-
-static TraitReg *registered_traits = NULL;
-
 void register_trait(const char *name)
 {
+    if (!g_parser_ctx)
+    {
+        return;
+    }
     TraitReg *r = xmalloc(sizeof(TraitReg));
     r->name = xstrdup(name);
-    r->next = registered_traits;
-    registered_traits = r;
+    r->next = g_parser_ctx->registered_traits;
+    g_parser_ctx->registered_traits = r;
 }
 
 void clear_registered_traits()
 {
-    registered_traits = NULL;
+    if (g_parser_ctx)
+    {
+        g_parser_ctx->registered_traits = NULL;
+    }
 }
 
 int is_trait(const char *name)
@@ -56,7 +55,7 @@ int is_trait(const char *name)
         *p = '\0';
     }
 
-    TraitReg *r = registered_traits;
+    TraitReg *r = g_parser_ctx ? g_parser_ctx->registered_traits : NULL;
     while (r)
     {
         if (0 == strcmp(r->name, base))

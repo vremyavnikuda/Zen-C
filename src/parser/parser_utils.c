@@ -2732,7 +2732,6 @@ Type *replace_type_formal(Type *t, const char *p, const char *c, const char *os,
         return NULL;
     }
 
-
     // Exact Match Logic (with multi-param splitting)
     if ((t->kind == TYPE_STRUCT || t->kind == TYPE_GENERIC) && t->name)
     {

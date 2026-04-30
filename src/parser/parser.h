@@ -377,6 +377,9 @@ struct ParserContext
 
     // Flow Analysis (Move Semantics)
     struct MoveState *move_state;
+
+    // Registry of traits (encapsulated)
+    TraitReg *registered_traits;
 };
 
 // Recursion Safety
