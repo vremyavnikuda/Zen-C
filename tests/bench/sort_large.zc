@@ -3,7 +3,7 @@ import "../../std/sort.zc"
 import "../../std/time.zc"
 import "../../std/random.zc"
 
-fn main() -> int {
+fn main() {
     let size = 10000;
     let iterations = 100;
     let arr: int[10000];

@@ -1,6 +1,6 @@
 import "../../std/time.zc"
 
-fn main() -> int {
+fn main() {
     let start = Time::now();
     for (let i = 0; i < 1000; i = i + 1) {
         // Just loop

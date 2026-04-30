@@ -135,6 +135,7 @@ Token lexer_peek2(Lexer *l);
  * @brief Register a trait.
  */
 void register_trait(const char *name);
+void clear_registered_traits();
 
 /**
  * @brief Check if a name is a trait.

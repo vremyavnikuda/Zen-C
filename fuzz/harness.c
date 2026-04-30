@@ -94,6 +94,8 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     // Everything (src, root, ctx allocations) was in the Arena.
     // Resetting it now to prevent leaks between iterations.
     arena_reset();
+    clear_registered_traits();
+    free(src);
 
     return 0;
 }

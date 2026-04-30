@@ -25,6 +25,14 @@ jobs:
     - name: Run Benchmarks
       run: ./tests/scripts/run_benchmarks.sh
 
+    - name: Ensure benchmark branch exists
+      if: github.ref == 'refs/heads/main'
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git fetch origin gh-pages:gh-pages || git checkout -b gh-pages
+        git checkout main
+
     - name: Store Benchmark Results
       uses: benchmark-action/github-action-benchmark@v1
       with:
@@ -32,7 +40,8 @@ jobs:
         tool: 'customSmallerIsBetter'
         output-file-path: benchmarks_result.json
         github-token: ${{ secrets.GITHUB_TOKEN }}
-        auto-push: true
+        # Only push on main branch
+        auto-push: ${{ github.ref == 'refs/heads/main' }}
         # Show alert if performance regresses by 20%
         alert-threshold: '120%'
         comment-on-alert: true

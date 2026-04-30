@@ -2732,6 +2732,7 @@ Type *replace_type_formal(Type *t, const char *p, const char *c, const char *os,
         return NULL;
     }
 
+
     // Exact Match Logic (with multi-param splitting)
     if ((t->kind == TYPE_STRUCT || t->kind == TYPE_GENERIC) && t->name)
     {
@@ -3051,6 +3052,20 @@ ASTNode *copy_ast_replacing(ASTNode *n, const char *p, const char *c, const char
             free(tmp_args);
             tmp_args = tmp2;
         }
+        new_node->func.arg_count = n->func.arg_count;
+        if (n->func.arg_count > 0 && n->func.arg_types)
+        {
+            new_node->func.arg_types = xmalloc(sizeof(Type *) * n->func.arg_count);
+            for (int i = 0; i < n->func.arg_count; i++)
+            {
+                new_node->func.arg_types[i] =
+                    replace_type_formal(n->func.arg_types[i], p, c, os, ns);
+            }
+        }
+        else
+        {
+            new_node->func.arg_types = NULL;
+        }
         new_node->func.args = tmp_args;
 
         new_node->func.ret_type_info = replace_type_formal(n->func.ret_type_info, p, c, os, ns);
@@ -3184,6 +3199,7 @@ ASTNode *copy_ast_replacing(ASTNode *n, const char *p, const char *c, const char
     case NODE_VAR_DECL:
         new_node->var_decl.name = xstrdup(n->var_decl.name);
         new_node->var_decl.type_str = replace_type_str(n->var_decl.type_str, p, c, os, ns);
+        new_node->var_decl.type_info = replace_type_formal(n->var_decl.type_info, p, c, os, ns);
         new_node->var_decl.init_expr = copy_ast_replacing(n->var_decl.init_expr, p, c, os, ns);
         break;
     case NODE_RETURN:
@@ -3466,31 +3482,14 @@ ASTNode *copy_ast_replacing(ASTNode *n, const char *p, const char *c, const char
         break;
     case NODE_TYPEOF:
     case NODE_EXPR_SIZEOF:
-        if (n->size_of.target_type)
-        {
-            char *replaced = replace_type_str(n->size_of.target_type, p, c, os, ns);
-            if (replaced && strchr(replaced, '<'))
-            {
-                char *mangled = sanitize_mangled_name(replaced);
-                free(replaced);
-                replaced = mangled;
-            }
-            new_node->size_of.target_type = replaced;
-            if (replaced && strcmp(replaced, n->size_of.target_type) != 0)
-            {
-                new_node->size_of.target_type_info = NULL;
-            }
-            else
-            {
-                new_node->size_of.target_type_info = n->size_of.target_type_info;
-            }
-        }
-        else
-        {
-            new_node->size_of.target_type_info = n->size_of.target_type_info;
-        }
-        new_node->size_of.is_type = n->size_of.is_type;
+        new_node->size_of.target_type = replace_type_str(n->size_of.target_type, p, c, os, ns);
         new_node->size_of.expr = copy_ast_replacing(n->size_of.expr, p, c, os, ns);
+        new_node->size_of.is_type = n->size_of.is_type;
+        if (n->size_of.target_type_info)
+        {
+            new_node->size_of.target_type_info =
+                replace_type_formal(n->size_of.target_type_info, p, c, os, ns);
+        }
         break;
     default:
         break;

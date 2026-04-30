@@ -21,6 +21,11 @@ void register_trait(const char *name)
     registered_traits = r;
 }
 
+void clear_registered_traits()
+{
+    registered_traits = NULL;
+}
+
 int is_trait(const char *name)
 {
     if (!name)
