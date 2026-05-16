@@ -668,7 +668,15 @@ static void __attribute__((unused)) check_format_string(ASTNode *call, Token t)
 
 ASTNode *parse_expression(ParserContext *ctx, Lexer *l)
 {
-    return parse_expr_prec(ctx, l, PREC_NONE);
+    ASTNode *n = parse_expr_prec(ctx, l, PREC_NONE);
+    // Return a safe sentinel instead of NULL — eliminates null-deref crashes
+    // across all ~150 call sites without needing individual NULL checks.
+    if (!n)
+    {
+        n = ast_create(NODE_ERRONEOUS);
+        n->token = lexer_peek(l);
+    }
+    return n;
 }
 
 Precedence get_token_precedence(Token t)
@@ -5093,6 +5101,10 @@ static ASTNode *parse_expr_prec_impl(ParserContext *ctx, Lexer *l, Precedence mi
             fmt[0] = 0;
             for (int i = 0; i < ac; i++)
             {
+                if (!args[i])
+                {
+                    continue;
+                }
                 Type *inner_t = args[i]->type_info;
                 if (!inner_t && args[i]->type == NODE_EXPR_VAR)
                 {
@@ -5341,6 +5353,10 @@ static ASTNode *parse_expr_prec_impl(ParserContext *ctx, Lexer *l, Precedence mi
         if (is_token(t, "**"))
         {
             operand = parse_expr_prec(ctx, l, PREC_UNARY);
+            if (!operand)
+            {
+                return ast_create(NODE_ERRONEOUS);
+            }
             ASTNode *inner_deref = ast_create(NODE_EXPR_UNARY);
             inner_deref->token = t;
             inner_deref->unary.op = xstrdup("*");
@@ -5355,9 +5371,13 @@ static ASTNode *parse_expr_prec_impl(ParserContext *ctx, Lexer *l, Precedence mi
         else
         {
             operand = parse_expr_prec(ctx, l, PREC_UNARY);
+            if (!operand)
+            {
+                return ast_create(NODE_ERRONEOUS);
+            }
         }
 
-        if (is_token(t, "&") && operand->type == NODE_EXPR_VAR)
+        if (!operand || (is_token(t, "&") && operand->type == NODE_EXPR_VAR))
         {
             ZenSymbol *s = find_symbol_entry(ctx, operand->var_ref.name);
             if (s && s->is_def)
@@ -6854,6 +6874,12 @@ static ASTNode *parse_expr_prec_impl(ParserContext *ctx, Lexer *l, Precedence mi
         }
 
         ASTNode *rhs = parse_expr_prec(ctx, l, next_prec);
+        if (!rhs)
+        {
+            // parse_expr_prec can return NULL on malformed input. Without the
+            // RHS we cannot form a binary expression, so bail out.
+            return lhs;
+        }
         ASTNode *bin = ast_create(NODE_EXPR_BINARY);
         bin->token = op;
         if (op.type == TOK_OP)

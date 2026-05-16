@@ -329,6 +329,11 @@ void check_expr_binary(TypeChecker *tc, ASTNode *node, int depth)
                                        node->token);
     }
 
+    // Malformed input can produce binary expressions with NULL children
+    if (!node->binary.left || !node->binary.right)
+    {
+        return;
+    }
     Type *left_type = node->binary.left->type_info;
     Type *right_type = node->binary.right->type_info;
 

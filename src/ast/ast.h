@@ -197,7 +197,8 @@ typedef enum
     NODE_PREPROC_DIRECTIVE,  ///< C-style preprocessor directive (#define, etc).
     NODE_IMPORT,             ///< Import statement (recursive).
     NODE_COMPTIME,           ///< Comptime block (interpreted at compile time).
-    NODE_AST_COMMENT         ///< Comment node.
+    NODE_AST_COMMENT,        ///< Comment node.
+    NODE_ERRONEOUS           ///< Error sentinel (safe no-op node).
 } NodeType;
 
 // ** AST Node Structure **

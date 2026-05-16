@@ -5023,6 +5023,7 @@ void instantiate_generic(ParserContext *ctx, const char *tpl, const char *arg,
     if (!t)
     {
         zpanic_at(token, "Unknown generic: %s", tpl);
+        return; // fault tolerance: zpanic_at returned, bail out
     }
 
     Instantiation *ni = xcalloc(1, sizeof(Instantiation));

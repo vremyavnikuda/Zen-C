@@ -707,19 +707,25 @@ Type *parse_type_formal(ParserContext *ctx, Lexer *l)
         ASTNode *size_expr = parse_expression(ctx, l);
         long long compiled_size = 0;
         int size = 0;
+        if (!size_expr)
+        {
+            zpanic_at(lexer_peek(l), "Expected array size expression");
+        }
         if (eval_const_int_expr(size_expr, ctx, &compiled_size))
         {
             size = (int)compiled_size;
         }
         else
         {
+            // Use lexer token for error location — the parsed expression's token
+            // may have a corrupted start position from malformed input.
             if (ctx->config->misra_mode)
             {
-                zpanic_at(size_expr->token, "MISRA Rule 18.8");
+                zpanic_at(lexer_peek(l), "MISRA Rule 18.8");
             }
             else
             {
-                zpanic_at(size_expr->token,
+                zpanic_at(lexer_peek(l),
                           "Array size must be a known compile-time constant integer");
             }
         }

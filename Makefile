@@ -57,6 +57,10 @@ ifeq ($(OS),Windows_NT)
 else
     ifeq ($(ZC_HAS_JIT), 1)
         LIBS += -ltcc
+        # afl-clang-fast/lld don't search /usr/local/lib by default
+        ifneq ($(wildcard /usr/local/lib/libtcc.a),)
+            LIBS += -L/usr/local/lib
+        endif
     endif
 endif
 
@@ -475,16 +479,15 @@ fuzz-libfuzzer-build:
 
 fuzz-corpus:
 	@$(MKDIR) $(FUZZ_CORPUS)
-	@cp tests/*.zc $(FUZZ_CORPUS)/ 2>/dev/null || true
-	@cp tests/std/*.zc $(FUZZ_CORPUS)/ 2>/dev/null || true
-	@echo "=> Seed corpus created from existing tests"
+	@find tests -name '*.zc' -exec cp {} $(FUZZ_CORPUS)/ \; 2>/dev/null || true
+	@echo "=> Seed corpus created from existing tests ($(shell ls -1 $(FUZZ_CORPUS) 2>/dev/null | wc -l) files)"
 
 fuzz-run: fuzz-build
 	@if [ ! -d "$(FUZZ_CORPUS)" ]; then sh $(FUZZ_DIR)/scripts/generate_corpus.sh; fi
 	@$(MKDIR) $(FUZZ_OUT)
 	@echo "-> Starting fuzzer (Persistent Mode enabled)"
 	@echo "-> Tip: For parallel runs, use '-M main' and '-S secondaryN'"
-	AFL_SKIP_CPUFREQ=1 AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1 afl-fuzz -i $(FUZZ_CORPUS) -o $(FUZZ_OUT) -x $(FUZZ_DICT) -- ./$(FUZZ_TARGET)
+	AFL_SKIP_CPUFREQ=1 AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1 afl-fuzz -i $(FUZZ_CORPUS) -o $(FUZZ_OUT) $(if $(wildcard $(FUZZ_DICT)),-x $(FUZZ_DICT),) -- ./$(FUZZ_TARGET)
 
 fuzz-clean:
 	rm -rf $(FUZZ_OUT)/*

@@ -1395,6 +1395,11 @@ ASTNode *parse_while(ParserContext *ctx, Lexer *l)
     Token tk = lexer_next(l);
     ASTNode *cond = parse_expression(ctx, l);
     check_assignment_condition(cond);
+    if (!cond)
+    {
+        zerror_at(lexer_peek(l), "Expected condition expression");
+        return ast_create(NODE_BLOCK);
+    }
 
     // Zen: While(true)
     if ((cond->type == NODE_EXPR_LITERAL && cond->literal.type_kind == LITERAL_INT &&
@@ -3018,19 +3023,7 @@ ASTNode *parse_macro_call(ParserContext *ctx, Lexer *l, char *macro_name)
         snprintf(err, sizeof(err), "Plugin implementation not found: %s", plugin_name);
         zpanic_at(start_tok, "%s", err);
 
-        // Fallback for ZLS: Return a dummy plugin node to stay alive
-        if (ctx->config->mode_lsp)
-        {
-            zfree(body);
-            ASTNode *n = ast_create(NODE_PLUGIN);
-            n->plugin_stmt.plugin_name = xstrdup(plugin_name);
-            n->plugin_stmt.body = xstrdup("");
-            n->plugin_stmt.start_line = start_line;
-            n->plugin_stmt.start_col = start_col;
-            n->plugin_stmt.end_line = end_line;
-            n->plugin_stmt.end_col = end_col;
-            return n;
-        }
+        return NULL;
     }
 
     // Execute Plugin Immediately (Expansion)

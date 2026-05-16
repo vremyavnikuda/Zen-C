@@ -353,12 +353,20 @@ ASTNode *parse_var_decl(ParserContext *ctx, Lexer *l, int is_export)
     {
         int is_struct = (lexer_peek(l).type == TOK_LBRACE);
         lexer_next(l);
-        char **names = xmalloc(16 * sizeof(char *));
-        char **types = xmalloc(16 * sizeof(char *));
-        Type **type_infos = xmalloc(16 * sizeof(Type *));
+        int cap = 16;
+        char **names = xmalloc(cap * sizeof(char *));
+        char **types = xmalloc(cap * sizeof(char *));
+        Type **type_infos = xmalloc(cap * sizeof(Type *));
         int count = 0;
         while (1)
         {
+            if (count >= cap)
+            {
+                cap *= 2;
+                names = xrealloc(names, cap * sizeof(char *));
+                types = xrealloc(types, cap * sizeof(char *));
+                type_infos = xrealloc(type_infos, cap * sizeof(Type *));
+            }
             Token t = lexer_next(l);
             check_identifier(ctx, t);
             char *nm = token_strdup(t);
@@ -371,7 +379,7 @@ ASTNode *parse_var_decl(ParserContext *ctx, Lexer *l, int is_export)
             {
                 lexer_next(l); // eat :
                 Type *type_obj = parse_type_formal(ctx, l);
-                types[count] = type_to_string(type_obj);
+                types[count] = type_obj ? type_to_string(type_obj) : xstrdup("unknown");
                 type_infos[count] = type_obj;
                 add_symbol(ctx, nm, types[count], type_obj, is_export);
             }
