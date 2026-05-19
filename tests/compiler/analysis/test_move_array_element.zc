@@ -1,0 +1,11 @@
+// EXPECT: FAIL
+// compiler/analysis: test_move_array_element  --  move array element and reuse
+import "std/string.zc"
+
+fn consume(s: String) {}
+
+fn main() {
+    let arr: [2]String;
+    consume(arr[0]);
+    consume(arr[0]);
+}

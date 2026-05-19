@@ -1,0 +1,11 @@
+// compiler/analysis: test_move_reassign  --  move, reassign via =, use again should pass
+import "std/string.zc"
+
+fn consume(s: String) {}
+
+fn main() {
+    let s = String::new("hello");
+    consume(s);
+    s = String::new("world");
+    consume(s);
+}

@@ -252,7 +252,15 @@ void build_compile_arg_list(ArgList *list, const char *outfile, const char *temp
     arg_list_add(list, temp_source_file);
     for (size_t i = 0; i < cfg->c_files.length; i++)
     {
-        arg_list_add(list, cfg->c_files.data[i]);
+        const char *file = cfg->c_files.data[i];
+        size_t len = strlen(file);
+        if (cfg->use_cpp && len > 2 && file[len - 2] == '.' && file[len - 1] == 'c')
+        {
+            // Force C compilation for .c files in C++ mode to match extern "C" linkage
+            arg_list_add(list, "-x");
+            arg_list_add(list, "c");
+        }
+        arg_list_add(list, file);
     }
 
     // Platform flags

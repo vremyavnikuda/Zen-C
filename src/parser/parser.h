@@ -88,6 +88,7 @@ DeclarationAttributes parse_attributes(ParserContext *ctx, Lexer *l);
 ASTNode *parse_program(ParserContext *ctx, Lexer *l);
 
 extern ParserContext *g_parser_ctx;
+extern char *curr_func_ret;
 
 #include "ast/symbols.h"
 
@@ -210,6 +211,14 @@ typedef struct StructDef
     ASTNode *node;
     struct StructDef *next;
 } StructDef;
+
+// Hash table entry for fast struct/enum lookup (used by find_struct_def).
+#define STRUCT_HASH_SIZE 2048
+typedef struct
+{
+    char *name; // NULL = empty slot
+    ASTNode *node;
+} StructHashEntry;
 
 /**
  * @brief Track used slice types for generation.
@@ -378,14 +387,15 @@ struct ParserContext
     ASTNode *instantiated_funcs;   ///< List of AST nodes for instantiated functions.
 
     // Structs/Enums
-    StructRef *parsed_structs_list; ///< List of all parsed struct nodes.
-    StructRef *parsed_enums_list;   ///< List of all parsed enum nodes.
-    StructRef *parsed_funcs_list;   ///< List of all parsed function nodes.
-    StructRef *parsed_impls_list;   ///< List of all parsed impl blocks.
-    StructRef *parsed_globals_list; ///< List of all parsed global variables.
-    StructDef *struct_defs;         ///< Registry of struct definitions (map name -> node).
-    EnumVariantReg *enum_variants;  ///< Registry of enum variants for global lookup.
-    ImplReg *registered_impls;      ///< Cache of type/trait implementations.
+    StructRef *parsed_structs_list;                ///< List of all parsed struct nodes.
+    StructHashEntry struct_hash[STRUCT_HASH_SIZE]; ///< Hash table for fast struct/enum lookup.
+    StructRef *parsed_enums_list;                  ///< List of all parsed enum nodes.
+    StructRef *parsed_funcs_list;                  ///< List of all parsed function nodes.
+    StructRef *parsed_impls_list;                  ///< List of all parsed impl blocks.
+    StructRef *parsed_globals_list;                ///< List of all parsed global variables.
+    StructDef *struct_defs;        ///< Registry of struct definitions (map name -> node).
+    EnumVariantReg *enum_variants; ///< Registry of enum variants for global lookup.
+    ImplReg *registered_impls;     ///< Cache of type/trait implementations.
 
     // Types
     SliceType *used_slices;  ///< Cache of generated slice types.
@@ -785,6 +795,7 @@ ASTNode *parse_expression(ParserContext *ctx, Lexer *l);
 ASTNode *parse_expr_prec(ParserContext *ctx, Lexer *l, Precedence min_prec);
 ASTNode *parse_return(ParserContext *ctx, Lexer *l);
 ASTNode *parse_assert(ParserContext *ctx, Lexer *l);
+ASTNode *parse_expect(ParserContext *ctx, Lexer *l);
 ASTNode *parse_plugin(ParserContext *ctx, Lexer *l, Token tk);
 char *token_get_string_content(Token t);
 ASTNode *find_struct_def(ParserContext *ctx, const char *name);
@@ -856,5 +867,46 @@ void instantiate_generic(ParserContext *ctx, const char *name, const char *arg_s
                          const char *arg_name, Token t);
 void instantiate_generic_multi(ParserContext *ctx, const char *name, char **args, int arg_count,
                                Token t);
+
+// stmt/ declarations
+ASTNode *parse_match(ParserContext *ctx, Lexer *l);
+ASTNode *parse_loop(ParserContext *ctx, Lexer *l);
+ASTNode *parse_repeat(ParserContext *ctx, Lexer *l);
+ASTNode *parse_unless(ParserContext *ctx, Lexer *l);
+ASTNode *parse_guard(ParserContext *ctx, Lexer *l);
+ASTNode *parse_defer(ParserContext *ctx, Lexer *l);
+ASTNode *parse_asm(ParserContext *ctx, Lexer *l);
+ASTNode *parse_if(ParserContext *ctx, Lexer *l);
+ASTNode *parse_while(ParserContext *ctx, Lexer *l);
+ASTNode *parse_for(ParserContext *ctx, Lexer *l);
+
+// utils/ declarations
+void audit_section_5(ParserContext *ctx, Scope *scope, const char *name, const char *link_name,
+                     Token tok);
+void instantiate_methods(ParserContext *ctx, GenericImplTemplate *it,
+                         const char *mangled_struct_name, const char *arg,
+                         const char *unmangled_arg);
+const char *get_closest_type_hint(ParserContext *ctx, const char *name);
+void add_instantiated_func(ParserContext *ctx, ASTNode *fn);
+char *ast_to_string(ASTNode *node);
+void struct_hash_insert(ParserContext *ctx, const char *name, ASTNode *node);
+void register_symbol_to_lsp(ParserContext *ctx, ZenSymbol *s);
+
+// core/ declarations
+ASTNode *generate_derive_impls(ParserContext *ctx, ASTNode *strct, char **traits, int count);
+
+// decl/ declarations
+void replace_it_with_var(ASTNode *node, char *var_name);
+
+// struct/ declarations
+void auto_import_std_mem(ParserContext *ctx);
+void mangle_method_name(char *out, size_t out_sz, const char *struct_name, const char *trait_name,
+                        const char *method_name);
+void patch_and_fix_self(ParserContext *ctx, ASTNode *f, const char *full_struct_name);
+Type *parse_type_obj(ParserContext *ctx, Lexer *l);
+
+// expr/ declarations
+ASTNode *parse_primary(ParserContext *ctx, Lexer *l);
+Precedence get_token_precedence(Token t);
 
 #endif // PARSER_H

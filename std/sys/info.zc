@@ -8,6 +8,7 @@ struct utsname {
     release: char[65];
     version: char[65];
     machine: char[65];
+    domainname: char[65];
 }
 
 extern fn uname(name: utsname*) -> int;

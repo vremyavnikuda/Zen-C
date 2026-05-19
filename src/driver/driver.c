@@ -407,7 +407,14 @@ int driver_compile(ZenCompiler *compiler)
         }
         else
         {
-            snprintf(exe_path, sizeof(exe_path), "./%s", outfile);
+            if (outfile[0] == '/')
+            {
+                snprintf(exe_path, sizeof(exe_path), "%s", outfile);
+            }
+            else
+            {
+                snprintf(exe_path, sizeof(exe_path), "./%s", outfile);
+            }
         }
 
         arg_list_add(&run_args, exe_path);

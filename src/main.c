@@ -285,6 +285,10 @@ int main(int argc, char **argv)
         else if (strcmp(arg, "--backend") == 0 && i + 1 < argc)
         {
             g_config.backend_name = argv[++i];
+            if (strcmp(g_config.backend_name, "cpp") == 0)
+            {
+                g_config.use_cpp = 1;
+            }
         }
         else if (strcmp(arg, "--backend-opt") == 0 && i + 1 < argc)
         {
@@ -318,6 +322,7 @@ int main(int argc, char **argv)
             }
             g_config.use_cpp = 1;
             g_config.backend_name = "cpp";
+            g_config.use_cpp = 1;
         }
         else if (strcmp(arg, "--cuda") == 0)
         {

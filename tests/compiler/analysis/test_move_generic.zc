@@ -1,0 +1,11 @@
+// EXPECT: FAIL
+// compiler/analysis: test_move_generic  --  move through generic function
+import "std/string.zc"
+
+fn consume_generic[T](x: T) {}
+
+fn main() {
+    let s = String::new("hello");
+    consume_generic(s);
+    consume_generic(s);
+}

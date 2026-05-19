@@ -1,0 +1,14 @@
+// EXPECT: FAIL
+// compiler/analysis: test_move_match_arms  --  use after move in match arms
+import "std/string.zc"
+
+fn consume(s: String) {}
+
+fn main() {
+    let s = String::new("hello");
+    match 1 {
+        0 => { consume(s); }
+        _ => { consume(s); }
+    }
+    consume(s);
+}

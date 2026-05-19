@@ -266,6 +266,7 @@ struct ASTNode
             char *section;   // @section("name")
             int is_async;    // async function
             int is_comptime; // @comptime function
+            int is_extern;   // extern fn (C linkage in C++ mode)
             // CUDA qualifiers
             int cuda_global; // @global -> __global__
             int cuda_device; // @device -> __device__
