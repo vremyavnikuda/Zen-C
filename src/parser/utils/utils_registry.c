@@ -26,9 +26,10 @@ void struct_hash_insert(ParserContext *ctx, const char *name, ASTNode *node)
     for (int i = 0; i < STRUCT_HASH_SIZE; i++)
     {
         unsigned int slot = (idx + i) & (STRUCT_HASH_SIZE - 1);
-        if (!ctx->struct_hash[slot].name || strcmp(ctx->struct_hash[slot].name, name) == 0)
+        if (!ctx->struct_hash[slot].name[0] || strcmp(ctx->struct_hash[slot].name, name) == 0)
         {
-            ctx->struct_hash[slot].name = (char *)name;
+            strncpy(ctx->struct_hash[slot].name, name, sizeof(ctx->struct_hash[slot].name) - 1);
+            ctx->struct_hash[slot].name[sizeof(ctx->struct_hash[slot].name) - 1] = '\0';
             ctx->struct_hash[slot].node = node;
             return;
         }
@@ -41,7 +42,7 @@ static ASTNode *struct_hash_lookup(ParserContext *ctx, const char *name)
     for (int i = 0; i < STRUCT_HASH_SIZE; i++)
     {
         unsigned int slot = (idx + i) & (STRUCT_HASH_SIZE - 1);
-        if (!ctx->struct_hash[slot].name)
+        if (!ctx->struct_hash[slot].name[0])
         {
             return NULL;
         }

@@ -216,7 +216,7 @@ typedef struct StructDef
 #define STRUCT_HASH_SIZE 2048
 typedef struct
 {
-    char *name; // NULL = empty slot
+    char name[256]; // empty string = empty slot (avoids dangling stack pointer issues with ASAN)
     ASTNode *node;
 } StructHashEntry;
 
