@@ -19,7 +19,16 @@ endif
 # Default: gcc
 # To build with clang: make CC=clang
 # To build with zig:   make CC="zig cc"
-GIT_VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo "0.1.0")
+GIT_DESC := $(shell git describe --tags --always --dirty 2>/dev/null)
+ifneq ($(GIT_DESC),)
+  GIT_VERSION := $(GIT_DESC)
+else
+  GIT_VERSION := $(shell cat .version 2>/dev/null || echo "unknown")
+endif
+# Re-check for CI overrides
+ifneq ($(GITHUB_RUN_NUMBER),)
+  GIT_VERSION := $(GIT_VERSION)+ci.$(GITHUB_RUN_NUMBER)
+endif
 SHAREDIR ?= /usr/local/share/zenc
 DEFINES = -DZEN_VERSION=\"$(GIT_VERSION)\" -DZEN_SHARE_DIR=\"$(SHAREDIR)\" -DZC_ALLOW_INTERNAL
 WERROR ?= 0
@@ -461,6 +470,37 @@ test-asan: clean asan
 	ASAN_OPTIONS=detect_leaks=0 ./tests/scripts/run_codegen_tests.sh
 	ASAN_OPTIONS=detect_leaks=0 ./tests/scripts/run_example_transpile.sh
 
+# LeakSanitizer — built into ASAN, just needs detect_leaks=1
+test-asan-leaks: clean
+	$(MAKE) asan ZC_RUN="ASAN_OPTIONS=detect_leaks=1 ./zc"
+	ASAN_OPTIONS=detect_leaks=1 ./tests/scripts/run_tests.sh
+	ASAN_OPTIONS=detect_leaks=1 ./tests/scripts/run_codegen_tests.sh
+
+# ThreadSanitizer — catches data races (separate from ASAN)
+tsan: CFLAGS += -fsanitize=thread -O1 -g -fno-omit-frame-pointer
+tsan: LIBS += -fsanitize=thread
+tsan: $(TARGET)
+
+test-tsan: clean tsan
+	./tests/scripts/run_tests.sh --no-source -j 2
+
+# MemorySanitizer — catches uninitialized reads (Clang only, separate from ASAN)
+msan: CC = clang
+msan: CFLAGS += -fsanitize=memory -O1 -g -fno-omit-frame-pointer -fsanitize-memory-track-origins
+msan: LIBS += -fsanitize=memory
+msan: $(TARGET)
+
+test-msan: clean msan
+	./tests/scripts/run_tests.sh --no-source -j 2
+
+# MemorySanitizer — catches uninitialized reads (Clang only, separate from ASAN)
+msan: override SAN_EXTRA = -fsanitize=memory -O1 -g -fno-omit-frame-pointer -fsanitize-memory-track-origins
+msan:
+	$(MAKE) CC=clang CFLAGS="$(CFLAGS) $(SAN_EXTRA)" LIBS="-fsanitize=memory" ZC_HAS_JIT=0
+
+test-msan: clean msan
+	./tests/scripts/run_tests.sh --no-source -j 2
+
 test-plugins: $(TARGET) $(PLUGINS)
 	./zc run tests/language/features/test_plugins_suite.zc
 
@@ -509,4 +549,4 @@ fuzz-clean:
 	rm -f $(FUZZ_TARGET) $(FUZZ_CMPLOG_TARGET)
 	rm -rf obj-fuzz obj-fuzz-cmplog
 
-.PHONY: all clean install uninstall install-ape uninstall-ape format format-check lint bench test test-misra test-tcc test-filcc test-lsp test-asan test-plugins zig clang filcc ape windows asan fuzz-build fuzz-run fuzz-clean
+.PHONY: all clean install uninstall install-ape uninstall-ape format format-check lint bench test test-misra test-tcc test-filcc test-lsp test-asan test-asan-leaks test-tsan test-msan test-plugins zig clang filcc ape windows asan tsan msan fuzz-build fuzz-run fuzz-clean

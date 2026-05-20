@@ -18,6 +18,13 @@ execute_process(
 )
 if(GIT_DESCRIBE_RESULT EQUAL 0 AND NOT "${GIT_DESCRIBE_OUTPUT}" STREQUAL "")
     set(ZEN_VERSION "${GIT_DESCRIBE_OUTPUT}")
+else()
+    # Fallback: read .version file, then "unknown"
+    set(ZEN_VERSION "unknown")
+    if(EXISTS "${CMAKE_SOURCE_DIR}/.version")
+        file(READ "${CMAKE_SOURCE_DIR}/.version" VERSION_FILE)
+        string(STRIP "${VERSION_FILE}" ZEN_VERSION)
+    endif()
 endif()
 
 # Set ZEN_SHARE_DIR for runtime file lookups (similar intent as Makefile)

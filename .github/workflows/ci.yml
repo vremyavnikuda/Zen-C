@@ -319,6 +319,73 @@ jobs:
           *.out.cpp
         if-no-files-found: warn
 
+  test-lsan:
+    name: LeakSanitizer
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install libtcc-dev
+      run: sudo apt-get update && sudo apt-get install -y libtcc-dev
+    - name: Build with LeakSanitizer
+      run: make asan ZC_HAS_JIT=1
+    - name: Run Tests with Leak Detection
+      run: |
+        ASAN_OPTIONS=detect_leaks=1 ./tests/scripts/run_tests.sh --no-source -j 2
+    - name: Upload Failed Test Artifacts
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: failed-test-artifacts-lsan
+        path: |
+          test_out_parallel_*
+          *.out.c
+          *.out.cpp
+        if-no-files-found: warn
+
+  test-tsan:
+    name: ThreadSanitizer
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install libtcc-dev
+      run: sudo apt-get update && sudo apt-get install -y libtcc-dev
+    - name: Build with ThreadSanitizer
+      run: make tsan ZC_HAS_JIT=0
+    - name: Run Tests
+      run: ./tests/scripts/run_tests.sh --no-source -j 2
+    - name: Upload Failed Test Artifacts
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: failed-test-artifacts-tsan
+        path: |
+          test_out_parallel_*
+          *.out.c
+          *.out.cpp
+        if-no-files-found: warn
+
+  test-msan:
+    name: MemorySanitizer
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install libtcc-dev
+      run: sudo apt-get update && sudo apt-get install -y libtcc-dev
+    - name: Build with MemorySanitizer
+      run: make msan ZC_HAS_JIT=0
+    - name: Run Tests
+      run: ./tests/scripts/run_tests.sh --no-source -j 2
+    - name: Upload Failed Test Artifacts
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: failed-test-artifacts-msan
+        path: |
+          test_out_parallel_*
+          *.out.c
+          *.out.cpp
+        if-no-files-found: warn
+
   filcc:
     name: Fil-C Build
     runs-on: ubuntu-latest

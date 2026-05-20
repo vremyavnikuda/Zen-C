@@ -4,9 +4,14 @@ setlocal enabledelayedexpansion
 rem Compiler configuration (default to gcc)
 if "%CC%"=="" set CC=gcc
 
-rem Version
-set ZEN_VERSION=0.1.0
+rem Version — try git, then .version file, then "unknown"
+set ZEN_VERSION=unknown
 for /f "delims=" %%i in ('git describe --tags --always --dirty 2^>nul') do set ZEN_VERSION=%%i
+if "!ZEN_VERSION!"=="unknown" (
+    if exist .version (
+        set /p ZEN_VERSION=<.version
+    )
+)
 
 rem Compilation flags
 set CFLAGS=-std=gnu11 -Wall -Wextra -Wshadow -Wformat=2 -Wmissing-prototypes ^
