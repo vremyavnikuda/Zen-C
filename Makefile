@@ -43,6 +43,11 @@ endif
 # Base flags shared by all compilers
 # Override C_STD to compile with a different standard, e.g.: make C_STD=gnu11
 C_STD ?= gnu23
+C_STD_SUPPORTED := $(shell echo "int x;" | $(CC) -std=$(C_STD) -x c - -c -o /dev/null 2>/dev/null && echo 1)
+ifeq ($(C_STD_SUPPORTED),)
+$(warning Compiler does not support -std=$(C_STD), falling back to gnu11)
+override C_STD := gnu11
+endif
 CFLAGS = -std=$(C_STD) -g -Wall -Wextra -Wshadow -Wformat=2 -Wmissing-prototypes -Wstrict-prototypes -Wnull-dereference -Wundef -Wfloat-equal -Wmissing-field-initializers -Wsign-compare -Wtype-limits -Wuninitialized -Wdouble-promotion -Wtautological-compare -Wshift-negative-value -Wdangling-else -Wreturn-local-addr $(DEPFLAGS) $(TCC_EXTRA) $(if $(filter 1,$(WERROR)),-Werror,) -I./src -I./src/ast -I./src/parser -I./src/codegen -I./plugins -I./src/zen -I./src/utils -I./src/lexer -I./src/analysis -I./src/lsp -I./src/diagnostics -I./std/third-party/tre/include $(DEFINES)
 
 

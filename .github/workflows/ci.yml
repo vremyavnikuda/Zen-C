@@ -95,9 +95,9 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Install Dependencies
-      run: sudo apt-get update && sudo apt-get install -y cppcheck libtcc-dev
+      run: sudo apt-get update && sudo apt-get install -y cppcheck libtcc-dev gcc-14
     - name: Build Compiler
-      run: make ZC_HAS_JIT=1
+      run: make CC=gcc-14 ZC_HAS_JIT=1
     - name: Validate stdlib C Emission
       run: |
         mkdir -p .misra_bin
@@ -113,7 +113,7 @@ jobs:
         include:
           - name: Linux GCC
             os: ubuntu-latest
-            cc: gcc
+            cc: gcc-14
             zc_has_jit: 1
           - name: Linux Clang
             os: ubuntu-latest
@@ -153,7 +153,7 @@ jobs:
 
     - name: Install LibTCC (Linux)
       if: runner.os == 'Linux' && !matrix.install_tcc
-      run: sudo apt-get update && sudo apt-get install -y libtcc-dev
+      run: sudo apt-get update && sudo apt-get install -y libtcc-dev gcc-14
 
     - name: Cache TCC Source
       if: matrix.install_tcc
@@ -217,9 +217,9 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Install Dependencies
-      run: sudo apt-get update && sudo apt-get install -y libtcc-dev g++
+      run: sudo apt-get update && sudo apt-get install -y libtcc-dev g++ gcc-14
     - name: Build
-      run: make ZC_HAS_JIT=1
+      run: make CC=gcc-14 ZC_HAS_JIT=1
     - name: Run C++ Tests
       run: ./tests/scripts/run_tests.sh --cpp --no-source -j 2
     - name: Upload Failed Test Artifacts
@@ -239,9 +239,9 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Install Dependencies
-      run: sudo apt-get update && sudo apt-get install -y libtcc-dev g++
+      run: sudo apt-get update && sudo apt-get install -y libtcc-dev g++ gcc-14
     - name: Build
-      run: make ZC_HAS_JIT=1
+      run: make CC=gcc-14 ZC_HAS_JIT=1
     - name: Check CUDA output syntax
       run: |
         FAILED=0
@@ -307,9 +307,9 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Install libtcc-dev
-      run: sudo apt-get update && sudo apt-get install -y libtcc-dev
+      run: sudo apt-get update && sudo apt-get install -y libtcc-dev gcc-14
     - name: Build with Sanitizers
-      run: make asan ZC_HAS_JIT=1
+      run: make CC=gcc-14 asan ZC_HAS_JIT=1
     - name: Run Tests with Sanitizers
       run: |
         export ASAN_OPTIONS=detect_leaks=0
@@ -331,9 +331,9 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Install libtcc-dev
-      run: sudo apt-get update && sudo apt-get install -y libtcc-dev
+      run: sudo apt-get update && sudo apt-get install -y libtcc-dev gcc-14
     - name: Build with C11 Standard
-      run: make C_STD=gnu11 ZC_HAS_JIT=0
+      run: make CC=gcc-14 C_STD=gnu11 ZC_HAS_JIT=0
     - name: Run Tests
       run: |
         ./tests/scripts/run_tests.sh --no-source -j 2
@@ -354,9 +354,9 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Install libtcc-dev
-      run: sudo apt-get update && sudo apt-get install -y libtcc-dev
+      run: sudo apt-get update && sudo apt-get install -y libtcc-dev gcc-14
     - name: Build with LeakSanitizer
-      run: make lsan ZC_HAS_JIT=1
+      run: make CC=gcc-14 lsan ZC_HAS_JIT=1
 
   build-tsan:
     name: ThreadSanitizer
@@ -364,9 +364,9 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Install libtcc-dev
-      run: sudo apt-get update && sudo apt-get install -y libtcc-dev
+      run: sudo apt-get update && sudo apt-get install -y libtcc-dev gcc-14
     - name: Build with ThreadSanitizer
-      run: make tsan ZC_HAS_JIT=0
+      run: make CC=gcc-14 tsan ZC_HAS_JIT=0
 
   build-msan:
     name: MemorySanitizer
@@ -374,9 +374,9 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Install libtcc-dev
-      run: sudo apt-get update && sudo apt-get install -y libtcc-dev
+      run: sudo apt-get update && sudo apt-get install -y libtcc-dev gcc-14
     - name: Build with MemorySanitizer
-      run: make msan ZC_HAS_JIT=0
+      run: make CC=gcc-14 msan ZC_HAS_JIT=0
 
   build-analyzer:
     name: GCC Static Analyzer
@@ -384,9 +384,9 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Install libtcc-dev
-      run: sudo apt-get update && sudo apt-get install -y libtcc-dev
+      run: sudo apt-get update && sudo apt-get install -y libtcc-dev gcc-14
     - name: Build with Static Analyzer
-      run: make analyzer ZC_HAS_JIT=0
+      run: make CC=gcc-14 analyzer ZC_HAS_JIT=0
 
   filcc:
     name: Fil-C Build
@@ -421,10 +421,10 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Install libtcc-dev
-      run: sudo apt-get update && sudo apt-get install -y libtcc-dev
+      run: sudo apt-get update && sudo apt-get install -y libtcc-dev gcc-14
     - name: Build and Run LSP Tests
       run: |
-        make test-lsp ZC_HAS_JIT=1
+        make CC=gcc-14 test-lsp ZC_HAS_JIT=1
 
   test-backends:
     name: Backend Tests
@@ -432,9 +432,9 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Install dependencies
-      run: sudo apt-get update && sudo apt-get install -y libtcc-dev sbcl
+      run: sudo apt-get update && sudo apt-get install -y libtcc-dev sbcl gcc-14
     - name: Build
-      run: make ZC_HAS_JIT=1
+      run: make CC=gcc-14 ZC_HAS_JIT=1
     - name: Test All Backends
       run: make test-backends
     - name: Upload Failed Artifacts
@@ -451,9 +451,9 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Install sbcl and libtcc
-      run: sudo apt-get update && sudo apt-get install -y sbcl libtcc-dev
+      run: sudo apt-get update && sudo apt-get install -y sbcl libtcc-dev gcc-14
     - name: Build
-      run: make ZC_HAS_JIT=1
+      run: make CC=gcc-14 ZC_HAS_JIT=1
     - name: Run Lisp Tests
       run: make test-lisp
     - name: Upload Failed Artifacts
