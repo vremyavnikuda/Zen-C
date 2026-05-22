@@ -395,7 +395,12 @@ uninstall-ape:
 
 # Clean
 clean:
-	$(RM) $(OBJ_DIR) obj-ape obj-fuzz obj-fuzz-cmplog $(TARGET) libzc-*.a out.c out.cpp out.m out.cu plugins/*.so a.out* out test_out_* rule_*
+	$(RM) $(OBJ_DIR) obj-ape obj-fuzz obj-fuzz-cmplog $(TARGET) libzc-*.a
+	$(RM) out.c out.cpp out.m out.cu plugins/*.so a.out* out test_out_* rule_*
+	$(RM) *.gcda *.gcno *.gcov coverage.info
+	$(RM) -r coverage-report/
+	$(RM) .bench_* bench_* benchmarks_result.json
+	$(RM) *_suite.c *_suite.cpp test_runner
 	@echo "=> Clean complete!"
 
 # Code Formatting
@@ -512,12 +517,19 @@ analyzer: CFLAGS += -fanalyzer
 analyzer: $(TARGET) $(PLUGINS)
 
 # Code coverage (GCC only, incompatible with sanitizers)
+GCOV ?= gcov
 coverage: CFLAGS += --coverage -O0
 coverage: LIBS += --coverage
 coverage: $(TARGET) $(PLUGINS)
 	@echo "=> Running tests with coverage instrumentation..."
 	./tests/scripts/run_tests.sh --no-source -j 2
-	@echo "=> Coverage data generated. Run: lcov --capture --directory obj --output-file coverage.info"
+	@echo "=> Coverage data generated"
+
+coverage-report: coverage
+	lcov --capture --directory obj --output-file coverage.info \
+	     --gcov-tool $(GCOV) --no-external --ignore-errors mismatch
+	genhtml coverage.info --output-directory coverage-report --ignore-errors empty
+	@echo "=> Coverage report: coverage-report/index.html"
 
 test-plugins: $(TARGET) $(PLUGINS)
 	./zc run tests/language/features/test_plugins_suite.zc
@@ -567,4 +579,4 @@ fuzz-clean:
 	rm -f $(FUZZ_TARGET) $(FUZZ_CMPLOG_TARGET)
 	rm -rf obj-fuzz obj-fuzz-cmplog
 
-.PHONY: all clean install uninstall install-ape uninstall-ape format format-check lint bench test test-misra test-tcc test-filcc test-lsp test-asan test-plugins zig clang filcc ape windows asan tsan msan lsan analyzer coverage fuzz-build fuzz-run fuzz-clean
+.PHONY: all clean install uninstall install-ape uninstall-ape format format-check lint bench test test-misra test-tcc test-filcc test-lsp test-asan test-plugins zig clang filcc ape windows asan tsan msan lsan analyzer coverage coverage-report fuzz-build fuzz-run fuzz-clean

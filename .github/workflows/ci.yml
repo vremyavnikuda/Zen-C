@@ -394,13 +394,11 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Install Dependencies
-      run: sudo apt-get update && sudo apt-get install -y libtcc-dev lcov
+      run: sudo apt-get update && sudo apt-get install -y libtcc-dev lcov gcc-14
     - name: Build and Test with Coverage
       run: make coverage ZC_HAS_JIT=0
     - name: Generate HTML Report
-      run: |
-        lcov --capture --directory obj --output-file coverage.info --no-external
-        genhtml coverage.info --output-directory coverage-report
+      run: make GCOV=gcov-14 coverage-report
     - name: Upload Coverage Report
       uses: actions/upload-artifact@v4
       with:

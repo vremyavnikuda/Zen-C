@@ -7,7 +7,9 @@ test "const_var_basic" {
 
 test "const_var_string" {
     let s: const string = "hello";
-    expect_eq(s == "hello", true, "const string should hold hello");
+    // Use strcmp for string content comparison (== compares pointers)
+    let ok: int = strcmp(s, "hello") == 0;
+    expect_eq(ok, 1, "const string should hold hello");
 }
 
 test "const_var_float" {
