@@ -69,6 +69,7 @@ __attribute__((used)) int LLVMFuzzerTestOneInput(const uint8_t *data, size_t siz
     ctx.current_filename = "fuzz_input.zc";
     module_state_init(&ctx.imports);
     token_set_parser_ctx(&ctx);
+    diag_set_parser_ctx(&ctx);
 
     scan_build_directives(&ctx, src);
 
