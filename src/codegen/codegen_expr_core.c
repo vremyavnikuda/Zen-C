@@ -198,8 +198,8 @@ static void codegen_var_expr(ParserContext *ctx, ASTNode *node)
     {
         // Extract type name and method name
         ptrdiff_t type_len = sep - node->var_ref.name;
-        char *type_name = xmalloc(type_len + 1);
-        strncpy(type_name, node->var_ref.name, type_len);
+        char *type_name = xmalloc((size_t)(type_len + 1));
+        strncpy(type_name, node->var_ref.name, (size_t)(type_len));
         type_name[type_len] = 0;
 
         char *method_name = sep + sep_len;
@@ -270,10 +270,10 @@ static void codegen_var_expr(ParserContext *ctx, ASTNode *node)
         strstr(node->var_ref.name, "__") == NULL)
     {
         char base[MAX_TYPE_NAME_LEN];
-        size_t len = underscore - node->var_ref.name;
+        size_t len = (size_t)(underscore - node->var_ref.name);
         if (len < sizeof(base))
         {
-            strncpy(base, node->var_ref.name, len);
+            strncpy(base, node->var_ref.name, (size_t)(len));
             base[len] = 0;
 
             ASTNode *def = find_struct_def(ctx, base);

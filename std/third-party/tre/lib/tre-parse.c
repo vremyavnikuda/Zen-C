@@ -112,7 +112,7 @@ static reg_errcode_t tre_new_item(tre_mem_t mem, int min, int max, int *i, int *
             return REG_ESPACE;
         }
         *max_i *= 2;
-        new_items = (decltype(new_items))xrealloc(array, sizeof(*items) * *max_i);
+        new_items = (decltype(new_items))xrealloc(array, sizeof(*items) * (size_t)(*max_i));
         if (new_items == NULL)
         {
             return REG_ESPACE;
@@ -142,9 +142,9 @@ static reg_errcode_t tre_expand_ctype(tre_mem_t mem, tre_ctype_t char_class, tre
         {
             if (min < 0)
             {
-                min = c;
+                min = (int)(c);
             }
-            max = c;
+            max = (int)(c);
         }
         else if (min >= 0)
         {
@@ -330,8 +330,8 @@ static reg_errcode_t tre_parse_bracket_items(tre_parse_ctx_t *ctx, int negate,
         if (re + 2 < ctx->re_end && *(re + 1) == CHAR_MINUS && *(re + 2) != CHAR_RBRACKET)
         {
             DPRINT(("tre_parse_bracket:  range: '%.*" STRF "'\n", REST(re)));
-            min = *re;
-            max = *(re + 2);
+            min = (tre_cint_t)(*re);
+            max = (tre_cint_t)(*(re + 2));
             re += 3;
             /* XXX - Should use collation order instead of encoding values
                in character ranges. */
@@ -419,7 +419,7 @@ static reg_errcode_t tre_parse_bracket_items(tre_parse_ctx_t *ctx, int negate,
                 /* Two ranges are not allowed to share and endpoint. */
                 return REG_ERANGE;
             }
-            min = max = *re++;
+            min = max = (tre_cint_t)(*re++);
         }
 
         if (char_class && negate)
@@ -435,7 +435,7 @@ static reg_errcode_t tre_parse_bracket_items(tre_parse_ctx_t *ctx, int negate,
         }
         else if (!skip)
         {
-            status = tre_new_item(ctx->mem, min, max, &i, &max_i, items);
+            status = tre_new_item(ctx->mem, (int)(min), (int)(max), &i, &max_i, items);
             if (status != REG_OK)
             {
                 return status;
@@ -455,11 +455,11 @@ static reg_errcode_t tre_parse_bracket_items(tre_parse_ctx_t *ctx, int negate,
                 if (tre_islower(min))
                 {
                     cmin = ccurr = tre_toupper(min++);
-                    while (tre_islower(min) && tre_toupper(min) == ccurr + 1 && min <= max)
+                    while ((int)(tre_islower(min)) && (int)(tre_toupper(min)) == (int)(ccurr + 1) && (int)(min) <= (int)(max))
                     {
                         ccurr = tre_toupper(min++);
                     }
-                    status = tre_new_item(ctx->mem, cmin, ccurr, &i, &max_i, items);
+                    status = tre_new_item(ctx->mem, (int)(cmin), (int)(ccurr), &i, &max_i, items);
                     if (status != REG_OK)
                     {
                         return status;
@@ -468,11 +468,11 @@ static reg_errcode_t tre_parse_bracket_items(tre_parse_ctx_t *ctx, int negate,
                 else if (tre_isupper(min))
                 {
                     cmin = ccurr = tre_tolower(min++);
-                    while (tre_isupper(min) && tre_tolower(min) == ccurr + 1 && min <= max)
+                    while ((int)(tre_isupper(min)) && (int)(tre_tolower(min)) == (int)(ccurr + 1) && (int)(min) <= (int)(max))
                     {
                         ccurr = tre_tolower(min++);
                     }
-                    status = tre_new_item(ctx->mem, cmin, ccurr, &i, &max_i, items);
+                    status = tre_new_item(ctx->mem, (int)(cmin), (int)(ccurr), &i, &max_i, items);
                     if (status != REG_OK)
                     {
                         return status;
@@ -503,7 +503,7 @@ static reg_errcode_t tre_parse_bracket(tre_parse_ctx_t *ctx, tre_ast_node_t **re
     int num_neg_classes = 0;
 
     /* Start off with an array of `max_i' elements. */
-    items = (decltype(items))xmalloc(sizeof(*items) * max_i);
+    items = (decltype(items))xmalloc(sizeof(*items) * (size_t)(max_i));
     if (items == NULL)
     {
         return REG_ESPACE;
@@ -577,7 +577,7 @@ static reg_errcode_t tre_parse_bracket(tre_parse_ctx_t *ctx, tre_ast_node_t **re
             if (num_neg_classes > 0)
             {
                 l->neg_classes = (decltype(l->neg_classes))
-                    tre_mem_alloc(ctx->mem, (sizeof(l->neg_classes) * (num_neg_classes + 1)));
+                    tre_mem_alloc(ctx->mem, sizeof(l->neg_classes) * (size_t)(num_neg_classes + 1));
                 if (l->neg_classes == NULL)
                 {
                     status = REG_ESPACE;
@@ -629,7 +629,7 @@ static reg_errcode_t tre_parse_bracket(tre_parse_ctx_t *ctx, tre_ast_node_t **re
             if (num_neg_classes > 0)
             {
                 l->neg_classes = (decltype(l->neg_classes))
-                    tre_mem_alloc(ctx->mem, (sizeof(l->neg_classes) * (num_neg_classes + 1)));
+                    tre_mem_alloc(ctx->mem, sizeof(l->neg_classes) * (size_t)(num_neg_classes + 1));
                 if (l->neg_classes == NULL)
                 {
                     status = REG_ESPACE;
@@ -687,13 +687,13 @@ static int tre_parse_int(const tre_char_t **regex, const tre_char_t *regex_end)
     {
         if (!overflow)
         {
-            if (num * 10 + *r - L'0' < num)
+            if ((unsigned long)(num) * 10 + (unsigned long)(*r - L'0') < (unsigned long)(num))
             {
                 overflow = 1;
             }
             else
             {
-                num = num * 10 + *r - L'0';
+                num = (unsigned long)(num) * 10 + (unsigned long)(*r - L'0');
                 if (num > INT_MAX)
                 {
                     overflow = 1;
@@ -1049,7 +1049,7 @@ static reg_errcode_t tre_parse_bound(tre_parse_ctx_t *ctx, tre_ast_node_t **resu
             }
 
             ctx->have_approx = 1;
-            params = (decltype(params))tre_mem_alloc(ctx->mem, sizeof(*params) * TRE_PARAM_LAST);
+            params = (decltype(params))tre_mem_alloc(ctx->mem, sizeof(*params) * (size_t)(TRE_PARAM_LAST));
             if (!params)
             {
                 return REG_ESPACE;
@@ -1659,12 +1659,12 @@ reg_errcode_t tre_parse(tre_parse_ctx_t *ctx)
                         long val;
                         DPRINT(("tre_parse:  8 bit hex: '%.*" STRF "'\n", REST(ctx->re - 2)));
 
-                        if (tre_isxdigit(ctx->re[0]) && ctx->re < ctx->re_end)
+                        if (tre_isxdigit((wint_t)(ctx->re[0])) && ctx->re < ctx->re_end)
                         {
                             tmp[0] = (char)ctx->re[0];
                             ctx->re++;
                         }
-                        if (tre_isxdigit(ctx->re[0]) && ctx->re < ctx->re_end)
+                        if (tre_isxdigit((wint_t)(ctx->re[0])) && ctx->re < ctx->re_end)
                         {
                             tmp[1] = (char)ctx->re[0];
                             ctx->re++;
@@ -1686,7 +1686,7 @@ reg_errcode_t tre_parse(tre_parse_ctx_t *ctx)
                             {
                                 break;
                             }
-                            if (tre_isxdigit(ctx->re[0]) && i < sizeof(tmp) - 1)
+                            if (tre_isxdigit((wint_t)(ctx->re[0])) && i < sizeof(tmp) - 1)
                             {
                                 tmp[i] = (char)ctx->re[0];
                                 i++;
@@ -1704,7 +1704,7 @@ reg_errcode_t tre_parse(tre_parse_ctx_t *ctx)
                     /*FALLTHROUGH*/
 
                 default:
-                    if (tre_isdigit(*ctx->re))
+                    if (tre_isdigit((wint_t)(*ctx->re)))
                     {
                         /* Back reference. */
                         int val = *ctx->re - L'0';
@@ -1851,7 +1851,7 @@ reg_errcode_t tre_parse(tre_parse_ctx_t *ctx)
                 /* Note that we can't use an tre_isalpha() test here, since there
                may be characters which are alphabetic but neither upper or
                lower case. */
-                if (ctx->cflags & REG_ICASE && (tre_isupper(*ctx->re) || tre_islower(*ctx->re)))
+                if (ctx->cflags & REG_ICASE && (tre_isupper((wint_t)(*ctx->re)) || tre_islower((wint_t)(*ctx->re))))
                 {
                     tre_ast_node_t *tmp1;
                     tre_ast_node_t *tmp2;
@@ -1865,13 +1865,13 @@ reg_errcode_t tre_parse(tre_parse_ctx_t *ctx)
                        could be several opposite-case counterpoints, but they
                        cannot be supported portably anyway. */
                     tmp1 =
-                        tre_ast_new_literal(ctx->mem, tre_toupper(*ctx->re), tre_toupper(*ctx->re));
+                        tre_ast_new_literal(ctx->mem, tre_toupper((wint_t)(*ctx->re)), tre_toupper((wint_t)(*ctx->re)));
                     if (!tmp1)
                     {
                         return REG_ESPACE;
                     }
                     tmp2 =
-                        tre_ast_new_literal(ctx->mem, tre_tolower(*ctx->re), tre_tolower(*ctx->re));
+                        tre_ast_new_literal(ctx->mem, tre_tolower((wint_t)(*ctx->re)), tre_tolower((wint_t)(*ctx->re)));
                     if (!tmp2)
                     {
                         return REG_ESPACE;

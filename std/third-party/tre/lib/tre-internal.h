@@ -93,8 +93,8 @@ typedef wint_t tre_cint_t;
 #define tre_isupper iswupper
 #define tre_isxdigit iswxdigit
 
-#define tre_tolower towlower
-#define tre_toupper towupper
+#define tre_tolower(c) ((int)(towlower((wint_t)(c))))
+#define tre_toupper(c) ((int)(towupper((wint_t)(c))))
 #define tre_strlen wcslen
 
 #else /* !TRE_WCHAR */
@@ -122,8 +122,8 @@ typedef short tre_cint_t;
 #define tre_isupper isupper
 #define tre_isxdigit isxdigit
 
-#define tre_tolower(c) (tre_cint_t)(tolower(c))
-#define tre_toupper(c) (tre_cint_t)(toupper(c))
+#define tre_tolower(c) ((int)(tolower(c)))
+#define tre_toupper(c) ((int)(toupper(c)))
 #define tre_strlen(s) (strlen((const char *)s))
 
 #endif /* !TRE_WCHAR */
@@ -155,7 +155,7 @@ typedef enum
 /* Returns number of bytes to add to (char *)ptr to make it
    properly aligned for the type. */
 #define ALIGN(ptr, type)                                                                           \
-    ((((intptr_t)ptr) % sizeof(type)) ? (sizeof(type) - (((intptr_t)ptr) % sizeof(type))) : 0)
+    ((size_t)((((intptr_t)(ptr)) % sizeof(type)) ? (sizeof(type) - (((intptr_t)(ptr)) % sizeof(type))) : 0))
 
 #undef MAX
 #undef MIN

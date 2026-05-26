@@ -259,6 +259,8 @@ static int dot_emit_node(ParserContext *ctx, ASTNode *node)
         case LITERAL_CHAR:
             emitter_printf(&ctx->cg.emitter, "'%c'", (char)node->literal.int_val);
             break;
+        default:
+            break;
         }
     }
 

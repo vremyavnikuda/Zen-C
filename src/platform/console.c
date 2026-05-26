@@ -100,9 +100,9 @@ void repl_enable_raw_mode(void)
 
         atexit(repl_disable_raw_mode);
         struct termios raw = orig_termios;
-        raw.c_lflag &= ~(ECHO | ICANON | IEXTEN | ISIG);
-        raw.c_iflag &= ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON);
-        raw.c_oflag &= ~(OPOST);
+        raw.c_lflag &= (tcflag_t) ~(ECHO | ICANON | IEXTEN | ISIG);
+        raw.c_iflag &= (tcflag_t) ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON);
+        raw.c_oflag &= (tcflag_t) ~(OPOST);
         raw.c_cflag |= (CS8);
         raw.c_cc[VMIN] = 1;
         raw.c_cc[VTIME] = 0;

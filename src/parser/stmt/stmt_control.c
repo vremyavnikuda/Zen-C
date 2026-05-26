@@ -482,7 +482,8 @@ ASTNode *parse_for(ParserContext *ctx, Lexer *l)
 
                     ASTNode *size_arg = ast_create(NODE_EXPR_LITERAL);
                     size_arg->literal.type_kind = LITERAL_INT;
-                    size_arg->literal.int_val = obj_expr->type_info->array_size;
+                    size_arg->literal.int_val =
+                        (unsigned long long)(obj_expr->type_info->array_size);
                     char size_buf[32];
                     snprintf(size_buf, sizeof(size_buf), "%d", obj_expr->type_info->array_size);
                     size_arg->literal.string_val = xstrdup(size_buf);
@@ -572,8 +573,8 @@ ASTNode *parse_for(ParserContext *ctx, Lexer *l)
                         if (t_end)
                         {
                             ptrdiff_t len = t_end - t_start - 1;
-                            inner = xmalloc(len + 1);
-                            strncpy(inner, t_start + 1, len);
+                            inner = xmalloc((size_t)(len + 1));
+                            strncpy(inner, t_start + 1, (size_t)(len));
                             inner[len] = 0;
                         }
                     }
@@ -658,7 +659,7 @@ ASTNode *parse_for(ParserContext *ctx, Lexer *l)
                             strncpy(elem, start + 1, (size_t)len);
                             elem[len] = 0;
 
-                            u_type = xmalloc(len + 8);
+                            u_type = xmalloc((size_t)(len + 8));
                             strcpy(u_type, elem);
 
                             iter_type_ptr = xmalloc(256);

@@ -131,7 +131,7 @@ int is_command(const char *buf, const char *cmd)
         return 0;
     }
     size_t cmd_len = strlen(cmd);
-    if (strncmp(buf + 1, cmd, cmd_len) != 0)
+    if (strncmp(buf + 1, cmd, (size_t)(cmd_len)) != 0)
     {
         return 0;
     }
@@ -202,11 +202,16 @@ void repl_load_docs(ReplState *state)
     }
     fseek(f, 0, SEEK_END);
     long len = ftell(f);
+    if (len < 0)
+    {
+        fclose(f);
+        return;
+    }
     fseek(f, 0, SEEK_SET);
-    char *data = malloc(len + 1);
+    char *data = malloc((size_t)(len + 1));
     if (data)
     {
-        fread(data, 1, len, f);
+        fread(data, 1, (size_t)(len), f);
         data[len] = 0;
     }
     fclose(f);
@@ -230,7 +235,7 @@ void repl_load_docs(ReplState *state)
         }
         zfree(state->docs);
         state->doc_count = cJSON_GetArraySize(json);
-        state->docs = calloc(state->doc_count + 1, sizeof(ReplDoc));
+        state->docs = calloc((size_t)(state->doc_count + 1), sizeof(ReplDoc));
         cJSON *item = NULL;
         int i = 0;
         cJSON_ArrayForEach(item, json)
@@ -284,7 +289,7 @@ static void repl_add_symbol(ReplState *state, const char *name)
     if (state->symbol_count >= state->symbol_cap)
     {
         state->symbol_cap = state->symbol_cap ? state->symbol_cap * 2 : 64;
-        state->symbols = realloc(state->symbols, state->symbol_cap * sizeof(char *));
+        state->symbols = realloc(state->symbols, (size_t)(state->symbol_cap) * sizeof(char *));
     }
     state->symbols[state->symbol_count++] = xstrdup(name);
 }

@@ -253,7 +253,7 @@ static reg_errcode_t tre_add_tags(tre_mem_t mem, tre_stack_t *stack, tre_ast_nod
                     tnfa->submatch_data[id].parents = NULL;
                     if (i > 0)
                     {
-                        int *p = (decltype(p))xmalloc(sizeof(*p) * (i + 1));
+                        int *p = (decltype(p))xmalloc(sizeof(*p) * (size_t)(i + 1));
                         if (p == NULL)
                         {
                             status = REG_ESPACE;
@@ -291,20 +291,20 @@ static reg_errcode_t tre_add_tags(tre_mem_t mem, tre_stack_t *stack, tre_ast_nod
                            literal or backref. */
                         if (!first_pass)
                         {
-                            status = tre_add_tag_left(mem, node, tag);
+                            status = tre_add_tag_left(mem, node, (int)(tag));
                             tnfa->tag_directions[tag] = direction;
                             if (minimal_tag >= 0)
                             {
                                 DPRINT(("Minimal %d, %d\n", minimal_tag, tag));
                                 for (i = 0; tnfa->minimal_tags[i] >= 0; i++)
                                     ;
-                                tnfa->minimal_tags[i] = tag;
+                                tnfa->minimal_tags[i] = (int)(tag);
                                 tnfa->minimal_tags[i + 1] = minimal_tag;
                                 tnfa->minimal_tags[i + 2] = -1;
                                 minimal_tag = -1;
                                 num_minimals++;
                             }
-                            tre_purge_regset(regset, tnfa, tag);
+                            tre_purge_regset(regset, tnfa, (int)(tag));
                         }
                         else
                         {
@@ -342,13 +342,13 @@ static reg_errcode_t tre_add_tags(tre_mem_t mem, tre_stack_t *stack, tre_ast_nod
                 STACK_PUSHX(stack, int, ADDTAGS_RECURSE);
 
                 /* After processing left child. */
-                STACK_PUSHX(stack, int, next_tag + left->num_tags);
+                STACK_PUSHX(stack, int, (int)(next_tag + left->num_tags));
                 DPRINT(("  Pushing %d for after left\n", next_tag + left->num_tags));
                 if (left->num_tags > 0 && right->num_tags > 0)
                 {
                     /* Reserve the next tag to the right child. */
                     DPRINT(("  Reserving next_tag %d to right child\n", next_tag));
-                    reserved_tag = next_tag;
+                    reserved_tag = (int)(next_tag);
                     next_tag++;
                 }
                 STACK_PUSHX(stack, int, reserved_tag);
@@ -370,7 +370,7 @@ static reg_errcode_t tre_add_tags(tre_mem_t mem, tre_stack_t *stack, tre_ast_nod
                 }
                 else
                 {
-                    STACK_PUSHX(stack, int, tag);
+                    STACK_PUSHX(stack, int, (int)(tag));
                     STACK_PUSHX(stack, int, iter->minimal);
                 }
                 STACK_PUSHX(stack, voidptr, node);
@@ -385,7 +385,7 @@ static reg_errcode_t tre_add_tags(tre_mem_t mem, tre_stack_t *stack, tre_ast_nod
                     if (!first_pass)
                     {
                         int i;
-                        status = tre_add_tag_left(mem, node, tag);
+                        status = tre_add_tag_left(mem, node, (int)(tag));
                         if (iter->minimal)
                         {
                             tnfa->tag_directions[tag] = TRE_TAG_MAXIMIZE;
@@ -399,13 +399,13 @@ static reg_errcode_t tre_add_tags(tre_mem_t mem, tre_stack_t *stack, tre_ast_nod
                             DPRINT(("Minimal %d, %d\n", minimal_tag, tag));
                             for (i = 0; tnfa->minimal_tags[i] >= 0; i++)
                                 ;
-                            tnfa->minimal_tags[i] = tag;
+                            tnfa->minimal_tags[i] = (int)(tag);
                             tnfa->minimal_tags[i + 1] = minimal_tag;
                             tnfa->minimal_tags[i + 2] = -1;
                             minimal_tag = -1;
                             num_minimals++;
                         }
-                        tre_purge_regset(regset, tnfa, tag);
+                        tre_purge_regset(regset, tnfa, (int)(tag));
                     }
 
                     DPRINT(("  num_tags++\n"));
@@ -427,13 +427,13 @@ static reg_errcode_t tre_add_tags(tre_mem_t mem, tre_stack_t *stack, tre_ast_nod
 
                 if (regset[0] >= 0)
                 {
-                    left_tag = next_tag;
-                    right_tag = next_tag + 1;
+                    left_tag = (int)(next_tag);
+                    right_tag = (int)(next_tag + 1);
                 }
                 else
                 {
-                    left_tag = tag;
-                    right_tag = next_tag;
+                    left_tag = (int)(tag);
+                    right_tag = (int)(next_tag);
                 }
 
                 DPRINT(("Union\n"));
@@ -465,20 +465,20 @@ static reg_errcode_t tre_add_tags(tre_mem_t mem, tre_stack_t *stack, tre_ast_nod
                     if (!first_pass)
                     {
                         int i;
-                        status = tre_add_tag_left(mem, node, tag);
+                        status = tre_add_tag_left(mem, node, (int)(tag));
                         tnfa->tag_directions[tag] = direction;
                         if (minimal_tag >= 0)
                         {
                             DPRINT(("Minimal %d, %d\n", minimal_tag, tag));
                             for (i = 0; tnfa->minimal_tags[i] >= 0; i++)
                                 ;
-                            tnfa->minimal_tags[i] = tag;
+                            tnfa->minimal_tags[i] = (int)(tag);
                             tnfa->minimal_tags[i + 1] = minimal_tag;
                             tnfa->minimal_tags[i + 2] = -1;
                             minimal_tag = -1;
                             num_minimals++;
                         }
-                        tre_purge_regset(regset, tnfa, tag);
+                        tre_purge_regset(regset, tnfa, (int)(tag));
                     }
 
                     DPRINT(("  num_tags++\n"));
@@ -520,7 +520,7 @@ static reg_errcode_t tre_add_tags(tre_mem_t mem, tre_stack_t *stack, tre_ast_nod
             if (first_pass)
             {
                 node->num_tags =
-                    ((tre_iteration_t *)node->obj)->arg->num_tags + tre_stack_pop_int(stack);
+                    ((tre_iteration_t *)node->obj)->arg->num_tags = tre_stack_pop_int(stack);
                 minimal_tag = -1;
             }
             else
@@ -557,7 +557,7 @@ static reg_errcode_t tre_add_tags(tre_mem_t mem, tre_stack_t *stack, tre_ast_nod
             if (new_tag >= 0)
             {
                 DPRINT(("  Setting tag to %d\n", new_tag));
-                tag = new_tag;
+                tag = (int)(new_tag);
             }
             break;
         }
@@ -595,7 +595,7 @@ static reg_errcode_t tre_add_tags(tre_mem_t mem, tre_stack_t *stack, tre_ast_nod
             if (first_pass)
             {
                 node->num_tags = ((tre_union_t *)node->obj)->left->num_tags +
-                                 ((tre_union_t *)node->obj)->right->num_tags + added_tags +
+                                 ((tre_union_t *)node->obj)->right->num_tags + (unsigned int)(added_tags) +
                                  ((node->num_submatches > 0) ? 2 : 0);
             }
             regset = (decltype(regset))tre_stack_pop_voidptr(stack);
@@ -636,7 +636,7 @@ static reg_errcode_t tre_add_tags(tre_mem_t mem, tre_stack_t *stack, tre_ast_nod
 
     if (!first_pass)
     {
-        tre_purge_regset(regset, tnfa, tag);
+        tre_purge_regset(regset, tnfa, (int)(tag));
     }
 
     if (!first_pass && minimal_tag >= 0)
@@ -645,7 +645,7 @@ static reg_errcode_t tre_add_tags(tre_mem_t mem, tre_stack_t *stack, tre_ast_nod
         DPRINT(("Minimal %d, %d\n", minimal_tag, tag));
         for (i = 0; tnfa->minimal_tags[i] >= 0; i++)
             ;
-        tnfa->minimal_tags[i] = tag;
+        tnfa->minimal_tags[i] = (int)(tag);
         tnfa->minimal_tags[i + 1] = minimal_tag;
         tnfa->minimal_tags[i + 2] = -1;
         minimal_tag = -1;
@@ -656,9 +656,9 @@ static reg_errcode_t tre_add_tags(tre_mem_t mem, tre_stack_t *stack, tre_ast_nod
             first_pass ? "First pass" : "Second pass", num_tags));
 
     assert(tree->num_tags == num_tags);
-    tnfa->end_tag = num_tags;
-    tnfa->num_tags = num_tags;
-    tnfa->num_minimals = num_minimals;
+    tnfa->end_tag = (int)(num_tags);
+    tnfa->num_tags = (int)(num_tags);
+    tnfa->num_minimals = (int)(num_minimals);
     xfree(orig_regset);
     xfree(parents);
     xfree(saved_states);
@@ -1065,7 +1065,7 @@ static reg_errcode_t tre_expand_ast(tre_mem_t mem, tre_stack_t *stack, tre_ast_n
                 {
                     return REG_ESPACE;
                 }
-                old_params = (decltype(old_params))tre_mem_alloc(mem, sizeof(*old_params) * TRE_PARAM_LAST);
+                old_params = (decltype(old_params))tre_mem_alloc(mem, sizeof(*old_params) * (size_t)(TRE_PARAM_LAST));
                 if (!old_params)
                 {
                     return REG_ESPACE;
@@ -1176,7 +1176,7 @@ static tre_pos_and_tags_t *tre_set_union(tre_mem_t mem, tre_pos_and_tags_t *set1
         ;
     for (s2 = 0; set2[s2].position >= 0; s2++)
         ;
-    new_set = (decltype(new_set))tre_mem_calloc(mem, sizeof(*new_set) * (s1 + s2 + 1));
+    new_set = (decltype(new_set))tre_mem_calloc(mem, sizeof(*new_set) * (size_t)(s1 + s2 + 1));
     if (!new_set)
     {
         return NULL;
@@ -1199,7 +1199,7 @@ static tre_pos_and_tags_t *tre_set_union(tre_mem_t mem, tre_pos_and_tags_t *set1
         {
             for (i = 0; set1[s1].tags != NULL && set1[s1].tags[i] >= 0; i++)
                 ;
-            new_tags = (decltype(new_tags))tre_mem_alloc(mem, (sizeof(*new_tags) * (i + num_tags + 1)));
+            new_tags = (decltype(new_tags))tre_mem_alloc(mem, sizeof(*new_tags) * (size_t)(i + num_tags + 1));
             if (new_tags == NULL)
             {
                 return NULL;
@@ -1227,7 +1227,7 @@ static tre_pos_and_tags_t *tre_set_union(tre_mem_t mem, tre_pos_and_tags_t *set1
             }
             else
             {
-                new_set[s1].params = (decltype(new_set[s1].params))tre_mem_alloc(mem, sizeof(*params) * TRE_PARAM_LAST);
+                new_set[s1].params = (decltype(new_set[s1].params))tre_mem_alloc(mem, sizeof(*params) * (size_t)(TRE_PARAM_LAST));
                 if (!new_set[s1].params)
                 {
                     return NULL;
@@ -1261,7 +1261,7 @@ static tre_pos_and_tags_t *tre_set_union(tre_mem_t mem, tre_pos_and_tags_t *set1
         {
             for (i = 0; set2[s2].tags[i] >= 0; i++)
                 ;
-            new_tags = (decltype(new_tags))tre_mem_alloc(mem, sizeof(*new_tags) * (i + 1));
+            new_tags = (decltype(new_tags))tre_mem_alloc(mem, sizeof(*new_tags) * (size_t)(i + 1));
             if (new_tags == NULL)
             {
                 return NULL;
@@ -1285,7 +1285,7 @@ static tre_pos_and_tags_t *tre_set_union(tre_mem_t mem, tre_pos_and_tags_t *set1
             }
             else
             {
-                new_set[s1 + s2].params = (decltype(new_set[s1 + s2].params))tre_mem_alloc(mem, sizeof(*params) * TRE_PARAM_LAST);
+                new_set[s1 + s2].params = (decltype(new_set[s1 + s2].params))tre_mem_alloc(mem, sizeof(*params) * (size_t)(TRE_PARAM_LAST));
                 if (!new_set[s1 + s2].params)
                 {
                     return NULL;
@@ -1622,7 +1622,7 @@ static reg_errcode_t tre_compute_npfl(tre_mem_t mem, tre_stack_t *stack, tre_ast
                     return status;
                 }
                 /* Allocate arrays for the tags and parameters. */
-                tags = (decltype(tags))xmalloc(sizeof(*tags) * (num_tags + 1));
+                tags = (decltype(tags))xmalloc(sizeof(*tags) * (size_t)(num_tags + 1));
                 if (!tags)
                 {
                     return REG_ESPACE;
@@ -1632,7 +1632,7 @@ static reg_errcode_t tre_compute_npfl(tre_mem_t mem, tre_stack_t *stack, tre_ast
                 params = NULL;
                 if (params_seen)
                 {
-                    params = (decltype(params))tre_mem_alloc(mem, sizeof(*params) * TRE_PARAM_LAST);
+                    params = (decltype(params))tre_mem_alloc(mem, sizeof(*params) * (size_t)(TRE_PARAM_LAST));
                     if (!params)
                     {
                         xfree(tags);
@@ -1673,7 +1673,7 @@ static reg_errcode_t tre_compute_npfl(tre_mem_t mem, tre_stack_t *stack, tre_ast
                     return status;
                 }
                 /* Allocate arrays for the tags and parameters. */
-                tags = (decltype(tags))xmalloc(sizeof(int) * (num_tags + 1));
+                tags = (decltype(tags))xmalloc(sizeof(int) * (size_t)(num_tags + 1));
                 if (!tags)
                 {
                     return REG_ESPACE;
@@ -1683,7 +1683,7 @@ static reg_errcode_t tre_compute_npfl(tre_mem_t mem, tre_stack_t *stack, tre_ast
                 params = NULL;
                 if (params_seen)
                 {
-                    params = (decltype(params))tre_mem_alloc(mem, sizeof(*params) * TRE_PARAM_LAST);
+                    params = (decltype(params))tre_mem_alloc(mem, sizeof(*params) * (size_t)(TRE_PARAM_LAST));
                     if (!params)
                     {
                         xfree(tags);
@@ -1799,7 +1799,7 @@ static reg_errcode_t tre_make_trans(tre_pos_and_tags_t *p1, tre_pos_and_tags_t *
                 {
                     for (i = 0; p1->neg_classes[i] != (tre_ctype_t)0; i++)
                         ;
-                    trans->neg_classes = (decltype(trans->neg_classes))xmalloc(sizeof(*trans->neg_classes) * (i + 1));
+                    trans->neg_classes = (decltype(trans->neg_classes))xmalloc(sizeof(*trans->neg_classes) * (size_t)(i + 1));
                     if (trans->neg_classes == NULL)
                     {
                         return REG_ESPACE;
@@ -1843,7 +1843,7 @@ static reg_errcode_t tre_make_trans(tre_pos_and_tags_t *p1, tre_pos_and_tags_t *
                 /* If there were any tags, allocate an array and fill it. */
                 if (i + j > 0)
                 {
-                    trans->tags = (decltype(trans->tags))xmalloc(sizeof(*trans->tags) * (i + j + 1));
+                    trans->tags = (decltype(trans->tags))xmalloc(sizeof(*trans->tags) * (size_t)(i + j + 1));
                     if (!trans->tags)
                     {
                         return REG_ESPACE;
@@ -2112,7 +2112,7 @@ int tre_compile(regex_t *preg, const tre_char_t *regex, size_t n, int cflags)
     {
         ERROR_EXIT(errcode);
     }
-    preg->re_nsub = parse_ctx.submatch_id - 1;
+    preg->re_nsub = (size_t)(parse_ctx.submatch_id - 1);
     tree = parse_ctx.result;
 
     /* Back references and approximate matching cannot currently be used
@@ -2140,7 +2140,7 @@ int tre_compile(regex_t *preg, const tre_char_t *regex, size_t n, int cflags)
     }
     tnfa->have_backrefs = parse_ctx.max_backref >= 0;
     tnfa->have_approx = parse_ctx.have_approx;
-    tnfa->num_submatches = parse_ctx.submatch_id;
+    tnfa->num_submatches = (int)(uintptr_t)(parse_ctx.submatch_id);
 
     /* Set up tags for submatch addressing.  If REG_NOSUB is set and the
        regexp does not have back references, this can be skipped. */
@@ -2160,13 +2160,13 @@ int tre_compile(regex_t *preg, const tre_char_t *regex, size_t n, int cflags)
 
         if (tnfa->num_tags > 0)
         {
-            tag_directions = (decltype(tag_directions))xmalloc(sizeof(*tag_directions) * (tnfa->num_tags + 1));
+            tag_directions = (decltype(tag_directions))xmalloc(sizeof(*tag_directions) * (size_t)(tnfa->num_tags + 1));
             if (tag_directions == NULL)
             {
                 ERROR_EXIT(REG_ESPACE);
             }
             tnfa->tag_directions = tag_directions;
-            memset(tag_directions, -1, sizeof(*tag_directions) * (tnfa->num_tags + 1));
+            memset(tag_directions, -1, sizeof(*tag_directions) * (size_t)(tnfa->num_tags + 1));
         }
         tnfa->minimal_tags = (decltype(tnfa->minimal_tags))xcalloc((unsigned)tnfa->num_tags * 2 + 1, sizeof(tnfa->minimal_tags));
         if (tnfa->minimal_tags == NULL)
@@ -2236,13 +2236,13 @@ int tre_compile(regex_t *preg, const tre_char_t *regex, size_t n, int cflags)
     DPRINT(("Number of states: %d\n", numpos));
 #endif /* TRE_DEBUG */
 
-    counts = (decltype(counts))xmalloc(sizeof(int) * numpos);
+    counts = (decltype(counts))xmalloc(sizeof(int) * (size_t)(numpos));
     if (counts == NULL)
     {
         ERROR_EXIT(REG_ESPACE);
     }
 
-    offs = (decltype(offs))xmalloc(sizeof(int) * numpos);
+    offs = (decltype(offs))xmalloc(sizeof(int) * (size_t)(numpos));
     if (offs == NULL)
     {
         ERROR_EXIT(REG_ESPACE);
@@ -2267,7 +2267,7 @@ int tre_compile(regex_t *preg, const tre_char_t *regex, size_t n, int cflags)
         ERROR_EXIT(REG_ESPACE);
     }
     tnfa->transitions = transitions;
-    tnfa->num_transitions = add;
+    tnfa->num_transitions = (int)(uintptr_t)(add);
 
     DPRINT(("Converting to TNFA:\n"));
     errcode = tre_ast_to_tnfa(tree, transitions, counts, offs);
@@ -2313,7 +2313,7 @@ int tre_compile(regex_t *preg, const tre_char_t *regex, size_t n, int cflags)
                 if (tnfa->firstpos_chars[k])
                 {
                     DPRINT(("first char must be %d\n", k));
-                    tnfa->first_char = k;
+                    tnfa->first_char = (int)(k);
                     xfree(tnfa->firstpos_chars);
                     tnfa->firstpos_chars = NULL;
                     break;
@@ -2387,12 +2387,12 @@ int tre_compile(regex_t *preg, const tre_char_t *regex, size_t n, int cflags)
             int j;
             for (j = 0; p->tags[j] >= 0; j++)
                 ;
-            initial[i].tags = (decltype(initial[i].tags))xmalloc(sizeof(*p->tags) * (j + 1));
+            initial[i].tags = (decltype(initial[i].tags))xmalloc(sizeof(*p->tags) * (size_t)(j + 1));
             if (!initial[i].tags)
             {
                 ERROR_EXIT(REG_ESPACE);
             }
-            memcpy(initial[i].tags, p->tags, sizeof(*p->tags) * (j + 1));
+            memcpy(initial[i].tags, p->tags, sizeof(*p->tags) * (size_t)(j + 1));
         }
         initial[i].params = NULL;
         if (p->params)
@@ -2402,14 +2402,14 @@ int tre_compile(regex_t *preg, const tre_char_t *regex, size_t n, int cflags)
             {
                 ERROR_EXIT(REG_ESPACE);
             }
-            memcpy(initial[i].params, p->params, sizeof(*p->params) * TRE_PARAM_LAST);
+            memcpy(initial[i].params, p->params, sizeof(*p->params) * (size_t)(TRE_PARAM_LAST));
         }
         initial[i].assertions = p->assertions;
         i++;
     }
     initial[i].state = NULL;
 
-    tnfa->num_transitions = add;
+    tnfa->num_transitions = (int)(uintptr_t)(add);
     tnfa->final = transitions + offs[tree->lastpos[0].position];
     tnfa->num_states = numpos;
     tnfa->cflags = cflags;

@@ -28,7 +28,7 @@ void repl_state_init(ReplState *state, const char *self_path, CompilerConfig *cf
     (void)self_path;
     memset(state, 0, sizeof(*state));
     state->history_cap = 64;
-    state->history = malloc(state->history_cap * sizeof(char *));
+    state->history = malloc((size_t)(state->history_cap) * sizeof(char *));
     state->history_len = 0;
 
     state->config = cfg;
@@ -69,7 +69,7 @@ void repl_history_add(ReplState *state, const char *line)
     if (state->history_len >= state->history_cap)
     {
         state->history_cap *= 2;
-        state->history = realloc(state->history, state->history_cap * sizeof(char *));
+        state->history = realloc(state->history, (size_t)(state->history_cap) * sizeof(char *));
     }
     state->history[state->history_len++] = xstrdup(line);
 }
@@ -285,7 +285,7 @@ static int repl_process_line(ReplState *state, char *line_buf, int *brace_depth,
 
     size_t len = strlen(line_buf);
     *input_buffer = realloc(*input_buffer, *input_len + len + 2);
-    memcpy(*input_buffer + *input_len, line_buf, len);
+    memcpy(*input_buffer + *input_len, line_buf, (size_t)(len));
     (*input_len) += len;
     (*input_buffer)[(*input_len)++] = '\n';
     (*input_buffer)[*input_len] = '\0';

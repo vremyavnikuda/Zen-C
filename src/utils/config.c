@@ -31,7 +31,7 @@ static void append_to_whitelist(char ***whitelist_ptr, cJSON *items)
         }
     }
 
-    size_t new_size = sizeof(char *) * (current_count + new_count + 1);
+    size_t new_size = sizeof(char *) * (size_t)(current_count + new_count + 1);
     *whitelist_ptr = xrealloc(*whitelist_ptr, new_size);
 
     int added = 0;
@@ -57,17 +57,27 @@ static int load_config_file(const char *path, CompilerConfig *cfg)
 
     fseek(f, 0, SEEK_END);
     long length = ftell(f);
+    if (length < 0)
+    {
+        fclose(f);
+        return 0;
+    }
+    if (length < 0)
+    {
+        fclose(f);
+        return 0;
+    }
     fseek(f, 0, SEEK_SET);
 
     // Use standard malloc/free for temporary file buffer to avoid arena pollution
-    char *data = malloc(length + 1);
+    char *data = malloc((size_t)(length + 1));
     if (!data)
     {
         fclose(f);
         return 0;
     }
 
-    fread(data, 1, length, f);
+    fread(data, 1, (size_t)(length), f);
     data[length] = '\0';
     fclose(f);
 

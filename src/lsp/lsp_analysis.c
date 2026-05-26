@@ -66,7 +66,7 @@ void lsp_on_diagnostic(void *data, Token t, int severity, const char *msg, int d
     Diagnostic *d = calloc(1, sizeof(Diagnostic));
     d->line = t.line > 0 ? t.line - 1 : 0;
     d->col = t.col > 0 ? t.col - 1 : 0;
-    d->len = t.len;
+    d->len = (int)(t.len);
     d->severity = severity;
     d->id = diag_id;
     d->message = msg ? xstrdup(msg) : xstrdup("Unknown error");
@@ -434,9 +434,9 @@ static char *get_word_at(const char *src, int line, int col)
     {
         return NULL;
     }
-    size_t len = end - start;
+    size_t len = (size_t)(end - start);
     char *word = malloc(len + 1);
-    memcpy(word, start, len);
+    memcpy(word, start, (size_t)(len));
     word[len] = 0;
     return word;
 }
@@ -875,7 +875,7 @@ void lsp_completion(const char *uri, int line, int col, int id)
                     {
                         len = sizeof(expr_chain) - 1;
                     }
-                    strncpy(expr_chain, ptr + start_ident, len);
+                    strncpy(expr_chain, ptr + start_ident, (size_t)(len));
                     expr_chain[len] = 0;
 
                     // e.g. "a.b.c" -> parts: "a", "b", "c"
@@ -1238,8 +1238,8 @@ void lsp_completion(const char *uri, int line, int col, int id)
             for (int i = 0; i < f->total_args; i++)
             {
                 char *tstr = type_to_string(f->arg_types[i]);
-                offset += snprintf(detail + offset, sizeof(detail) - offset, "%s%s", tstr,
-                                   (i < f->total_args - 1) ? ", " : "");
+                offset += snprintf(detail + offset, (size_t)(sizeof(detail) - (size_t)(offset)),
+                                   "%s%s", tstr, (i < f->total_args - 1) ? ", " : "");
                 zfree(tstr);
                 if (offset >= (int)sizeof(detail))
                 {
@@ -1249,7 +1249,8 @@ void lsp_completion(const char *uri, int line, int col, int id)
             char *ret_str = type_to_string(f->ret_type);
             if (offset < (int)sizeof(detail))
             {
-                snprintf(detail + offset, sizeof(detail) - offset, ") -> %s", ret_str);
+                snprintf(detail + offset, (size_t)(sizeof(detail) - (size_t)(offset)), ") -> %s",
+                         ret_str);
             }
             zfree(ret_str);
             cJSON_AddStringToObject(item, "detail", detail);
@@ -1419,8 +1420,9 @@ static cJSON *ast_to_symbol(ASTNode *node)
 
     cJSON *end = cJSON_CreateObject();
     cJSON_AddNumberToObject(end, "line", node->token.line > 0 ? node->token.line - 1 : 0);
-    cJSON_AddNumberToObject(end, "character",
-                            (node->token.col > 0 ? node->token.col - 1 : 0) + node->token.len);
+    cJSON_AddNumberToObject(
+        end, "character",
+        (double)((node->token.col > 0 ? node->token.col - 1 : 0) + (int)node->token.len));
 
     cJSON_AddItemToObject(range, "start", start);
     cJSON_AddItemToObject(range, "end", end);
@@ -1627,7 +1629,7 @@ void lsp_signature_help(const char *uri, int line, int col, int id)
             if (len > 0 && len < MAX_FUNC_NAME_LEN - 1)
             {
                 char func_name[MAX_FUNC_NAME_LEN];
-                strncpy(func_name, ident_start, len);
+                strncpy(func_name, ident_start, (size_t)(len));
                 func_name[len] = 0;
                 // Lookup
                 FuncSig *fn = g_project->ctx->func_registry;
@@ -1684,7 +1686,7 @@ void lsp_signature_help(const char *uri, int line, int col, int id)
                                 {
                                     p_len = 255;
                                 }
-                                strncpy(param_label, p_ptr, p_len);
+                                strncpy(param_label, p_ptr, (size_t)(p_len));
                                 param_label[p_len] = 0;
                                 p_ptr = p_end + 2;
                             }

@@ -55,7 +55,7 @@ int lsp_main(int argc, char **argv)
             }
             if (0 == strncmp(line, "Content-Length: ", 16))
             {
-                content_len = atoi(line + 16);
+                content_len = (int)strtol(line + 16, NULL, 10);
             }
         }
 

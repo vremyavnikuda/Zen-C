@@ -421,7 +421,7 @@ void cmd_add_fmt(CmdBuilder *cmd, const char *fmt, ...)
         return;
     }
 
-    size_t needed = size + 1 + 1; // + space + null
+    size_t needed = (size_t)(size) + 1 + 1; // + space + null
     ensure_cap(cmd, needed);
 
     if (cmd->len > 0 && cmd->buf[cmd->len - 1] != ' ')
@@ -434,7 +434,7 @@ void cmd_add_fmt(CmdBuilder *cmd, const char *fmt, ...)
     vsnprintf(cmd->buf + cmd->len, cmd->cap - cmd->len, fmt, args);
     va_end(args);
 
-    cmd->len += size;
+    cmd->len += (size_t)(size);
 }
 
 void cmd_free(CmdBuilder *cmd)
@@ -484,9 +484,9 @@ void arg_list_add_fmt(ArgList *list, const char *fmt, ...)
         return;
     }
 
-    char *buf = xmalloc(size + 1);
+    char *buf = xmalloc((size_t)(size + 1));
     va_start(args, fmt);
-    vsnprintf(buf, size + 1, fmt, args);
+    vsnprintf(buf, (size_t)(size + 1), fmt, args);
     va_end(args);
 
     arg_list_add(list, buf);

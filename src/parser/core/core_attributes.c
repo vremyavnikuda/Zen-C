@@ -43,7 +43,7 @@ DeclarationAttributes parse_attributes(ParserContext *ctx, Lexer *l)
                 if (num.type == TOK_INT)
                 {
                     char *tmp = token_strdup(num);
-                    res.vector_size = atoi(tmp);
+                    res.vector_size = (int)strtol(tmp, NULL, 10);
                     zfree(tmp);
                 }
                 if (lexer_next(l).type != TOK_RPAREN)
@@ -191,7 +191,7 @@ DeclarationAttributes parse_attributes(ParserContext *ctx, Lexer *l)
                 Token num = lexer_next(l);
                 if (num.type == TOK_INT)
                 {
-                    res.align = atoi(num.start);
+                    res.align = (int)strtol(num.start, NULL, 10);
                 }
                 if (lexer_next(l).type != TOK_RPAREN)
                 {
@@ -655,8 +655,8 @@ DeclarationAttributes parse_attributes(ParserContext *ctx, Lexer *l)
                     while (1)
                     {
                         Token inner_t = lexer_next(l);
-                        new_attr->args =
-                            realloc(new_attr->args, sizeof(char *) * (new_attr->arg_count + 1));
+                        new_attr->args = realloc(
+                            new_attr->args, sizeof(char *) * (size_t)(new_attr->arg_count + 1));
 
                         if (inner_t.type == TOK_STRING)
                         {

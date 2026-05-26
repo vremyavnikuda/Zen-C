@@ -140,7 +140,7 @@ void *tre_mem_alloc_impl(tre_mem_t mem, int provided, void *provided_block, int 
     }
 
     /* Make sure the next pointer will be aligned. */
-    size += ALIGN(mem->ptr + size, long);
+    size += (size_t)(ALIGN(mem->ptr + size, long));
 
     /* Allocate from current block. */
     ptr = mem->ptr;

@@ -21,7 +21,7 @@ int tre_filter_find(const unsigned char *str, size_t len, tre_filter_t *filter)
 {
     unsigned short counts[256];
     unsigned int i;
-    unsigned int window_len = filter->window_len;
+    unsigned int window_len = (int)(uintptr_t)(filter->window_len);
     tre_filter_profile_t *profile = filter->profile;
     const unsigned char *str_orig = str;
 

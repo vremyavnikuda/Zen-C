@@ -1,3 +1,4 @@
+#include <stddef.h>
 // SPDX-License-Identifier: MIT
 
 /**
@@ -82,7 +83,7 @@ typedef struct
 {
     ZenTokenType type; ///< Type of the token.
     const char *start; ///< Pointer to start of token in source buffer.
-    int len;           ///< Length of the token text.
+    size_t len;        ///< Length of the token text.
     int line;          ///< Line number (1-based).
     int col;           ///< Column number (1-based).
     const char *file;  ///< Name of file with source code.

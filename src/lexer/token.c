@@ -131,7 +131,7 @@ Token lexer_next(Lexer *l)
         }
         l->pos += len;
 
-        return (Token){TOK_PREPROC, s, len, start_line, start_col, l->filename};
+        return (Token){TOK_PREPROC, s, (size_t)len, start_line, start_col, l->filename};
     }
 
     // Comments.
@@ -144,7 +144,8 @@ Token lexer_next(Lexer *l)
             {
                 if ((s[len] == '/' && s[len + 1] == '/') || (s[len] == '/' && s[len + 1] == '*'))
                 {
-                    zerror_at((Token){TOK_COMMENT, s, len + 2, start_line, start_col, l->filename},
+                    zerror_at((Token){TOK_COMMENT, s, (size_t)(len + 2), start_line, start_col,
+                                      l->filename},
                               "MISRA Rule 3.1: '//' or '/*' within a comment");
                 }
             }
@@ -155,7 +156,7 @@ Token lexer_next(Lexer *l)
         {
             l->pos += len;
             l->col += len;
-            return (Token){TOK_COMMENT, s, len, start_line, start_col, l->filename};
+            return (Token){TOK_COMMENT, s, (size_t)len, start_line, start_col, l->filename};
         }
 
         l->pos += len;
@@ -178,7 +179,7 @@ Token lexer_next(Lexer *l)
                 // Check for nested /* or //
                 if ((s[0] == '/' && s[1] == '*') || (s[0] == '/' && s[1] == '/'))
                 {
-                    zerror_at((Token){TOK_COMMENT, comment_start, (int)(s - comment_start) + 2,
+                    zerror_at((Token){TOK_COMMENT, comment_start, (size_t)(s - comment_start) + 2,
                                       start_line, start_col, l->filename},
                               "MISRA Rule 3.1: '/*' or '//' within a comment");
                 }
@@ -210,7 +211,7 @@ Token lexer_next(Lexer *l)
         if (l->emit_comments)
         {
             size_t len = (size_t)(s - comment_start);
-            return (Token){TOK_COMMENT, comment_start, (int)len,
+            return (Token){TOK_COMMENT, comment_start, (size_t)len,
                            start_line,  start_col,     l->filename};
         }
 
@@ -334,7 +335,7 @@ Token lexer_next(Lexer *l)
         }
         else
         {
-            return (Token){TOK_IDENT, s, len, start_line, start_col, l->filename};
+            return (Token){TOK_IDENT, s, (size_t)len, start_line, start_col, l->filename};
         }
     }
 
@@ -342,7 +343,7 @@ Token lexer_next(Lexer *l)
     {
         int len = lexer_scan_string_internal(l, s, '"', 0, 1);
         l->pos += len;
-        return (Token){TOK_FSTRING, s, len, start_line, start_col, l->filename};
+        return (Token){TOK_FSTRING, s, (size_t)len, start_line, start_col, l->filename};
     }
 
     // Raw Strings (r"..." or r'...' or r"""...""")
@@ -351,7 +352,7 @@ Token lexer_next(Lexer *l)
         char quote = s[1];
         int len = lexer_scan_string_internal(l, s, quote, 1, 1);
         l->pos += len;
-        return (Token){TOK_RAW_STRING, s, len, start_line, start_col, l->filename};
+        return (Token){TOK_RAW_STRING, s, (size_t)len, start_line, start_col, l->filename};
     }
 
     // Numbers
@@ -444,7 +445,7 @@ Token lexer_next(Lexer *l)
                 }
                 l->pos += len;
                 l->col += len;
-                return (Token){TOK_FLOAT, s, len, start_line, start_col, l->filename};
+                return (Token){TOK_FLOAT, s, (size_t)len, start_line, start_col, l->filename};
             }
         }
 
@@ -458,7 +459,7 @@ Token lexer_next(Lexer *l)
 
         l->pos += len;
         l->col += len;
-        return (Token){TOK_INT, s, len, start_line, start_col, l->filename};
+        return (Token){TOK_INT, s, (size_t)len, start_line, start_col, l->filename};
     }
 
     // Strings
@@ -466,7 +467,7 @@ Token lexer_next(Lexer *l)
     {
         int len = lexer_scan_string_internal(l, s, '"', 0, 0);
         l->pos += len;
-        return (Token){TOK_STRING, s, len, start_line, start_col, l->filename};
+        return (Token){TOK_STRING, s, (size_t)len, start_line, start_col, l->filename};
     }
 
     if (*s == '\'')
@@ -524,7 +525,7 @@ Token lexer_next(Lexer *l)
 
         l->pos += len;
         l->col += len;
-        return (Token){TOK_CHAR, s, len, start_line, start_col, l->filename};
+        return (Token){TOK_CHAR, s, (size_t)len, start_line, start_col, l->filename};
     }
 
     // Operators.
@@ -664,7 +665,7 @@ Token lexer_next(Lexer *l)
 
     l->pos += len;
     l->col += len;
-    return (Token){type, s, len, start_line, start_col, l->filename};
+    return (Token){type, s, (size_t)len, start_line, start_col, l->filename};
 }
 
 Token lexer_peek(Lexer *l)

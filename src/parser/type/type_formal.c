@@ -52,7 +52,7 @@ Type *parse_type_formal(ParserContext *ctx, Lexer *l)
         {
             Token st = lexer_peek(l);
             int valid = 1;
-            for (int i = 0; i < st.len; i++)
+            for (size_t i = 0; i < st.len; i++)
             {
                 if (st.start[i] != '*')
                 {
@@ -64,7 +64,7 @@ Type *parse_type_formal(ParserContext *ctx, Lexer *l)
                 break;
             }
             lexer_next(l);
-            star_count += st.len;
+            star_count += (int)(st.len);
         }
 
         Type *fn_type = type_new(TYPE_FUNCTION);
@@ -102,7 +102,7 @@ Type *parse_type_formal(ParserContext *ctx, Lexer *l)
                 break;
             }
             fn_type->arg_count++;
-            fn_type->args = xrealloc(fn_type->args, sizeof(Type *) * fn_type->arg_count);
+            fn_type->args = xrealloc(fn_type->args, sizeof(Type *) * (size_t)(fn_type->arg_count));
             fn_type->args[fn_type->arg_count - 1] = arg;
 
             if (lexer_peek(l).type == TOK_COMMA)
@@ -145,7 +145,7 @@ Type *parse_type_formal(ParserContext *ctx, Lexer *l)
     {
         Token st = lexer_peek(l);
         int valid = 1;
-        for (int i = 0; i < st.len; i++)
+        for (size_t i = 0; i < st.len; i++)
         {
             if (st.start[i] != '*')
             {
@@ -158,7 +158,7 @@ Type *parse_type_formal(ParserContext *ctx, Lexer *l)
         }
 
         lexer_next(l); // consume '*' or '**'
-        for (int i = 0; i < st.len; i++)
+        for (size_t i = 0; i < st.len; i++)
         {
             t = type_new_ptr(t);
         }
@@ -175,7 +175,7 @@ Type *parse_type_formal(ParserContext *ctx, Lexer *l)
         if (dims_count == dims_cap)
         {
             dims_cap = dims_cap == 0 ? 4 : dims_cap * 2;
-            dims = xrealloc(dims, sizeof(int) * dims_cap);
+            dims = xrealloc(dims, sizeof(int) * (size_t)(dims_cap));
         }
 
         if (lexer_peek(l).type == TOK_RBRACKET)

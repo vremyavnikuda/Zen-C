@@ -106,7 +106,7 @@ static void hash_table_add(hashTable *tbl, void *ptr, size_t bytes, const char *
     unsigned int i;
     hashTableItem *item, *new_item;
 
-    i = hash_void_ptr(ptr);
+    i = (int)(hash_void_ptr(ptr));
 
     item = tbl->table[i];
     if (item != NULL)
@@ -156,7 +156,7 @@ static size_t
     hashTableItem *item, *prev;
     size_t bytes;
 
-    i = hash_void_ptr(ptr);
+    i = (int)(hash_void_ptr(ptr));
 
     item = tbl->table[i];
     if (item == NULL)
@@ -263,7 +263,7 @@ int xmalloc_dump_leaks(void)
     }
     printf(" bytes per block).\n");
 
-    return num_leaks;
+    return (int)(num_leaks);
 }
 
 void *xmalloc_impl(size_t size, const char *file, int line, const char *func)
@@ -294,7 +294,7 @@ void *xmalloc_impl(size_t size, const char *file, int line, const char *func)
     ptr = malloc(size);
     if (ptr != NULL)
     {
-        hash_table_add(xmalloc_table, ptr, (int)size, file, line, func);
+        hash_table_add(xmalloc_table, ptr, (size_t)(size), file, line, func);
     }
     return ptr;
 }
@@ -327,7 +327,7 @@ void *xcalloc_impl(size_t nmemb, size_t size, const char *file, int line, const 
     ptr = calloc(nmemb, size);
     if (ptr != NULL)
     {
-        hash_table_add(xmalloc_table, ptr, (int)(nmemb * size), file, line, func);
+        hash_table_add(xmalloc_table, ptr, (size_t)(nmemb * size), file, line, func);
     }
     return ptr;
 }
@@ -377,12 +377,12 @@ void *xrealloc_impl(void *ptr, size_t new_size, const char *file, int line, cons
 
     if (new_ptr != NULL)
     {
-        hash_table_add(xmalloc_table, new_ptr, (int)new_size, file, line, func);
+        hash_table_add(xmalloc_table, new_ptr, (size_t)(new_size), file, line, func);
     }
     else
     {
         /* Realloc failed, restore old entry */
-        hash_table_add(xmalloc_table, ptr, (int)old_size, file, line, func);
+        hash_table_add(xmalloc_table, ptr, (size_t)(old_size), file, line, func);
     }
     return new_ptr;
 }

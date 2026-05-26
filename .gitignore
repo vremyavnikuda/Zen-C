@@ -1,70 +1,61 @@
-obj/
-obj-*/
-obj.ape/
-bin/
-zc
-zc.exe
-zc.com
-zc-boot.com
-zc-fuzz
-zc-fuzz-cmplog
-zc-asan
-result
-out.c
-a.out
+# Build artifacts
 *.o
 *.so
-*.dll
-*.dylib
 *.a
-*.so.dSYM/
-*.dSYM/
-.vscode/
-.idea/
-*.swp
-*~
-.DS_Store
-compile_commands.json
-vgcore.*
-tests/**/*.o
-plugins/*.so
-.cache
-out/
-# Doxygen documentation
-docs/html/
-docs/latex/
-*.db
-build_dir_env.txt 
-build_dir_linux.txt
-# Fuzzing
-!fuzz/
-fuzz/corpus/
-fuzz/out/
+zc
+zc-fuzz
+zc-fuzz-cmplog
+zc-fuzz-libfuzzer
+zc-fuzz-harness
+zencraft_bin
+
+# Generated files
+out.c
+out.cpp
+out.m
+out.cu
+
+# Test artifacts
+test_out_*
+rule_*
+*_suite.c
+*_suite.cpp
+test_runner
+
+# Development scratch files
+main.c
+test.zc
+fib.zc
+befunge.c
+variadic_c23.c
+
+# Build logs
+make.log
+make_warning.log
+
+# Fuzzer artifacts
 crash-*
 leak-*
 timeout-*
-oom-*
-zc-fuzz-*
-scratch/
-test_out_*.out.c
-test_out_*.out.cu
-test_out_*.out.cpp
-test_out_*.out.m
-test_out_*.out
-trace.txt
-zc-*
-_tmp_comptime_*.c
-.github/workflows/fuzzing.yml
-tests/compiler/lsp/test_runner
-# cscope code browsing artifacts
-cscope.out
-cscope.in.out
-cscope.po.out
+
 # Coverage
 *.gcda
 *.gcno
 *.gcov
 coverage.info
 coverage-report/
-benchmarks_result.json
+
+# Benchmark artifacts
 .bench_*
+bench_*
+benchmarks_result.json
+
+# Editor/IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

@@ -47,7 +47,7 @@
                 size_t w;                                                                          \
                 size_t max;                                                                        \
                 if (len >= 0)                                                                      \
-                    max = len - pos;                                                               \
+                    max = (size_t)(len - pos);                                                     \
                 else                                                                               \
                     max = 32;                                                                      \
                 if (max <= 0)                                                                      \
@@ -139,7 +139,7 @@
 
 #endif /* !TRE_WCHAR */
 
-#define IS_WORD_CHAR(c) ((c) == L'_' || tre_isalnum(c))
+#define IS_WORD_CHAR(c) ((c) == L'_' || tre_isalnum((wint_t)(c)))
 
 #define CHECK_ASSERTIONS(assertions)                                                               \
     (((assertions & ASSERT_AT_BOL) && (pos > 0 || reg_notbol) &&                                   \

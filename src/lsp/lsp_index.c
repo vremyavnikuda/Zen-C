@@ -56,7 +56,7 @@ void lsp_index_add_def(LSPIndex *idx, Token t, const char *hover, ASTNode *node)
     r->start_line = t.line - 1;
     r->start_col = t.col - 1;
     r->end_line = t.line - 1;
-    r->end_col = t.col - 1 + t.len;
+    r->end_col = (int)(t.col) - 1 + (int)(t.len);
     if (hover)
     {
         r->hover_text = xstrdup(hover);
@@ -96,7 +96,7 @@ void lsp_index_add_ref(LSPIndex *idx, Token t, Token def_t, ASTNode *node)
     r->start_line = t.line - 1;
     r->start_col = t.col - 1;
     r->end_line = t.line - 1;
-    r->end_col = t.col - 1 + t.len;
+    r->end_col = (int)(t.col) - 1 + (int)(t.len);
 
     r->def_line = def_t.line - 1;
     r->def_col = def_t.col - 1;

@@ -87,7 +87,7 @@ ASTNode *parse_match(ParserContext *ctx, Lexer *l)
                     lexer_next(l); // eat ::
                     Token suffix = lexer_next(l);
                     char *tmp = xmalloc(strlen(p_str) + suffix.len + 3);
-                    sprintf(tmp, "%s__%.*s", p_str, suffix.len, suffix.start); /* safe */
+                    sprintf(tmp, "%s__%.*s", p_str, (int)(suffix.len), suffix.start); /* safe */
                     zfree(p_str);
                     p_str = tmp;
                 }

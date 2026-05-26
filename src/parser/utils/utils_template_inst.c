@@ -164,7 +164,8 @@ static void trigger_instantiations(ParserContext *ctx, ASTNode *node)
             while (t)
             {
                 size_t tlen = strlen(t->name);
-                if (strncmp(name, t->name, tlen) == 0 && name[tlen] == '_' && name[tlen + 1] == '_')
+                if (strncmp(name, t->name, (size_t)(tlen)) == 0 && name[tlen] == '_' &&
+                    name[tlen + 1] == '_')
                 {
                     char *template_name = t->name;
                     char *concrete_arg = (char *)name + tlen + 2;
@@ -412,7 +413,7 @@ char *instantiate_function_template(ParserContext *ctx, const char *name, const 
 
         // Build the param suffix (e.g., for "X,Y,Z" -> "_X_Y_Z")
         size_t suffix_cap = strlen(tpl->generic_param) * 2 + 64;
-        char *param_suffix = xmalloc(suffix_cap);
+        char *param_suffix = xmalloc((size_t)(suffix_cap));
         param_suffix[0] = 0;
         const char *p_ptr = tpl->generic_param;
         while (p_ptr && *p_ptr)
@@ -420,7 +421,7 @@ char *instantiate_function_template(ParserContext *ctx, const char *name, const 
             strcat(param_suffix, "__");
             const char *p_next = strchr(p_ptr, ',');
             int sub_len = p_next ? (int)(p_next - p_ptr) : (int)strlen(p_ptr);
-            strncat(param_suffix, p_ptr, sub_len);
+            strncat(param_suffix, p_ptr, (size_t)(sub_len));
             if (p_next)
             {
                 p_ptr = p_next + 1;
@@ -437,9 +438,9 @@ char *instantiate_function_template(ParserContext *ctx, const char *name, const 
         if (ret_len > suffix_len && strcmp(ret + ret_len - suffix_len, param_suffix) == 0)
         {
             // Extract base struct name (e.g., "Triple" from "Triple_X_Y_Z")
-            size_t base_len = ret_len - suffix_len;
-            char *struct_base = xmalloc(base_len + 1);
-            strncpy(struct_base, ret, base_len);
+            size_t base_len = (size_t)(ret_len - suffix_len);
+            char *struct_base = xmalloc((size_t)(base_len + 1));
+            strncpy(struct_base, ret, (size_t)(base_len));
             struct_base[base_len] = 0;
 
             // Check if it's a known generic template
@@ -464,7 +465,7 @@ char *instantiate_function_template(ParserContext *ctx, const char *name, const 
                 }
 
                 // Split concrete types
-                char **args = xmalloc(sizeof(char *) * template_param_count);
+                char **args = xmalloc(sizeof(char *) * (size_t)(template_param_count));
                 int arg_count = 0;
                 const char *types_ptr = types_src;
                 while (types_ptr && *types_ptr && arg_count < template_param_count)
@@ -473,8 +474,8 @@ char *instantiate_function_template(ParserContext *ctx, const char *name, const 
                     int types_len =
                         types_next ? (int)(types_next - types_ptr) : (int)strlen(types_ptr);
 
-                    args[arg_count] = xmalloc(types_len + 1);
-                    strncpy(args[arg_count], types_ptr, types_len);
+                    args[arg_count] = xmalloc((size_t)(types_len + 1));
+                    strncpy(args[arg_count], types_ptr, (size_t)(types_len));
                     args[arg_count][types_len] = 0;
                     arg_count++;
 
@@ -795,8 +796,8 @@ ZEN_MAYBE_UNUSED static ASTNode *copy_fields_replacing(ParserContext *ctx, ASTNo
             {
                 size_t tlen = strlen(gt->name);
                 // Check if name starts with template name followed by double underscore
-                if (strncmp(inner->name, gt->name, tlen) == 0 && inner->name[tlen] == '_' &&
-                    inner->name[tlen + 1] == '_')
+                if (strncmp(inner->name, gt->name, (size_t)(tlen)) == 0 &&
+                    inner->name[tlen] == '_' && inner->name[tlen + 1] == '_')
                 {
                     template_name = gt->name;
                     concrete_arg =
@@ -896,8 +897,9 @@ void instantiate_methods(ParserContext *ctx, GenericImplTemplate *it,
         // Standardize: ensure __ between type and method
         // If it's already correctly mangled (e.g. Vec__int32_t__with_capacity), skip
         size_t mlen = strlen(mangled_struct_name);
-        int correctly_mangled = (strncmp(meth->func.name, mangled_struct_name, mlen) == 0 &&
-                                 meth->func.name[mlen] == '_' && meth->func.name[mlen + 1] == '_');
+        int correctly_mangled =
+            (strncmp(meth->func.name, mangled_struct_name, (size_t)(mlen)) == 0 &&
+             meth->func.name[mlen] == '_' && meth->func.name[mlen + 1] == '_');
 
         if (!correctly_mangled)
         {
@@ -936,7 +938,7 @@ void instantiate_methods(ParserContext *ctx, GenericImplTemplate *it,
             {
                 size_t tlen = strlen(gt->name);
                 char delim = meth->func.ret_type[tlen];
-                if (strncmp(meth->func.ret_type, gt->name, tlen) == 0 &&
+                if (strncmp(meth->func.ret_type, gt->name, (size_t)(tlen)) == 0 &&
                     (delim == '_' || delim == '<'))
                 {
                     // Found matching template prefix
@@ -996,7 +998,7 @@ static void register_enum_constructor(ParserContext *ctx, const char *m, const c
                                       int tag_id, Type *payload, Token token, int is_export)
 {
     size_t mangled_var_sz = strlen(m) + strlen(var_name) + 3;
-    char *mangled_var = xmalloc(mangled_var_sz);
+    char *mangled_var = xmalloc((size_t)(mangled_var_sz));
     snprintf(mangled_var, mangled_var_sz, "%s__%s", m, var_name);
     register_enum_variant(ctx, m, mangled_var, tag_id);
 
@@ -1225,7 +1227,7 @@ void instantiate_generic_multi(ParserContext *ctx, const char *tpl, char **args,
         m_len += 2 + strlen(clean);
         zfree(clean);
     }
-    char *m = xmalloc(m_len + 1);
+    char *m = xmalloc((size_t)(m_len + 1));
     strcpy(m, tpl);
     char *m_end = m + strlen(m);
     while (m_end > m && *(m_end - 1) == '_')
@@ -1280,7 +1282,7 @@ void instantiate_generic_multi(ParserContext *ctx, const char *tpl, char **args,
     {
         u_len += strlen(args[i]) + 1;
     }
-    char *u_buf = xmalloc(u_len + 1);
+    char *u_buf = xmalloc((size_t)(u_len + 1));
     u_buf[0] = 0;
     for (int i = 0; i < arg_count; i++)
     {
@@ -1367,7 +1369,7 @@ void instantiate_generic_multi(ParserContext *ctx, const char *tpl, char **args,
         {
             c_args_len += strlen(args[j]) + 1;
         }
-        char *c_args = xmalloc(c_args_len);
+        char *c_args = xmalloc((size_t)(c_args_len));
         c_args[0] = 0;
         for (int j = 0; j < arg_count; j++)
         {

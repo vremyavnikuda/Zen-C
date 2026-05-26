@@ -18,8 +18,8 @@ char *strip_template_suffix(const char *name)
     if (lt)
     {
         ptrdiff_t len = lt - name;
-        char *buf = xmalloc(len + 1);
-        strncpy(buf, name, len);
+        char *buf = xmalloc((size_t)(len + 1));
+        strncpy(buf, name, (size_t)(len));
         buf[len] = 0;
         return buf;
     }
@@ -101,8 +101,8 @@ char *replace_string_type(const char *args)
         const char *match = strstr(p, "string");
         if (match)
         {
-            size_t prefix_len = match - p;
-            strncat(res, p, prefix_len);
+            size_t prefix_len = (size_t)(match - p);
+            strncat(res, p, (size_t)(prefix_len));
             p = match;
 
             int before_ok = (match == args || (!isalnum(*(match - 1)) && *(match - 1) != '_'));

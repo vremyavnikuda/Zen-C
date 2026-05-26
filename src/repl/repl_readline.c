@@ -33,7 +33,7 @@ char *repl_complete(ReplState *state, const char *buf, int pos)
     {
         return NULL;
     }
-    strncpy(prefix, buf + start, len);
+    strncpy(prefix, buf + start, (size_t)(len));
     prefix[len] = 0;
 
     char *match = NULL;
@@ -42,7 +42,7 @@ char *repl_complete(ReplState *state, const char *buf, int pos)
     /* Keywords */
     for (int i = 0; REPL_KEYWORDS[i]; i++)
     {
-        if (strncmp(REPL_KEYWORDS[i], prefix, len) == 0)
+        if (strncmp(REPL_KEYWORDS[i], prefix, (size_t)(len)) == 0)
         {
             match = (char *)REPL_KEYWORDS[i];
             match_count++;
@@ -54,7 +54,7 @@ char *repl_complete(ReplState *state, const char *buf, int pos)
     {
         for (int i = 0; COMMANDS[i]; i++)
         {
-            if (strncmp(COMMANDS[i], prefix, len) == 0)
+            if (strncmp(COMMANDS[i], prefix, (size_t)(len)) == 0)
             {
                 match = (char *)COMMANDS[i];
                 match_count++;
@@ -67,7 +67,7 @@ char *repl_complete(ReplState *state, const char *buf, int pos)
     {
         for (int i = 0; i < state->symbol_count; i++)
         {
-            if (strncmp(state->symbols[i], prefix, len) == 0)
+            if (strncmp(state->symbols[i], prefix, (size_t)(len)) == 0)
             {
                 match = state->symbols[i];
                 match_count++;
@@ -114,7 +114,7 @@ char *repl_readline(ReplState *state, const char *prompt, int indent_level)
     repl_enable_raw_mode();
 
     int buf_size = 1024;
-    char *buf = malloc(buf_size);
+    char *buf = malloc((size_t)(buf_size));
     buf[0] = 0;
     int len = 0;
     int pos = 0;
@@ -126,7 +126,7 @@ char *repl_readline(ReplState *state, const char *prompt, int indent_level)
             if (len >= buf_size - 1)
             {
                 buf_size *= 2;
-                buf = realloc(buf, buf_size);
+                buf = realloc((buf), (size_t)(buf_size));
             }
             buf[len++] = ' ';
         }
@@ -198,7 +198,7 @@ char *repl_readline(ReplState *state, const char *prompt, int indent_level)
                         { // Delete key
                             if (pos < len)
                             {
-                                memmove(buf + pos, buf + pos + 1, len - pos);
+                                memmove(buf + pos, buf + pos + 1, (size_t)(len - pos));
                                 len--;
                             }
                         }
@@ -292,7 +292,7 @@ char *repl_readline(ReplState *state, const char *prompt, int indent_level)
         {
             if (pos > 0)
             {
-                memmove(buf + pos - 1, buf + pos, len - pos + 1);
+                memmove(buf + pos - 1, buf + pos, (size_t)(len - pos + 1));
                 len--;
                 pos--;
             }
@@ -339,8 +339,8 @@ char *repl_readline(ReplState *state, const char *prompt, int indent_level)
                 if (len + clen < buf_size - 1)
                 {
                     // Insert completion
-                    memmove(buf + pos + clen, buf + pos, len - pos + 1);
-                    memcpy(buf + pos, completion, clen);
+                    memmove(buf + pos + clen, buf + pos, (size_t)(len - pos + 1));
+                    memcpy(buf + pos, completion, (size_t)(clen));
                     len += clen;
                     pos += clen;
                 }
@@ -483,7 +483,7 @@ char *repl_readline(ReplState *state, const char *prompt, int indent_level)
         {
             if (pos > 0)
             {
-                memmove(buf, buf + pos, len - pos + 1);
+                memmove(buf, buf + pos, (size_t)(len - pos + 1));
                 len -= pos;
                 pos = 0;
             }
@@ -509,9 +509,9 @@ char *repl_readline(ReplState *state, const char *prompt, int indent_level)
             if (len >= buf_size - 1)
             {
                 buf_size *= 2;
-                buf = realloc(buf, buf_size);
+                buf = realloc((buf), (size_t)(buf_size));
             }
-            memmove(buf + pos + 1, buf + pos, len - pos + 1);
+            memmove(buf + pos + 1, buf + pos, (size_t)(len - pos + 1));
             buf[pos] = c;
             len++;
             pos++;

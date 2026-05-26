@@ -44,7 +44,7 @@ void parser_audit_preprocessor(ParserContext *ctx, Token tok)
                 {
                     id_len = 127;
                 }
-                strncpy(id, id_start, id_len);
+                strncpy(id, id_start, (size_t)(id_len));
                 id[id_len] = 0;
 
                 if (strcmp(id, "errno") == 0 || strcmp(id, "assert") == 0 ||
@@ -114,8 +114,8 @@ void parser_audit_preprocessor(ParserContext *ctx, Token tok)
                 ptrdiff_t expr_len = (tok.start + tok.len) - expr_start;
                 if (expr_len > 0)
                 {
-                    char *expr_buf = xmalloc(expr_len + 1);
-                    strncpy(expr_buf, expr_start, expr_len);
+                    char *expr_buf = xmalloc((size_t)(expr_len + 1));
+                    strncpy(expr_buf, expr_start, (size_t)(expr_len));
                     expr_buf[expr_len] = 0;
 
                     char *comment = strstr(expr_buf, "//");
@@ -177,7 +177,7 @@ void parser_audit_preprocessor(ParserContext *ctx, Token tok)
                     {
                         id_len = 127;
                     }
-                    strncpy(id, id_start, id_len);
+                    strncpy(id, id_start, (size_t)(id_len));
                     id[id_len] = 0;
 
                     if (strcmp(id, "errno") == 0 || strcmp(id, "assert") == 0 ||
@@ -284,8 +284,8 @@ void try_parse_macro_const(ParserContext *ctx, const char *content)
                         pm++;
                     }
                     ptrdiff_t len = pm - p_start;
-                    params[param_count] = xmalloc(len + 1);
-                    strncpy(params[param_count], p_start, len);
+                    params[param_count] = xmalloc((size_t)(len + 1));
+                    strncpy(params[param_count], p_start, (size_t)(len));
                     params[param_count][len] = 0;
                     param_count++;
                 }
@@ -332,7 +332,7 @@ void try_parse_macro_const(ParserContext *ctx, const char *content)
                             for (int i = 0; i < param_count; i++)
                             {
                                 if (id_len == (int)strlen(params[i]) &&
-                                    strncmp(id_start, params[i], id_len) == 0)
+                                    strncmp(id_start, params[i], (size_t)(id_len)) == 0)
                                 {
                                     used_op |= (1 << i);
                                     if (!is_concat)
@@ -371,7 +371,7 @@ void try_parse_macro_const(ParserContext *ctx, const char *content)
                         for (int i = 0; i < param_count; i++)
                         {
                             if (id_len == (int)strlen(params[i]) &&
-                                strncmp(id_start, params[i], id_len) == 0)
+                                strncmp(id_start, params[i], (size_t)(id_len)) == 0)
                             {
                                 if (follows_concat)
                                 {

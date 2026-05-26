@@ -100,8 +100,8 @@ static void try_parse_c_function_decl(ParserContext *ctx, const char *line)
         return;
     }
 
-    char *name = xmalloc(name_len + 1);
-    strncpy(name, name_start, name_len);
+    char *name = xmalloc((size_t)(name_len + 1));
+    strncpy(name, name_start, (size_t)(name_len));
     name[name_len] = '\0';
 
     register_extern_symbol(ctx, name);
@@ -168,8 +168,8 @@ static void try_parse_c_struct_decl(ParserContext *ctx, const char *line)
             }
             if (name_len > 0 && *p == ';')
             {
-                char *name = xmalloc(name_len + 1);
-                strncpy(name, name_start, name_len);
+                char *name = xmalloc((size_t)(name_len + 1));
+                strncpy(name, name_start, (size_t)(name_len));
                 name[name_len] = '\0';
                 register_type_alias(ctx, name, name, NULL, 1, NULL, TOKEN_UNKNOWN, 0);
                 register_extern_symbol(ctx, name);
@@ -196,8 +196,8 @@ static void try_parse_c_struct_decl(ParserContext *ctx, const char *line)
         return;
     }
 
-    char *tag_name = xmalloc(tag_len + 1);
-    strncpy(tag_name, tag_start, tag_len);
+    char *tag_name = xmalloc((size_t)((size_t)(tag_len) + 1));
+    strncpy(tag_name, tag_start, (size_t)(tag_len));
     tag_name[tag_len] = '\0';
 
     while (*p && isspace(*p))
@@ -208,7 +208,7 @@ static void try_parse_c_struct_decl(ParserContext *ctx, const char *line)
     if (*p == '{' || *p == ';')
     {
         const char *c_keyword = is_union ? "union" : "struct";
-        char *c_type = xmalloc(strlen(c_keyword) + 1 + tag_len + 1);
+        char *c_type = xmalloc((size_t)(strlen(c_keyword) + 1 + (size_t)(tag_len) + 1));
         sprintf(c_type, "%s %s", c_keyword, tag_name); /* safe */
         register_type_alias(ctx, tag_name, c_type, NULL, 1, NULL, TOKEN_UNKNOWN, 0);
         register_extern_symbol(ctx, tag_name);
@@ -247,7 +247,7 @@ static void scan_c_header_contents(ParserContext *ctx, const char *path, int dep
         {
             dir_len = (int)sizeof(header_dir) - 1;
         }
-        strncpy(header_dir, path, dir_len);
+        strncpy(header_dir, path, (size_t)(dir_len));
         header_dir[dir_len] = 0;
     }
 
@@ -278,10 +278,10 @@ static void scan_c_header_contents(ParserContext *ctx, const char *path, int dep
             int heap_alloced = 0;
             if (len >= (int)sizeof(stack_buf))
             {
-                line_buf = xmalloc(len + 1);
+                line_buf = xmalloc((size_t)(len + 1));
                 heap_alloced = 1;
             }
-            memcpy(line_buf, line_start, len);
+            memcpy(line_buf, line_start, (size_t)(len));
             line_buf[len] = 0;
 
             char *p = line_buf;
@@ -317,7 +317,7 @@ static void scan_c_header_contents(ParserContext *ctx, const char *path, int dep
                                 inc_len = 255;
                             }
                             char inc_name[MAX_VAR_NAME_LEN];
-                            memcpy(inc_name, inc, inc_len);
+                            memcpy(inc_name, inc, (size_t)(inc_len));
                             inc_name[inc_len] = '\0';
 
                             char nested_path[MAX_PATH_LEN * 2];

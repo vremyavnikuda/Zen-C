@@ -140,7 +140,7 @@ static void yield_append(CInterp *ci, const char *s)
         ci->yield_buf = xrealloc(ci->yield_buf, new_cap);
         ci->yield_cap = new_cap;
     }
-    memcpy(ci->yield_buf + ci->yield_len, s, len);
+    memcpy(ci->yield_buf + ci->yield_len, s, (size_t)(len));
     ci->yield_len += len;
     ci->yield_buf[ci->yield_len] = 0;
 }

@@ -427,8 +427,8 @@ ASTNode *parse_primary_impl(ParserContext *ctx, Lexer *l)
         if (t.len == 2 && strncmp(t.start, "fn", 2) == 0 &&
             (lexer_peek(l).type == TOK_LPAREN || lexer_peek(l).type == TOK_LBRACKET))
         {
-            l->pos -= t.len;
-            l->col -= t.len;
+            l->pos -= (int)(t.len);
+            l->col -= (int)(t.len);
             return parse_lambda(ctx, l);
         }
 
@@ -765,7 +765,7 @@ ASTNode *parse_primary_impl(ParserContext *ctx, Lexer *l)
                             {
                                 char *gname = ctx->known_generics[i];
                                 size_t glen = strlen(gname);
-                                if (strncmp(acc, gname, glen) == 0 && acc[glen] == '_' &&
+                                if (strncmp(acc, gname, (size_t)(glen)) == 0 && acc[glen] == '_' &&
                                     acc[glen + 1] == '_')
                                 {
                                     ASTNode *tpl_def = find_struct_def(ctx, gname);
@@ -805,8 +805,8 @@ ASTNode *parse_primary_impl(ParserContext *ctx, Lexer *l)
                                 {
                                     char *gname = gt->name;
                                     size_t glen = strlen(gname);
-                                    if ((strncmp(acc, gname, glen) == 0 && acc[glen] == '_' &&
-                                         acc[glen + 1] == '_') ||
+                                    if ((strncmp(acc, gname, (size_t)(glen)) == 0 &&
+                                         acc[glen] == '_' && acc[glen + 1] == '_') ||
                                         strcmp(acc, gname) == 0)
                                     {
                                         ASTNode *tpl_def = gt->struct_node;
@@ -1078,8 +1078,8 @@ ASTNode *parse_primary_impl(ParserContext *ctx, Lexer *l)
                         if (sr->node && sr->node->type == NODE_STRUCT)
                         {
                             size_t len = strlen(sr->node->strct.name);
-                            if (strncmp(acc, sr->node->strct.name, len) == 0 && acc[len] == '_' &&
-                                acc[len + 1] == '_')
+                            if (strncmp(acc, sr->node->strct.name, (size_t)(len)) == 0 &&
+                                acc[len] == '_' && acc[len + 1] == '_')
                             {
                                 is_struct_init = 1;
                                 break;
@@ -1096,7 +1096,8 @@ ASTNode *parse_primary_impl(ParserContext *ctx, Lexer *l)
                             if (gn->type == NODE_STRUCT)
                             {
                                 size_t len = strlen(gn->strct.name);
-                                if (strncmp(acc, gn->strct.name, len) == 0 && acc[len] == '_')
+                                if (strncmp(acc, gn->strct.name, (size_t)(len)) == 0 &&
+                                    acc[len] == '_')
                                 {
                                     is_struct_init = 1;
                                     break;
@@ -1399,7 +1400,7 @@ ASTNode *parse_primary_impl(ParserContext *ctx, Lexer *l)
                                         size_t inner_len = ftl - 2;
                                         if (inner_len < sizeof(inner_name))
                                         {
-                                            memcpy(inner_name, ft + 1, inner_len);
+                                            memcpy(inner_name, ft + 1, (size_t)(inner_len));
                                             inner_name[inner_len] = '\0';
                                             if (strcmp(inner_name, gen_param) == 0 &&
                                                 val_type->kind == TYPE_ARRAY && val_type->inner)
@@ -1418,7 +1419,7 @@ ASTNode *parse_primary_impl(ParserContext *ctx, Lexer *l)
                                         size_t base_len = ftl - 1;
                                         if (base_len < sizeof(base_name))
                                         {
-                                            memcpy(base_name, ft, base_len);
+                                            memcpy(base_name, ft, (size_t)(base_len));
                                             base_name[base_len] = '\0';
                                             if (strcmp(base_name, gen_param) == 0 &&
                                                 val_type->kind == TYPE_POINTER && val_type->inner)
@@ -1855,7 +1856,7 @@ ASTNode *parse_primary_impl(ParserContext *ctx, Lexer *l)
                 node = ast_create(NODE_EXPR_LITERAL);
                 node->token = t;
                 node->literal.type_kind = LITERAL_INT; // INT (assumed for now from const_int_val)
-                node->literal.int_val = sym->const_int_val;
+                node->literal.int_val = (unsigned long long)(sym->const_int_val);
                 node->type_info = type_new(TYPE_INT);
                 // No need for resolution
             }
@@ -2034,7 +2035,7 @@ ASTNode *parse_primary_impl(ParserContext *ctx, Lexer *l)
             {
                 Token st = lexer_peek(&cast_look);
                 int valid = 1;
-                for (int i = 0; i < st.len; i++)
+                for (size_t i = 0; i < st.len; i++)
                 {
                     if (st.start[i] != '*')
                     {
@@ -2298,7 +2299,7 @@ ASTNode *parse_primary_impl(ParserContext *ctx, Lexer *l)
                                "- Block expressions `{...}`",
                                NULL};
         char msg[MAX_SHORT_MSG_LEN];
-        snprintf(msg, sizeof(msg), "Unexpected token '%.*s' while parsing expression", t.len,
+        snprintf(msg, sizeof(msg), "Unexpected token '%.*s' while parsing expression", (int)(t.len),
                  t.start);
         zpanic_with_hints(t, msg, hints);
         return NULL;

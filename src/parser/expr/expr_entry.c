@@ -190,7 +190,7 @@ static void find_var_refs(ASTNode *node, char ***refs, int *ref_count)
 
     if (node->type == NODE_EXPR_VAR)
     {
-        *refs = xrealloc(*refs, sizeof(char *) * (*ref_count + 1));
+        *refs = xrealloc(*refs, sizeof(char *) * (size_t)(*ref_count + 1));
         (*refs)[*ref_count] = xstrdup(node->var_ref.name);
         (*ref_count)++;
     }
@@ -269,7 +269,7 @@ static void find_var_refs(ASTNode *node, char ***refs, int *ref_count)
     case NODE_RAW_STMT:
         for (int i = 0; i < node->raw_stmt.used_symbol_count; i++)
         {
-            *refs = xrealloc(*refs, sizeof(char *) * (*ref_count + 1));
+            *refs = xrealloc(*refs, sizeof(char *) * (size_t)(*ref_count + 1));
             (*refs)[*ref_count] = xstrdup(node->raw_stmt.used_symbols[i]);
             (*ref_count)++;
         }
@@ -319,7 +319,7 @@ static void find_declared_vars(ASTNode *node, char ***decls, int *count)
 
     if (node->type == NODE_VAR_DECL)
     {
-        *decls = xrealloc(*decls, sizeof(char *) * (*count + 1));
+        *decls = xrealloc(*decls, sizeof(char *) * (size_t)(*count + 1));
         (*decls)[*count] = xstrdup(node->var_decl.name);
         (*count)++;
     }
@@ -332,7 +332,7 @@ static void find_declared_vars(ASTNode *node, char ***decls, int *count)
             {
                 if (node->match_case.binding_names[i])
                 {
-                    *decls = xrealloc(*decls, sizeof(char *) * (*count + 1));
+                    *decls = xrealloc(*decls, sizeof(char *) * (size_t)(*count + 1));
                     (*decls)[*count] = xstrdup(node->match_case.binding_names[i]);
                     (*count)++;
                 }

@@ -312,9 +312,9 @@ reg_errcode_t tre_tnfa_run_approx(const tre_tnfa_t *tnfa, const void *string, ss
     {
         unsigned char *buf_cursor;
         /* Space needed for one array of tags. */
-        int tag_bytes = sizeof(*tmp_tags) * num_tags;
+        int tag_bytes = (int)(sizeof(*tmp_tags) * (size_t)(num_tags));
         /* Space needed for one reach table. */
-        int reach_bytes = sizeof(*reach_next) * tnfa->num_states;
+        int reach_bytes = (int)(sizeof(*reach_next) * (size_t)(tnfa->num_states));
         /* Total space needed. */
         int total_bytes = reach_bytes * 2 + (tnfa->num_states * 2 + 1) * tag_bytes;
         /* Add some extra to make sure we can align the pointers.  The multiplier
@@ -525,7 +525,7 @@ reg_errcode_t tre_tnfa_run_approx(const tre_tnfa_t *tnfa, const void *string, ss
 
             /* Set the costs after this transition. */
             memcpy(reach_next[id].costs, reach[id].costs,
-                   sizeof(reach_next[id].costs[0][0]) * TRE_M_LAST * (depth + 1));
+                   (size_t)(sizeof(reach_next[id].costs[0][0]) * TRE_M_LAST * (size_t)(depth + 1)));
             reach_next[id].costs[depth][TRE_M_COST] = cost;
             reach_next[id].costs[depth][TRE_M_NUM_INS]++;
             reach_next[id].costs[depth][TRE_M_NUM_ERR]++;
@@ -668,7 +668,7 @@ reg_errcode_t tre_tnfa_run_approx(const tre_tnfa_t *tnfa, const void *string, ss
 
                     reach_next[dest_id].depth = reach_p->depth;
                     memcpy(&reach_next[dest_id].costs, reach_p->costs,
-                           sizeof(reach_p->costs[0][0]) * TRE_M_LAST * (depth + 1));
+                           (size_t)(sizeof(reach_p->costs[0][0]) * TRE_M_LAST * (size_t)(depth + 1)));
                     reach_next[dest_id].costs[depth][TRE_M_COST] = cost;
                     reach_next[dest_id].costs[depth][TRE_M_NUM_DEL]++;
                     reach_next[dest_id].costs[depth][TRE_M_NUM_ERR]++;
@@ -877,7 +877,7 @@ reg_errcode_t tre_tnfa_run_approx(const tre_tnfa_t *tnfa, const void *string, ss
 
                 /* Set the costs after this transition. */
                 memcpy(&reach_next[dest_id].costs, reach[id].costs,
-                       sizeof(reach[id].costs[0][0]) * TRE_M_LAST * (depth + 1));
+                       (size_t)(sizeof(reach[id].costs[0][0]) * TRE_M_LAST * (size_t)(depth + 1)));
                 reach_next[dest_id].costs[depth][TRE_M_COST] = cost;
                 reach_next[dest_id].costs[depth][TRE_M_NUM_SUBST] += err;
                 reach_next[dest_id].costs[depth][TRE_M_NUM_ERR] += err;

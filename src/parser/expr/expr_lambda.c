@@ -117,10 +117,10 @@ ASTNode *parse_arrow_lambda_multi(ParserContext *ctx, Lexer *l, char **param_nam
     // Type Info construction
     Type *t = type_new(TYPE_FUNCTION);
     t->inner = type_new(TYPE_INT);
-    t->args = xmalloc(sizeof(Type *) * num_params);
+    t->args = xmalloc(sizeof(Type *) * (size_t)(num_params));
     t->arg_count = num_params;
 
-    lambda->lambda.param_types = xmalloc(sizeof(char *) * num_params);
+    lambda->lambda.param_types = xmalloc(sizeof(char *) * (size_t)(num_params));
     for (int i = 0; i < num_params; i++)
     {
         if (param_types && param_types[i])

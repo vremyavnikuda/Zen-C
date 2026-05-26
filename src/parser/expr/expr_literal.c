@@ -209,15 +209,15 @@ char *escape_c_string(const char *input)
                 val = (val << 4);
                 if (*input >= '0' && *input <= '9')
                 {
-                    val += *input - '0';
+                    val += (uint32_t)(*input - '0');
                 }
                 else if (*input >= 'a' && *input <= 'f')
                 {
-                    val += *input - 'a' + 10;
+                    val += (uint32_t)(*input - 'a' + 10);
                 }
                 else if (*input >= 'A' && *input <= 'F')
                 {
-                    val += *input - 'A' + 10;
+                    val += (uint32_t)(*input - 'A' + 10);
                 }
                 input++;
             }
@@ -760,15 +760,15 @@ ASTNode *parse_char_literal(Token t)
                     val = (val << 4);
                     if (*s >= '0' && *s <= '9')
                     {
-                        val += *s - '0';
+                        val += (uint32_t)(*s - '0');
                     }
                     else if (*s >= 'a' && *s <= 'f')
                     {
-                        val += *s - 'a' + 10;
+                        val += (uint32_t)(*s - 'a' + 10);
                     }
                     else if (*s >= 'A' && *s <= 'F')
                     {
-                        val += *s - 'A' + 10;
+                        val += (uint32_t)(*s - 'A' + 10);
                     }
                     s++;
                 }

@@ -237,6 +237,8 @@ static void lemit_expr(ParserContext *ctx, ASTNode *node, int depth)
         case LITERAL_CHAR:
             emitter_printf(&ctx->cg.emitter, "#\\%c", (char)node->literal.int_val);
             break;
+        default:
+            break;
         }
         break;
 

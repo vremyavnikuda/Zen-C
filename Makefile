@@ -31,7 +31,7 @@ ifneq ($(GITHUB_RUN_NUMBER),)
 endif
 SHAREDIR ?= /usr/local/share/zenc
 DEFINES = -DZEN_VERSION=\"$(GIT_VERSION)\" -DZEN_SHARE_DIR=\"$(SHAREDIR)\" -DZC_ALLOW_INTERNAL
-WERROR ?= 0
+WERROR ?= 1
 # TCC does not support -MMD -MP, may not search /usr/local/include, and maxes out at C11
 ifeq ($(findstring tcc,$(CC)),tcc)
     DEPFLAGS =
@@ -54,9 +54,15 @@ CONSTEXPR_SUPPORTED := $(shell echo "constexpr int x = 42; int main(void){return
 ifneq ($(CONSTEXPR_SUPPORTED),)
 DEFINES += -DHAS_CONSTEXPR
 endif
-CFLAGS = -std=$(C_STD) -g -Wall -Wextra -Wshadow -Wformat=2 -Wmissing-prototypes -Wstrict-prototypes -Wnull-dereference -Wundef -Wfloat-equal -Wmissing-field-initializers -Wsign-compare -Wtype-limits -Wuninitialized -Wdouble-promotion -Wtautological-compare -Wshift-negative-value -Wdangling-else -Wreturn-local-addr -Wconversion -Wno-sign-conversion -Wno-float-conversion $(DEPFLAGS) $(TCC_EXTRA) $(if $(filter 1,$(WERROR)),-Werror,) -I./src -I./src/ast -I./src/parser -I./src/codegen -I./plugins -I./src/zen -I./src/utils -I./src/lexer -I./src/analysis -I./src/lsp -I./src/diagnostics -I./std/third-party/tre/include $(DEFINES)
+CFLAGS = -std=$(C_STD) -g -Wall -Wextra -Wshadow -Wformat=2 -Wmissing-prototypes -Wstrict-prototypes -Wnull-dereference -Wundef -Wfloat-equal -Wmissing-field-initializers -Wsign-compare -Wtype-limits -Wuninitialized -Wdouble-promotion -Wtautological-compare -Wshift-negative-value -Wdangling-else -Wreturn-local-addr -Wconversion -Wno-float-conversion -Wformat-signedness -Wswitch-default -Wvla -fstack-protector-strong $(DEPFLAGS) $(TCC_EXTRA) $(if $(filter 1,$(WERROR)),-Werror -Wno-error=sign-conversion,) -I./src -I./src/ast -I./src/parser -I./src/codegen -I./plugins -I./src/zen -I./src/utils -I./src/lexer -I./src/analysis -I./src/lsp -I./src/diagnostics -I./std/third-party/tre/include $(DEFINES)
 
 
+
+
+
+# 145 of 191 TRE warnings were fixed directly in source. The remaining 46 come from macro
+# expansions (ALIGN, IS_WORD_CHAR) and explicit sign-conversion casts in vendored code.
+obj/std/third-party/tre/%.o: CFLAGS += -Wno-sign-conversion -Wno-switch-default
 
 # GCC-specific warnings
 ifneq ($(findstring clang,$(CC)),clang)
@@ -616,9 +622,38 @@ fuzz-run: fuzz-build
 	@echo "-> Tip: For parallel runs, use '-M main' and '-S secondaryN'"
 	AFL_SKIP_CPUFREQ=1 AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1 afl-fuzz -i $(FUZZ_CORPUS) -o $(FUZZ_OUT) $(if $(wildcard $(FUZZ_DICT)),-x $(FUZZ_DICT),) -- ./$(FUZZ_TARGET)
 
+# Fuzz regression: replay known crash/leak/timeout inputs to verify they no longer crash
+FUZZ_CRASH_FILES = $(wildcard crash-*) $(wildcard leak-*) $(wildcard timeout-*)
+FUZZ_HARNESS = zc-fuzz-harness
+
+test-fuzz-regression: $(FUZZ_HARNESS) $(FUZZ_CRASH_FILES)
+	@echo "=== Fuzz Regression Tests ==="
+	@total=0; pass=0; \
+	for f in $(FUZZ_CRASH_FILES); do \
+		total=$$((total + 1)); \
+		result=0; \
+		./$(FUZZ_HARNESS) "$$f" 2>/dev/null || result=$$?; \
+		if [ $$result -eq 0 ]; then \
+			echo "  [PASS] $$f"; \
+			pass=$$((pass + 1)); \
+		else \
+			echo "  [FAIL] $$f (exit code $$result)"; \
+		fi; \
+	done; \
+	echo "---"; \
+	if [ $$pass -eq $$total ]; then \
+		echo "All $$total fuzz regression tests passed."; \
+	else \
+		echo "$$pass/$$total fuzz regression tests passed."; \
+		exit 1; \
+	fi
+
+$(FUZZ_HARNESS): fuzz/harness.c $(OBJS)
+	$(CC) $(CFLAGS) -D__AFL_HAVE_MANUAL_CONTROL -Wno-switch-default -Wno-sign-conversion $(filter-out src/main.c,$(SRCS)) fuzz/harness.c -o $@ $(LIBS)
+
 fuzz-clean:
 	rm -rf $(FUZZ_OUT)/*
-	rm -f $(FUZZ_TARGET) $(FUZZ_CMPLOG_TARGET)
+	rm -f $(FUZZ_TARGET) $(FUZZ_CMPLOG_TARGET) $(FUZZ_HARNESS)
 	rm -rf obj-fuzz obj-fuzz-cmplog
 
-.PHONY: all clean install uninstall install-ape uninstall-ape format format-check lint bench test test-misra test-tcc test-filcc test-lsp test-asan test-plugins zig clang filcc ape windows asan tsan msan lsan analyzer coverage coverage-report core lite minimal fuzz-build fuzz-run fuzz-clean
+.PHONY: all clean install uninstall install-ape uninstall-ape format format-check lint bench test test-misra test-tcc test-filcc test-lsp test-asan test-plugins zig clang filcc ape windows asan tsan msan lsan analyzer coverage coverage-report core lite minimal fuzz-build fuzz-run fuzz-clean test-fuzz-regression

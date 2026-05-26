@@ -23,8 +23,8 @@ static void emit_single_pattern_cond(ParserContext *ctx, const char *pat, int id
     {
         // Inclusive range: start..=end -> _m_id >= start && _m_id <= end
         int start_len = (int)(range_incl - pat);
-        char *start = xmalloc(start_len + 1);
-        strncpy(start, pat, start_len);
+        char *start = xmalloc((size_t)(start_len + 1));
+        strncpy(start, pat, (size_t)(start_len));
         start[start_len] = 0;
         char *end = xstrdup(range_incl + 3);
         if (is_ptr)
@@ -42,8 +42,8 @@ static void emit_single_pattern_cond(ParserContext *ctx, const char *pat, int id
     {
         // Exclusive range: start..end -> _m_id >= start && _m_id < end
         int start_len = (int)(range_excl - pat);
-        char *start = xmalloc(start_len + 1);
-        strncpy(start, pat, start_len);
+        char *start = xmalloc((size_t)(start_len + 1));
+        strncpy(start, pat, (size_t)(start_len));
         start[start_len] = 0;
         char *end = xstrdup(range_excl + 2);
         if (is_ptr)

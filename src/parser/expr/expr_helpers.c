@@ -16,7 +16,7 @@ int token_is_field_name(Token t)
     {
         return 1;
     }
-    if (!t.start || t.len <= 0)
+    if (!t.start || t.len == 0)
     {
         return 0;
     }
@@ -169,7 +169,7 @@ void get_struct_name(ParserContext *ctx, ASTNode *node, char **out_struct_name,
                 {
                     size_t struct_type_len = len - 1;
                     char *st = xmalloc(struct_type_len + 1);
-                    strncpy(st, clean_rhs, struct_type_len);
+                    strncpy(st, clean_rhs, (size_t)(struct_type_len));
                     st[struct_type_len] = '\0';
                     *out_struct_name = st;
                     *out_var_ref_name = node->var_ref.name;
@@ -253,7 +253,7 @@ CallArgs parse_call_args(ParserContext *ctx, Lexer *l, FuncSig *sig)
                 res.tail = arg;
             }
 
-            res.arg_names = xrealloc(res.arg_names, (res.arg_count + 1) * sizeof(char *));
+            res.arg_names = xrealloc(res.arg_names, (size_t)(res.arg_count + 1) * sizeof(char *));
             res.arg_names[res.arg_count] = arg_name;
             res.arg_count++;
 

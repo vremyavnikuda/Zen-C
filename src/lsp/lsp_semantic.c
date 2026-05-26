@@ -42,7 +42,7 @@ static void builder_init(TokenBuilder *b)
 {
     b->count = 0;
     b->capacity = 4096;
-    b->tokens = malloc(sizeof(SemanticToken) * b->capacity);
+    b->tokens = malloc(sizeof(SemanticToken) * (size_t)(b->capacity));
 }
 
 static void builder_push(TokenBuilder *b, int line, int col, int length, int type, int modifiers)
@@ -54,7 +54,8 @@ static void builder_push(TokenBuilder *b, int line, int col, int length, int typ
     if (b->count >= b->capacity)
     {
         b->capacity *= 2;
-        SemanticToken *new_tokens = realloc(b->tokens, sizeof(SemanticToken) * b->capacity);
+        SemanticToken *new_tokens =
+            realloc(b->tokens, sizeof(SemanticToken) * (size_t)(b->capacity));
         if (!new_tokens)
         {
             return;
@@ -99,7 +100,7 @@ static void traverse_node(TokenBuilder *b, ASTNode *node, int depth)
     case NODE_FUNCTION:
         if (node->token.type != TOK_EOF)
         {
-            builder_push(b, node->token.line - 1, node->token.col - 1, node->token.len,
+            builder_push(b, node->token.line - 1, node->token.col - 1, (int)(node->token.len),
                          TOKEN_TYPE_FUNCTION, 1);
         }
         // Parameters
@@ -117,7 +118,7 @@ static void traverse_node(TokenBuilder *b, ASTNode *node, int depth)
     case NODE_VAR_DECL:
         if (node->token.type != TOK_EOF)
         {
-            builder_push(b, node->token.line - 1, node->token.col - 1, node->token.len,
+            builder_push(b, node->token.line - 1, node->token.col - 1, (int)(node->token.len),
                          TOKEN_TYPE_VARIABLE, 0);
         }
         traverse_node(b, node->var_decl.init_expr, depth + 1);
@@ -158,7 +159,7 @@ static void traverse_node(TokenBuilder *b, ASTNode *node, int depth)
     case NODE_CONST:
         if (node->token.type != TOK_EOF)
         {
-            builder_push(b, node->token.line - 1, node->token.col - 1, node->token.len,
+            builder_push(b, node->token.line - 1, node->token.col - 1, (int)(node->token.len),
                          TOKEN_TYPE_VARIABLE, 2);
         }
         traverse_node(b, node->var_decl.init_expr, depth + 1);
@@ -167,7 +168,7 @@ static void traverse_node(TokenBuilder *b, ASTNode *node, int depth)
     case NODE_TYPE_ALIAS:
         if (node->token.type != TOK_EOF)
         {
-            builder_push(b, node->token.line - 1, node->token.col - 1, node->token.len,
+            builder_push(b, node->token.line - 1, node->token.col - 1, (int)(node->token.len),
                          TOKEN_TYPE_TYPE, 0);
         }
         break;
@@ -175,7 +176,7 @@ static void traverse_node(TokenBuilder *b, ASTNode *node, int depth)
     case NODE_EXPR_VAR:
         if (node->token.type != TOK_EOF)
         {
-            builder_push(b, node->token.line - 1, node->token.col - 1, node->token.len,
+            builder_push(b, node->token.line - 1, node->token.col - 1, (int)(node->token.len),
                          TOKEN_TYPE_VARIABLE, 0);
         }
         break;
@@ -183,7 +184,7 @@ static void traverse_node(TokenBuilder *b, ASTNode *node, int depth)
     case NODE_STRUCT:
         if (node->token.type != TOK_EOF)
         {
-            builder_push(b, node->token.line - 1, node->token.col - 1, node->token.len,
+            builder_push(b, node->token.line - 1, node->token.col - 1, (int)(node->token.len),
                          TOKEN_TYPE_STRUCT, 0);
         }
         traverse_node(b, node->strct.fields, depth + 1);
@@ -192,7 +193,7 @@ static void traverse_node(TokenBuilder *b, ASTNode *node, int depth)
     case NODE_FIELD:
         if (node->token.type != TOK_EOF)
         {
-            builder_push(b, node->token.line - 1, node->token.col - 1, node->token.len,
+            builder_push(b, node->token.line - 1, node->token.col - 1, (int)(node->token.len),
                          TOKEN_TYPE_MEMBER, 0);
         }
         break;
@@ -201,7 +202,7 @@ static void traverse_node(TokenBuilder *b, ASTNode *node, int depth)
         traverse_node(b, node->member.target, depth + 1);
         if (node->token.type != TOK_EOF)
         {
-            builder_push(b, node->token.line - 1, node->token.col - 1, node->token.len,
+            builder_push(b, node->token.line - 1, node->token.col - 1, (int)(node->token.len),
                          TOKEN_TYPE_MEMBER, 0);
         }
         break;
@@ -211,18 +212,18 @@ static void traverse_node(TokenBuilder *b, ASTNode *node, int depth)
         {
             if (node->literal.type_kind == LITERAL_STRING)
             {
-                builder_push(b, node->token.line - 1, node->token.col - 1, node->token.len,
+                builder_push(b, node->token.line - 1, node->token.col - 1, (int)(node->token.len),
                              TOKEN_TYPE_STRING, 0);
             }
             else if (node->literal.type_kind == LITERAL_INT ||
                      node->literal.type_kind == LITERAL_FLOAT)
             {
-                builder_push(b, node->token.line - 1, node->token.col - 1, node->token.len,
+                builder_push(b, node->token.line - 1, node->token.col - 1, (int)(node->token.len),
                              TOKEN_TYPE_NUMBER, 0);
             }
             else if (node->literal.type_kind == LITERAL_CHAR)
             {
-                builder_push(b, node->token.line - 1, node->token.col - 1, node->token.len,
+                builder_push(b, node->token.line - 1, node->token.col - 1, (int)(node->token.len),
                              TOKEN_TYPE_STRING, 0);
             }
         }
@@ -231,7 +232,7 @@ static void traverse_node(TokenBuilder *b, ASTNode *node, int depth)
     case NODE_TRAIT:
         if (node->token.type != TOK_EOF)
         {
-            builder_push(b, node->token.line - 1, node->token.col - 1, node->token.len,
+            builder_push(b, node->token.line - 1, node->token.col - 1, (int)(node->token.len),
                          TOKEN_TYPE_STRUCT, 0);
         }
         traverse_node(b, node->trait.methods, depth + 1);
@@ -240,7 +241,7 @@ static void traverse_node(TokenBuilder *b, ASTNode *node, int depth)
     case NODE_IMPL:
         if (node->token.type != TOK_EOF)
         {
-            builder_push(b, node->token.line - 1, node->token.col - 1, node->token.len,
+            builder_push(b, node->token.line - 1, node->token.col - 1, (int)(node->token.len),
                          TOKEN_TYPE_STRUCT, 0);
         }
         traverse_node(b, node->impl.methods, depth + 1);
@@ -249,7 +250,7 @@ static void traverse_node(TokenBuilder *b, ASTNode *node, int depth)
     case NODE_IMPL_TRAIT:
         if (node->token.type != TOK_EOF)
         {
-            builder_push(b, node->token.line - 1, node->token.col - 1, node->token.len,
+            builder_push(b, node->token.line - 1, node->token.col - 1, (int)(node->token.len),
                          TOKEN_TYPE_STRUCT, 0);
         }
         traverse_node(b, node->impl_trait.methods, depth + 1);
@@ -258,7 +259,7 @@ static void traverse_node(TokenBuilder *b, ASTNode *node, int depth)
     case NODE_ENUM:
         if (node->token.type != TOK_EOF)
         {
-            builder_push(b, node->token.line - 1, node->token.col - 1, node->token.len,
+            builder_push(b, node->token.line - 1, node->token.col - 1, (int)(node->token.len),
                          TOKEN_TYPE_ENUM, 0);
         }
         traverse_node(b, node->enm.variants, depth + 1);
@@ -267,7 +268,7 @@ static void traverse_node(TokenBuilder *b, ASTNode *node, int depth)
     case NODE_ENUM_VARIANT:
         if (node->token.type != TOK_EOF)
         {
-            builder_push(b, node->token.line - 1, node->token.col - 1, node->token.len,
+            builder_push(b, node->token.line - 1, node->token.col - 1, (int)(node->token.len),
                          TOKEN_TYPE_ENUM, 0);
         }
         if (node->variant.payload)
@@ -327,7 +328,7 @@ char *lsp_semantic_tokens_full(const char *uri)
         root = root->next;
     }
 
-    qsort(b.tokens, b.count, sizeof(SemanticToken), compare_tokens);
+    qsort(b.tokens, (size_t)(b.count), sizeof(SemanticToken), compare_tokens);
 
     cJSON *root_json = cJSON_CreateObject();
     cJSON *data = cJSON_CreateArray();

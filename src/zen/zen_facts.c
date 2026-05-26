@@ -109,6 +109,16 @@ static void load_facts(void)
 
     fseek(f, 0, SEEK_END);
     long len = ftell(f);
+    if (len < 0)
+    {
+        fclose(f);
+        return;
+    }
+    if (len < 0)
+    {
+        fclose(f);
+        return;
+    }
     fseek(f, 0, SEEK_SET);
 
     if (len < 0)
@@ -117,10 +127,10 @@ static void load_facts(void)
         return;
     }
 
-    char *data = xmalloc(len + 1);
+    char *data = xmalloc((size_t)(len + 1));
     if (data)
     {
-        size_t read_bytes = fread(data, 1, len, f);
+        size_t read_bytes = fread(data, 1, (size_t)(len), f);
         data[read_bytes] = 0;
     }
     fclose(f);
@@ -143,7 +153,7 @@ static void load_facts(void)
         fact_count = cJSON_GetArraySize(json);
         if (fact_count > 0)
         {
-            facts = calloc(fact_count, sizeof(ZenFact));
+            facts = calloc((size_t)(fact_count), sizeof(ZenFact));
         }
         if (!facts && fact_count > 0)
         {
@@ -184,7 +194,7 @@ static void load_facts(void)
 void zen_init(void)
 {
     // Seed random with current time
-    srand((unsigned int)(((uint64_t)(z_get_time() * 1000.0)) & 0xFFFFFFFF) ^ z_get_pid());
+    srand(((uint64_t)(z_get_time() * 1000.0) & 0xFFFFFFFF) ^ (unsigned int)(z_get_pid()));
 }
 
 // Global helper to print.

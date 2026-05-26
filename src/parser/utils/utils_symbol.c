@@ -365,8 +365,8 @@ EnumVariantReg *find_enum_variant(ParserContext *ctx, const char *name)
     if (sep)
     {
         int elen = (int)(sep - name);
-        ename = xmalloc(elen + 1);
-        strncpy(ename, name, elen);
+        ename = xmalloc((size_t)(elen + 1));
+        strncpy(ename, name, (size_t)(elen));
         ename[elen] = 0;
         vname = sep + 2;
     }
@@ -419,7 +419,7 @@ void register_extern_symbol(ParserContext *ctx, const char *name)
     else if (ctx->extern_symbol_count % 64 == 0)
     {
         ctx->extern_symbols =
-            xrealloc(ctx->extern_symbols, sizeof(char *) * (ctx->extern_symbol_count + 64));
+            xrealloc(ctx->extern_symbols, sizeof(char *) * (size_t)(ctx->extern_symbol_count + 64));
     }
 
     ctx->extern_symbols[ctx->extern_symbol_count++] = xstrdup(name);

@@ -68,12 +68,12 @@ int zvfprintf(FILE *stream, const char *format, va_list args)
     char *work_buf = stack_buf;
     if (len >= (int)sizeof(stack_buf))
     {
-        work_buf = malloc(len + 1);
+        work_buf = malloc((size_t)(len + 1));
         if (!work_buf)
         {
             return -1;
         }
-        vsnprintf(work_buf, len + 1, format, args);
+        vsnprintf(work_buf, (size_t)(len + 1), format, args);
     }
 
     strip_ansi_codes(work_buf);

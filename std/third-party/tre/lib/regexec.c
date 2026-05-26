@@ -153,7 +153,7 @@ static int tre_match(const tre_tnfa_t *tnfa, const void *string, ssize_t len, tr
 #ifdef TRE_USE_ALLOCA
         tags = (decltype(tags))alloca(sizeof(*tags) * tnfa->num_tags);
 #else  /* !TRE_USE_ALLOCA */
-        tags = (decltype(tags))xmalloc(sizeof(*tags) * tnfa->num_tags);
+        tags = (decltype(tags))xmalloc(sizeof(*tags) * (size_t)(tnfa->num_tags));
 #endif /* !TRE_USE_ALLOCA */
         if (tags == NULL)
         {
@@ -221,7 +221,7 @@ int tre_regnexec(const regex_t *preg, const char *str, size_t len, size_t nmatch
     tre_tnfa_t *tnfa = (tre_tnfa_t *)preg->TRE_REGEX_T_FIELD;
     tre_str_type_t type = (TRE_MB_CUR_MAX == 1) ? STR_BYTE : STR_MBS;
 
-    return tre_match(tnfa, str, len, type, nmatch, pmatch, eflags);
+    return tre_match(tnfa, str, (ssize_t)(len), type, nmatch, pmatch, eflags);
 }
 
 #ifdef TRE_USE_GNUC_REGEXEC_FPL
@@ -232,7 +232,7 @@ int tre_regexec(const regex_t *preg, const char *str, size_t nmatch, regmatch_t 
                 int eflags)
 #endif
 {
-    return tre_regnexec(preg, str, -1, nmatch, pmatch, eflags);
+    return tre_regnexec(preg, str, (size_t)-1, nmatch, pmatch, eflags);
 }
 
 int tre_regexecb(const regex_t *preg, const char *str, size_t nmatch, regmatch_t pmatch[],
@@ -248,7 +248,7 @@ int tre_regnexecb(const regex_t *preg, const char *str, size_t len, size_t nmatc
 {
     tre_tnfa_t *tnfa = (tre_tnfa_t *)preg->TRE_REGEX_T_FIELD;
 
-    return tre_match(tnfa, str, len, STR_BYTE, nmatch, pmatch, eflags);
+    return tre_match(tnfa, str, (ssize_t)(len), STR_BYTE, nmatch, pmatch, eflags);
 }
 
 #ifdef TRE_WCHAR
@@ -257,13 +257,13 @@ int tre_regwnexec(const regex_t *preg, const wchar_t *str, size_t len, size_t nm
                   regmatch_t pmatch[], int eflags)
 {
     tre_tnfa_t *tnfa = (tre_tnfa_t *)preg->TRE_REGEX_T_FIELD;
-    return tre_match(tnfa, str, len, STR_WIDE, nmatch, pmatch, eflags);
+    return tre_match(tnfa, str, (ssize_t)(len), STR_WIDE, nmatch, pmatch, eflags);
 }
 
 int tre_regwexec(const regex_t *preg, const wchar_t *str, size_t nmatch, regmatch_t pmatch[],
                  int eflags)
 {
-    return tre_regwnexec(preg, str, -1, nmatch, pmatch, eflags);
+    return tre_regwnexec(preg, str, (size_t)-1, nmatch, pmatch, eflags);
 }
 
 #endif /* TRE_WCHAR */
@@ -307,7 +307,7 @@ static int tre_match_approx(const tre_tnfa_t *tnfa, const void *string, ssize_t 
 #if defined(TRE_USE_ALLOCA) && TRE_USE_ALLOCA
         tags = (decltype(tags))alloca(sizeof(*tags) * tnfa->num_tags);
 #else  /* !TRE_USE_ALLOCA */
-        tags = (decltype(tags))xmalloc(sizeof(*tags) * tnfa->num_tags);
+        tags = (decltype(tags))xmalloc(sizeof(*tags) * (size_t)(tnfa->num_tags));
 #endif /* !TRE_USE_ALLOCA */
         if (tags == NULL)
         {
@@ -334,13 +334,13 @@ int tre_reganexec(const regex_t *preg, const char *str, size_t len, regamatch_t 
     tre_tnfa_t *tnfa = (tre_tnfa_t *)preg->TRE_REGEX_T_FIELD;
     tre_str_type_t type = (TRE_MB_CUR_MAX == 1) ? STR_BYTE : STR_MBS;
 
-    return tre_match_approx(tnfa, str, len, type, match, params, eflags);
+    return tre_match_approx(tnfa, str, (ssize_t)(len), type, match, params, eflags);
 }
 
 int tre_regaexec(const regex_t *preg, const char *str, regamatch_t *match, regaparams_t params,
                  int eflags)
 {
-    return tre_reganexec(preg, str, -1, match, params, eflags);
+    return tre_reganexec(preg, str, (size_t)-1, match, params, eflags);
 }
 
 int tre_regaexecb(const regex_t *preg, const char *str, regamatch_t *match, regaparams_t params,
@@ -363,7 +363,7 @@ int tre_regawnexec(const regex_t *preg, const wchar_t *str, size_t len, regamatc
 int tre_regawexec(const regex_t *preg, const wchar_t *str, regamatch_t *match, regaparams_t params,
                   int eflags)
 {
-    return tre_regawnexec(preg, str, -1, match, params, eflags);
+    return tre_regawnexec(preg, str, (size_t)-1, match, params, eflags);
 }
 
 #endif /* TRE_WCHAR */

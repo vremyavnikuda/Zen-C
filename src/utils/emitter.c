@@ -213,7 +213,7 @@ void emitter_write(Emitter *e, const void *ptr, size_t size)
         {
             return;
         }
-        memcpy(e->buffer.buf + e->buffer.len, ptr, size);
+        memcpy(e->buffer.buf + e->buffer.len, ptr, (size_t)(size));
         e->buffer.len += size;
         e->buffer.buf[e->buffer.len] = '\0';
     }

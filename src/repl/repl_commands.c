@@ -103,7 +103,7 @@ static int cmd_undo(ReplState *state, const char *args)
 
 static int cmd_delete(ReplState *state, const char *args)
 {
-    int idx = atoi(args) - 1;
+    int idx = (int)strtol(args, NULL, 10) - 1;
     if (idx >= 0 && idx < state->history_len)
     {
         zfree(state->history[idx]);
@@ -248,7 +248,7 @@ static int cmd_edit(ReplState *state, const char *args)
     int idx = state->history_len - 1;
     if (args[0])
     {
-        idx = atoi(args) - 1;
+        idx = (int)strtol(args, NULL, 10) - 1;
     }
 
     const char *editor = getenv("EDITOR");
@@ -285,11 +285,16 @@ static int cmd_edit(ReplState *state, const char *args)
                 {
                     fseek(fr, 0, SEEK_END);
                     long length = ftell(fr);
+                    if (length < 0)
+                    {
+                        fclose(fr);
+                        return REPL_HANDLED;
+                    }
                     fseek(fr, 0, SEEK_SET);
-                    char *buffer = malloc(length + 1);
+                    char *buffer = malloc((size_t)(length + 1));
                     if (buffer)
                     {
-                        fread(buffer, 1, length, fr);
+                        fread(buffer, 1, (size_t)(length), fr);
                         buffer[length] = 0;
 
                         while (length > 0 && buffer[length - 1] == '\n')
@@ -350,11 +355,16 @@ static int cmd_edit(ReplState *state, const char *args)
             {
                 fseek(fr, 0, SEEK_END);
                 long length = ftell(fr);
+                if (length < 0)
+                {
+                    fclose(fr);
+                    return REPL_HANDLED;
+                }
                 fseek(fr, 0, SEEK_SET);
-                char *buffer = malloc(length + 1);
+                char *buffer = malloc((size_t)(length + 1));
                 if (buffer)
                 {
-                    fread(buffer, 1, length, fr);
+                    fread(buffer, 1, (size_t)(length), fr);
                     buffer[length] = 0;
 
                     while (length > 0 && buffer[length - 1] == '\n')
@@ -424,7 +434,7 @@ static int cmd_watch(ReplState *state, const char *args)
 
 static int cmd_unwatch(ReplState *state, const char *args)
 {
-    int idx = atoi(args) - 1;
+    int idx = (int)strtol(args, NULL, 10) - 1;
     if (idx >= 0 && idx < state->watches_len)
     {
         zfree(state->watches[idx]);
@@ -1040,7 +1050,7 @@ static int cmd_doc(ReplState *state, const char *args)
     {
         slen = 255;
     }
-    strncpy(safe_sym, sym, slen);
+    strncpy(safe_sym, sym, (size_t)(slen));
     safe_sym[slen] = 0;
     for (int i = 0; safe_sym[i]; i++)
     {
@@ -1157,7 +1167,7 @@ int repl_dispatch_command(ReplState *state, const char *cmd_buf)
     for (int i = 0; command_table[i].name; i++)
     {
         size_t name_len = strlen(command_table[i].name);
-        if (strncmp(cmd_start, command_table[i].name, name_len) == 0)
+        if (strncmp(cmd_start, command_table[i].name, (size_t)(name_len)) == 0)
         {
             char next = cmd_start[name_len];
             if (next == 0 || isspace(next))

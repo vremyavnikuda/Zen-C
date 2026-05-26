@@ -25,7 +25,7 @@ Token z_parse_expect(Lexer *l, ZenTokenType type, const char *msg)
     Token t = lexer_next(l);
     if (t.type != type)
     {
-        zpanic_at(t, "Expected %s, but got '%.*s'", msg, t.len, t.start);
+        zpanic_at(t, "Expected %s, but got '%.*s'", msg, (int)(t.len), t.start);
         return (Token){0};
         return (Token){type, t.start, 0, t.line, t.col, t.file};
     }
@@ -58,7 +58,7 @@ char *ast_to_string_recursive(ASTNode *node, int depth)
     }
 
     size_t buf_size = MAX_PATH_LEN;
-    char *buf = xmalloc(buf_size);
+    char *buf = xmalloc((size_t)(buf_size));
     buf[0] = 0;
 
     switch (node->type)
@@ -233,7 +233,7 @@ char *ast_to_string_recursive(ASTNode *node, int depth)
 int is_token(Token t, const char *s)
 {
     size_t len = strlen(s);
-    return ((size_t)t.len == len && strncmp(t.start, s, len) == 0);
+    return ((size_t)t.len == len && strncmp(t.start, s, (size_t)(len)) == 0);
 }
 
 char *token_strdup(Token t)
@@ -271,14 +271,14 @@ char *token_get_string_content(Token t)
         end_offset = is_multi ? 3 : 1;
     }
 
-    int content_len = t.len - start_offset - end_offset;
+    int content_len = (int)(t.len) - start_offset - end_offset;
     if (content_len < 0)
     {
         content_len = 0;
     }
 
-    char *content = xmalloc(content_len + 1);
-    strncpy(content, t.start + start_offset, content_len);
+    char *content = xmalloc((size_t)(content_len + 1));
+    strncpy(content, t.start + start_offset, (size_t)(content_len));
     content[content_len] = '\0';
     return content;
 }
@@ -296,7 +296,7 @@ void skip_comments(Lexer *l)
             {
                 size_t old_len = strlen(token_parser_ctx->last_doc_comment);
                 char *new_c = xmalloc(old_len + tk.len + 2);
-                sprintf(new_c, "%s\n%.*s", token_parser_ctx->last_doc_comment, tk.len,
+                sprintf(new_c, "%s\n%.*s", token_parser_ctx->last_doc_comment, (int)(tk.len),
                         tk.start); /* safe */
                 zfree(token_parser_ctx->last_doc_comment);
                 token_parser_ctx->last_doc_comment = new_c;
@@ -362,8 +362,8 @@ char *consume_until_semicolon(Lexer *l)
         if (d == 0 && t.type == TOK_SEMICOLON)
         {
             ptrdiff_t len = t.start - s;
-            char *r = xmalloc(len + 1);
-            strncpy(r, s, len);
+            char *r = xmalloc((size_t)(len + 1));
+            strncpy(r, s, (size_t)(len));
             r[len] = 0;
             lexer_next(l);
             return r;
@@ -421,7 +421,7 @@ int is_reserved_keyword(Token t)
 
         for (int i = 0; pseudo_keywords[i] != NULL; i++)
         {
-            if (t.len == (int)strlen(pseudo_keywords[i]) &&
+            if (t.len == strlen(pseudo_keywords[i]) &&
                 strncmp(t.start, pseudo_keywords[i], t.len) == 0)
             {
                 return 1;
@@ -439,8 +439,8 @@ void check_identifier(ParserContext *ctx, Token t)
     {
         char buf[MAX_SHORT_MSG_LEN];
         char name[64];
-        int len = t.len < 63 ? t.len : 63;
-        strncpy(name, t.start, len);
+        int len = (int)(t.len < 63 ? t.len : 63);
+        strncpy(name, t.start, (size_t)(len));
         name[len] = 0;
         snprintf(buf, sizeof(buf), "Cannot use reserved keyword '%s' as an identifier", name);
         zpanic_at(t, "%s", buf);

@@ -400,8 +400,8 @@ static ASTNode *parse_expr_prec_impl(ParserContext *ctx, Lexer *l, Precedence mi
                             if (end && end > start)
                             {
                                 ptrdiff_t len = end - start;
-                                char *inner_type = xmalloc(len + 1);
-                                strncpy(inner_type, start, len);
+                                char *inner_type = xmalloc((size_t)(len + 1));
+                                strncpy(inner_type, start, (size_t)(len));
                                 inner_type[len] = 0;
                                 lhs->resolved_type = inner_type;
                                 // Try to create proper type_info
@@ -1224,7 +1224,7 @@ static ASTNode *parse_expr_prec_impl(ParserContext *ctx, Lexer *l, Precedence mi
                     tail = arg;
 
                     // Store arg name
-                    arg_names = xrealloc(arg_names, (arg_count + 1) * sizeof(char *));
+                    arg_names = xrealloc(arg_names, (size_t)(arg_count + 1) * sizeof(char *));
                     arg_names[arg_count] = arg_name;
                     arg_count++;
 
@@ -1253,7 +1253,7 @@ static ASTNode *parse_expr_prec_impl(ParserContext *ctx, Lexer *l, Precedence mi
                 if (has_named)
                 {
                     // Prepend NULL to arg_names for self
-                    char **new_names = xmalloc(sizeof(char *) * arg_count);
+                    char **new_names = xmalloc(sizeof(char *) * (size_t)(arg_count));
                     new_names[0] = NULL;
                     for (int i = 0; i < arg_count - 1; i++)
                     {
@@ -1487,8 +1487,8 @@ static ASTNode *parse_expr_prec_impl(ParserContext *ctx, Lexer *l, Precedence mi
                     if (!sig && strchr(struct_name, '<'))
                     {
                         size_t len = strcspn(struct_name, "<");
-                        char *base = xmalloc(len + 1);
-                        strncpy(base, struct_name, len);
+                        char *base = xmalloc((size_t)(len + 1));
+                        strncpy(base, struct_name, (size_t)(len));
                         base[len] = 0;
 
                         GenericImplTemplate *it = ctx->impl_templates;
@@ -1875,16 +1875,16 @@ static ASTNode *parse_expr_prec_impl(ParserContext *ctx, Lexer *l, Precedence mi
                     lexer_next(l); // consume <
 
                     int cap = 8;
-                    char **concrete = xmalloc(cap * sizeof(char *));
-                    char **unmangled = xmalloc(cap * sizeof(char *));
+                    char **concrete = xmalloc((size_t)(cap) * sizeof(char *));
+                    char **unmangled = xmalloc((size_t)(cap) * sizeof(char *));
                     int argc = 0;
                     while (1)
                     {
                         if (argc >= cap)
                         {
                             cap *= 2;
-                            concrete = xrealloc(concrete, cap * sizeof(char *));
-                            unmangled = xrealloc(unmangled, cap * sizeof(char *));
+                            concrete = xrealloc(concrete, (size_t)(cap) * sizeof(char *));
+                            unmangled = xrealloc(unmangled, (size_t)(cap) * sizeof(char *));
                         }
                         Type *inner_t = parse_type_formal(ctx, l);
                         if (!inner_t)
@@ -1937,8 +1937,8 @@ static ASTNode *parse_expr_prec_impl(ParserContext *ctx, Lexer *l, Precedence mi
 
                         // Join types
                         size_t ac_sz = 1024, au_sz = 1024;
-                        char *all_concrete = xmalloc(ac_sz);
-                        char *all_unmangled = xmalloc(au_sz);
+                        char *all_concrete = xmalloc((size_t)(ac_sz));
+                        char *all_unmangled = xmalloc((size_t)(au_sz));
                         all_concrete[0] = 0;
                         all_unmangled[0] = 0;
                         for (int i = 0; i < argc; i++)
@@ -2016,7 +2016,7 @@ static ASTNode *parse_expr_prec_impl(ParserContext *ctx, Lexer *l, Precedence mi
             continue;
         }
 
-        int next_prec = prec + 1;
+        int next_prec = (int)(prec + 1);
         if (op.type == TOK_OP && (is_token(op, "**") || is_token(op, "**=")))
         {
             next_prec = prec;
@@ -2278,8 +2278,8 @@ static ASTNode *parse_expr_prec_impl(ParserContext *ctx, Lexer *l, Precedence mi
 
             // Extract the base operator (remove last char '=')
             size_t inner_op_len = op_len - 1;
-            char *inner_op = xmalloc(inner_op_len + 1);
-            strncpy(inner_op, bin->binary.op, inner_op_len);
+            char *inner_op = xmalloc((size_t)(inner_op_len + 1));
+            strncpy(inner_op, bin->binary.op, (size_t)(inner_op_len));
             inner_op[inner_op_len] = '\0';
             op_node->binary.op = inner_op;
 

@@ -355,7 +355,7 @@ static void emit_protos_internal(ParserContext *ctx, ASTNode *node, VisitedModul
                 // Build proto: if fname starts with sname__, replace with effective_name__
                 char *proto = NULL;
                 size_t slen = strlen(sname);
-                if (strncmp(fname, sname, slen) == 0 && fname[slen] == '_' &&
+                if (strncmp(fname, sname, (size_t)(slen)) == 0 && fname[slen] == '_' &&
                     fname[slen + 1] == '_')
                 {
                     // Replace alias prefix with resolved name

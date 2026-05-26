@@ -1001,7 +1001,7 @@ void misra_check_identifier_collision(Token tok, const char *name1, const char *
         return;
     }
 
-    if (strncmp(name1, name2, limit) == 0)
+    if (strncmp(name1, name2, (size_t)(limit)) == 0)
     {
         char msg[MAX_SHORT_MSG_LEN];
         if (limit == 31)
@@ -1197,7 +1197,7 @@ void misra_check_preprocessor_expression_parser(struct ParserContext *ctx, Token
         {
             len = 127;
         }
-        strncpy(name, start, len);
+        strncpy(name, start, (size_t)(len));
         name[len] = 0;
 
         // Skip 'defined' operator

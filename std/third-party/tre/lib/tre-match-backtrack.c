@@ -147,7 +147,7 @@ typedef struct tre_backtrack_struct
             }                                                                                      \
             s->prev = stack;                                                                       \
             s->next = NULL;                                                                        \
-            s->item.tags = (decltype(s->item.tags))tre_bt_mem_alloc(mem, sizeof(*tags) * tnfa->num_tags);                  \
+            s->item.tags = (decltype(s->item.tags))tre_bt_mem_alloc(mem, sizeof(*tags) * (size_t)(tnfa->num_tags));                  \
             if (!s->item.tags)                                                                     \
             {                                                                                      \
                 tre_bt_mem_destroy(mem);                                                           \
@@ -182,7 +182,7 @@ typedef struct tre_backtrack_struct
         assert(stack->prev);                                                                       \
         pos = stack->item.pos;                                                                     \
         if (type == STR_USER)                                                                      \
-            str_source->rewind(pos + pos_add_next, str_source->context);                           \
+            str_source->rewind((size_t)(pos) + (size_t)(pos_add_next), str_source->context);                           \
         str_byte = stack->item.str_byte;                                                           \
         BT_STACK_WIDE_OUT;                                                                         \
         state = stack->item.state;                                                                 \
@@ -285,7 +285,7 @@ reg_errcode_t tre_tnfa_run_backtrack(const tre_tnfa_t *tnfa, const void *string,
 #else  /* !TRE_USE_ALLOCA */
     if (tnfa->num_tags)
     {
-        tags = (decltype(tags))xmalloc(sizeof(*tags) * tnfa->num_tags);
+        tags = (decltype(tags))xmalloc(sizeof(*tags) * (size_t)(tnfa->num_tags));
         if (!tags)
         {
             ret = REG_ESPACE;
@@ -333,7 +333,7 @@ retry:
     pos = pos_start;
     if (type == STR_USER)
     {
-        str_source->rewind(pos + pos_add_next, str_source->context);
+        str_source->rewind((size_t)(pos) + (size_t)(pos_add_next), str_source->context);
     }
     GET_NEXT_WCHAR();
     pos_start = (int)pos;

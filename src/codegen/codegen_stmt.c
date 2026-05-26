@@ -393,7 +393,7 @@ void codegen_node_single(ParserContext *ctx, ASTNode *node)
                     // Extract variable name
                     ptrdiff_t var_len = end - p - 1;
                     char var_name[64];
-                    strncpy(var_name, p + 1, var_len);
+                    strncpy(var_name, p + 1, (size_t)(var_len));
                     var_name[var_len] = 0;
 
                     // Find variable index
@@ -422,7 +422,7 @@ void codegen_node_single(ParserContext *ctx, ASTNode *node)
                         }
                     }
 
-                    size_t rem = transformed_sz - (dst - transformed);
+                    size_t rem = transformed_sz - (size_t)(dst - transformed);
                     if (idx >= 0)
                     {
                         // Replace with %N
@@ -969,15 +969,15 @@ void codegen_node_single(ParserContext *ctx, ASTNode *node)
                     }
                     else
                     {
-                        EMIT(ctx, "%.*s", t.len, t.start);
+                        EMIT(ctx, "%.*s", (int)(t.len), t.start);
                     }
                     zfree(name);
                 }
                 else
                 {
-                    EMIT(ctx, "%.*s", t.len, t.start);
+                    EMIT(ctx, "%.*s", (int)(t.len), t.start);
                 }
-                last_pos = current_tok_start + t.len;
+                last_pos = current_tok_start + (int)(t.len);
             }
             EMIT(ctx, "%s\n", node->raw_stmt.content + last_pos);
         }

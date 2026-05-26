@@ -70,18 +70,18 @@ ASTNode *parse_var_decl(ParserContext *ctx, Lexer *l, int is_export)
         int is_struct = (lexer_peek(l).type == TOK_LBRACE);
         lexer_next(l);
         int cap = 16;
-        char **names = xmalloc(cap * sizeof(char *));
-        char **types = xmalloc(cap * sizeof(char *));
-        Type **type_infos = xmalloc(cap * sizeof(Type *));
+        char **names = xmalloc((size_t)cap * sizeof(char *));
+        char **types = xmalloc((size_t)cap * sizeof(char *));
+        Type **type_infos = xmalloc((size_t)cap * sizeof(Type *));
         int count = 0;
         while (1)
         {
             if (count >= cap)
             {
                 cap *= 2;
-                names = xrealloc(names, cap * sizeof(char *));
-                types = xrealloc(types, cap * sizeof(char *));
-                type_infos = xrealloc(type_infos, cap * sizeof(Type *));
+                names = xrealloc(names, (size_t)cap * sizeof(char *));
+                types = xrealloc(types, (size_t)cap * sizeof(char *));
+                type_infos = xrealloc(type_infos, (size_t)cap * sizeof(Type *));
             }
             Token t = lexer_next(l);
             check_identifier(ctx, t);

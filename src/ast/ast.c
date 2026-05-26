@@ -597,7 +597,7 @@ static char *type_to_string_impl(Type *t)
             if (dims_count == dims_cap)
             {
                 dims_cap = dims_cap == 0 ? 4 : dims_cap * 2;
-                dims = xrealloc(dims, sizeof(int) * dims_cap);
+                dims = xrealloc(dims, sizeof(int) * (size_t)(dims_cap));
             }
             dims[dims_count++] = base->array_size;
             base = base->inner;
@@ -610,7 +610,7 @@ static char *type_to_string_impl(Type *t)
             total_len += 20;
         }
 
-        char *res = xmalloc(total_len);
+        char *res = xmalloc((size_t)(total_len));
         strcpy(res, inner);
         zfree(inner);
 
@@ -704,7 +704,7 @@ static char *type_to_string_impl(Type *t)
         {
             char *base = t->name;
             size_t base_len = strlen(base);
-            char *res = xmalloc(base_len + 1);
+            char *res = xmalloc((size_t)(base_len + 1));
             strcpy(res, base);
 
             for (int i = 0; i < t->arg_count; i++)
@@ -713,7 +713,7 @@ static char *type_to_string_impl(Type *t)
                 char *clean_arg = sanitize_mangled_name(arg);
 
                 size_t new_len = strlen(res) + strlen(clean_arg) + 3;
-                char *new_res = xmalloc(new_len);
+                char *new_res = xmalloc((size_t)(new_len));
                 sprintf(new_res, "%s__%s", res, clean_arg); /* safe */
 
                 zfree(res);
@@ -891,7 +891,7 @@ static char *type_to_c_string_impl(Type *t)
         {
             long prefix_len = ptr_token - inner + 2; // "void (*"
             char *res = xmalloc(strlen(inner) + 2);
-            strncpy(res, inner, prefix_len);
+            strncpy(res, inner, (size_t)(prefix_len));
             res[prefix_len] = 0;
             strcat(res, "*");
             strcat(res, ptr_token + 2);
@@ -934,7 +934,7 @@ static char *type_to_c_string_impl(Type *t)
             if (dims_count == dims_cap)
             {
                 dims_cap = dims_cap == 0 ? 4 : dims_cap * 2;
-                dims = xrealloc(dims, sizeof(int) * dims_cap);
+                dims = xrealloc(dims, sizeof(int) * (size_t)(dims_cap));
             }
             dims[dims_count++] = base->array_size;
             base = base->inner;
@@ -947,7 +947,7 @@ static char *type_to_c_string_impl(Type *t)
             total_len += 20;
         }
 
-        char *res = xmalloc(total_len);
+        char *res = xmalloc((size_t)(total_len));
         strcpy(res, inner);
         zfree(inner);
 
@@ -1247,8 +1247,8 @@ char *infer_type(ParserContext *ctx, ASTNode *node)
                 if (end && end > start)
                 {
                     ptrdiff_t len = end - start;
-                    char *extracted = xmalloc(len + 1);
-                    strncpy(extracted, start, len);
+                    char *extracted = xmalloc((size_t)(len + 1));
+                    strncpy(extracted, start, (size_t)(len));
                     extracted[len] = 0;
                     return extracted;
                 }
@@ -1395,8 +1395,8 @@ char *infer_type(ParserContext *ctx, ASTNode *node)
             if (ptr)
             {
                 ptrdiff_t len = ptr - array_type;
-                char *buf = xmalloc(len + 1);
-                strncpy(buf, array_type, len);
+                char *buf = xmalloc((size_t)(len + 1));
+                strncpy(buf, array_type, (size_t)(len));
                 buf[len] = 0;
                 return buf;
             }
@@ -1448,8 +1448,8 @@ char *infer_type(ParserContext *ctx, ASTNode *node)
                 {
                     // Return base type (naive)
                     ptrdiff_t len = ptr - inner;
-                    char *dup = xmalloc(len + 1);
-                    strncpy(dup, inner, len);
+                    char *dup = xmalloc((size_t)(len + 1));
+                    strncpy(dup, inner, (size_t)(len));
                     dup[len] = 0;
                     return dup;
                 }
@@ -1473,8 +1473,8 @@ char *infer_type(ParserContext *ctx, ASTNode *node)
                 if (end && end > start)
                 {
                     ptrdiff_t len = end - start;
-                    char *extracted = xmalloc(len + 1);
-                    strncpy(extracted, start, len);
+                    char *extracted = xmalloc((size_t)(len + 1));
+                    strncpy(extracted, start, (size_t)(len));
                     extracted[len] = 0;
                     return extracted;
                 }

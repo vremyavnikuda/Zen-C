@@ -78,7 +78,7 @@ void *xrealloc(void *ptr, size_t new_size)
 {
     if (!ptr)
     {
-        return xmalloc(new_size);
+        return xmalloc((size_t)(new_size));
     }
 
     // Header is XMALLOC_HDR_SIZE bytes before the returned pointer
@@ -90,8 +90,8 @@ void *xrealloc(void *ptr, size_t new_size)
         return ptr;
     }
 
-    void *new_ptr = xmalloc(new_size);
-    memcpy(new_ptr, ptr, old_size);
+    void *new_ptr = xmalloc((size_t)(new_size));
+    memcpy(new_ptr, ptr, (size_t)(old_size));
     return new_ptr;
 }
 
@@ -102,8 +102,8 @@ char *xstrdup(const char *s)
         zfatal("xstrdup(NULL)");
     }
     size_t len = strlen(s);
-    char *d = xmalloc(len + 1);
-    memcpy(d, s, len);
+    char *d = xmalloc((size_t)(len + 1));
+    memcpy(d, s, (size_t)(len));
     d[len] = 0;
     return d;
 }
@@ -116,7 +116,7 @@ char *merge_underscores(const char *name)
     }
 
     size_t len = strlen(name);
-    char *res = xmalloc(len + 1);
+    char *res = xmalloc((size_t)(len + 1));
     char *out = res;
     const char *in = name;
 
@@ -187,12 +187,12 @@ static void maybe_lock_std_root(CompilerConfig *cfg, const char *resolved)
     {
         return;
     }
-    size_t root_len = std_pos - resolved;
+    size_t root_len = (size_t)(std_pos - resolved);
     if (root_len >= sizeof(cfg->std_root))
     {
         return;
     }
-    memcpy(cfg->std_root, resolved, root_len);
+    memcpy(cfg->std_root, resolved, (size_t)(root_len));
     cfg->std_root[root_len] = '\0';
     cfg->std_locked = 1;
 }
@@ -385,9 +385,19 @@ char *load_file(const char *fn, const char *relative_to)
     }
     fseek(f, 0, SEEK_END);
     long l = ftell(f);
+    if (l < 0)
+    {
+        fclose(f);
+        return NULL;
+    }
+    if (l < 0)
+    {
+        fclose(f);
+        return NULL;
+    }
     rewind(f);
-    char *b = xmalloc(l + 1);
-    fread(b, 1, l, f);
+    char *b = xmalloc((size_t)(l + 1));
+    fread(b, 1, (size_t)(l), f);
     b[l] = 0;
     fclose(f);
     return b;
@@ -436,7 +446,7 @@ static void expand_env_vars(char *dest, size_t dest_size, const char *src)
                 ptrdiff_t len = end - (s + 2);
                 if (len < MAX_VAR_NAME_LEN - 1)
                 {
-                    strncpy(var_name, s + 2, len);
+                    strncpy(var_name, s + 2, (size_t)(len));
                     var_name[len] = 0;
                     char *val = getenv(var_name);
                     if (val)
@@ -444,7 +454,7 @@ static void expand_env_vars(char *dest, size_t dest_size, const char *src)
                         size_t val_len = strlen(val);
                         if (val_len < remaining)
                         {
-                            strncpy(d, val, remaining);
+                            strncpy(d, val, (size_t)(remaining));
                             d += val_len;
                             remaining -= val_len;
                             s = end + 1;
@@ -516,7 +526,7 @@ void scan_build_directives(ParserContext *ctx, const char *src)
             {
                 len = 2047;
             }
-            strncpy(raw_line, start, len);
+            strncpy(raw_line, start, (size_t)(len));
             raw_line[len] = 0;
 
             // Strip trailing \r (Windows CRLF)

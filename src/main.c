@@ -399,7 +399,7 @@ int main(int argc, char **argv)
                     {
                         plen = sizeof(g_config.cc) - 1;
                     }
-                    memcpy(g_config.cc, path, plen);
+                    memcpy(g_config.cc, path, (size_t)(plen));
                     g_config.cc[plen] = '\0';
                     char libpath[MAX_PATH_SIZE + 32];
                     snprintf(libpath, sizeof(libpath), "%s/filc-0.678-linux-x86_64/pizfix/lib",

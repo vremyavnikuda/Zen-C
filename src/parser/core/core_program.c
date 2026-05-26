@@ -319,10 +319,10 @@ ASTNode *parse_program_nodes(ParserContext *ctx, Lexer *l)
                 }
 
                 const char *end = l->src + l->pos - 1;
-                size_t len = end - start;
+                size_t len = (size_t)(end - start);
 
                 char *content = xmalloc(len + 1);
-                memcpy(content, start, len);
+                memcpy(content, start, (size_t)(len));
                 content[len] = 0;
 
                 s = ast_create(NODE_RAW_STMT);

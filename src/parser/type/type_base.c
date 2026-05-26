@@ -159,7 +159,7 @@ Type *parse_type_base(ParserContext *ctx, Lexer *l)
             }
             if (valid)
             {
-                int width = atoi(name + 1);
+                int width = (int)strtol(name + 1, NULL, 10);
                 if (width > 0)
                 {
                     // Map standard widths to standard types for standard ABI/C compabitility
@@ -332,7 +332,7 @@ Type *parse_type_base(ParserContext *ctx, Lexer *l)
                         return NULL;
                     }
                     char *arg_str = type_to_string(arg);
-                    args = realloc(args, sizeof(char *) * (arg_count + 1));
+                    args = realloc(args, sizeof(char *) * (size_t)(arg_count + 1));
                     args[arg_count++] = xstrdup(arg_str);
                     zfree(arg_str);
                 }

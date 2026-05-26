@@ -287,7 +287,7 @@ void repl_highlight(const char *buf, int cursor_pos)
             char word[MAX_VAR_NAME_LEN];
             if (len < 256)
             {
-                strncpy(word, start, len);
+                strncpy(word, start, (size_t)(len));
                 word[len] = 0;
 
                 int is_keyword = 0;

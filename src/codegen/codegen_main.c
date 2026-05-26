@@ -62,7 +62,7 @@ static int struct_depends_on(ParserContext *ctx, ASTNode *s1, const char *target
 
                 // Check for match
                 size_t len = strlen(target_name);
-                int is_match = (strncmp(mangled_clean, target_name, len) == 0);
+                int is_match = (strncmp(mangled_clean, target_name, (size_t)(len)) == 0);
                 zfree(mangled_clean);
 
                 if (is_match)
@@ -117,7 +117,7 @@ static int struct_depends_on(ParserContext *ctx, ASTNode *s1, const char *target
 
                     // Check for match
                     size_t len = strlen(target_name);
-                    int is_match = (strncmp(mangled_clean, target_name, len) == 0);
+                    int is_match = (strncmp(mangled_clean, target_name, (size_t)(len)) == 0);
                     zfree(mangled_clean);
 
                     if (is_match)
@@ -275,13 +275,13 @@ static ASTNode *topo_sort_structs(ParserContext *ctx, ASTNode *head)
     }
 
     // Build array of all nodes.
-    ASTNode **nodes = malloc(count * sizeof(ASTNode *));
-    int *emitted = calloc(count, sizeof(int));
+    ASTNode **nodes = malloc((size_t)count * sizeof(ASTNode *));
+    int *emitted = calloc((size_t)count, sizeof(int));
     int idx = 0;
     collect_sortable_nodes(head, nodes, &idx);
 
     // Build order array (indices in emission order).
-    int *order = malloc(count * sizeof(int));
+    int *order = malloc((size_t)count * sizeof(int));
     int order_idx = 0;
 
     int changed = 1;
@@ -821,6 +821,10 @@ void codegen_c_program(ParserContext *ctx, ASTNode *node)
         if (ctx->cg.hoist_out)
         {
             long pos = ftell(ctx->cg.hoist_out);
+            if (pos < 0)
+            {
+                pos = 0;
+            }
             rewind(ctx->cg.hoist_out);
             char buf[4096];
             size_t n;

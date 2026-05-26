@@ -118,7 +118,7 @@ void handle_node_impl(ParserContext *ctx, ASTNode *node)
         while (m)
         {
             if (m->type == NODE_FUNCTION && m->func.name &&
-                strncmp(m->func.name, sname, slen) == 0 && m->func.name[slen] == '_' &&
+                strncmp(m->func.name, sname, (size_t)(slen)) == 0 && m->func.name[slen] == '_' &&
                 m->func.name[slen + 1] == '_')
             {
                 const char *method_part = m->func.name + slen;
@@ -590,7 +590,7 @@ void handle_node_impl_trait(ParserContext *ctx, ASTNode *node)
         while (m)
         {
             if (m->type == NODE_FUNCTION && m->func.name &&
-                strncmp(m->func.name, sname, slen) == 0 && m->func.name[slen] == '_' &&
+                strncmp(m->func.name, sname, (size_t)(slen)) == 0 && m->func.name[slen] == '_' &&
                 m->func.name[slen + 1] == '_')
             {
                 const char *method_part = m->func.name + slen;

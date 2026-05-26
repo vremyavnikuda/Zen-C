@@ -44,7 +44,7 @@ const char *backend_opt(zvec_Str *opts, const char *key)
     for (size_t i = 0; i < opts->length; i++)
     {
         const char *opt = opts->data[i];
-        if (strncmp(opt, key, klen) == 0)
+        if (strncmp(opt, key, (size_t)(klen)) == 0)
         {
             if (opt[klen] == '=')
             {

@@ -1061,7 +1061,7 @@ void check_expr_var(TypeChecker *tc, ASTNode *node)
             fn_type->arg_count = sig->total_args;
             if (sig->total_args > 0)
             {
-                fn_type->args = xmalloc(sizeof(Type *) * sig->total_args);
+                fn_type->args = xmalloc(sizeof(Type *) * (size_t)(sig->total_args));
                 for (int i = 0; i < sig->total_args; i++)
                 {
                     fn_type->args[i] = sig->arg_types[i];
@@ -1106,6 +1106,8 @@ void check_expr_literal(TypeChecker *tc, ASTNode *node)
         break;
     case LITERAL_CHAR:
         node->type_info = type_new(TYPE_CHAR);
+        break;
+    default:
         break;
     }
 }

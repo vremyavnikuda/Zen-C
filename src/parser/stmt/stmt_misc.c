@@ -23,7 +23,7 @@ char *normalize_raw_content(const char *content)
     }
 
     size_t len = strlen(content);
-    char *normalized = xmalloc(len + 1);
+    char *normalized = xmalloc((size_t)(len + 1));
     char *d = normalized;
     const char *s = content;
 
@@ -73,9 +73,9 @@ static void append_to_gen_fmt(char **gen, size_t *cap, const char *fmt, ...)
         return;
     }
 
-    char *buf = xmalloc(size + 1);
+    char *buf = xmalloc((size_t)(size + 1));
     va_start(args, fmt);
-    vsnprintf(buf, size + 1, fmt, args);
+    vsnprintf(buf, (size_t)(size + 1), fmt, args);
     va_end(args);
 
     append_to_gen(gen, cap, buf);
@@ -93,7 +93,7 @@ char *process_printf_sugar(ParserContext *ctx, Token srctoken, const char *conte
     int fs_id = fs_id_gen++;
 
     size_t gen_cap = 1024 * 32;
-    char *gen = xmalloc(gen_cap);
+    char *gen = xmalloc((size_t)(gen_cap));
     gen[0] = 0;
     append_to_gen(&gen, &gen_cap, "({ ");
 
@@ -278,7 +278,7 @@ char *process_printf_sugar(ParserContext *ctx, Token srctoken, const char *conte
 
                     if (used_syms && count)
                     {
-                        *used_syms = xrealloc(*used_syms, sizeof(char *) * (*count + 1));
+                        *used_syms = xrealloc(*used_syms, sizeof(char *) * (size_t)(*count + 1));
                         (*used_syms)[*count] = name;
                         (*count)++;
                     }
@@ -361,7 +361,7 @@ char *process_printf_sugar(ParserContext *ctx, Token srctoken, const char *conte
                 if (struct_name)
                 {
                     size_t mangled_sz = strlen(struct_name) + sizeof("__to_string");
-                    char *mangled = xmalloc(mangled_sz);
+                    char *mangled = xmalloc((size_t)(mangled_sz));
                     snprintf(mangled, mangled_sz, "%s__to_string", struct_name);
                     if (find_func(ctx, mangled))
                     {
@@ -926,8 +926,8 @@ ASTNode *parse_macro_call(ParserContext *ctx, Lexer *l, char *macro_name)
 
     const char *body_end = l->src + l->pos - 1;
     size_t body_len = (size_t)(body_end - body_start);
-    char *body = xmalloc(body_len + 1);
-    memcpy(body, body_start, body_len);
+    char *body = xmalloc((size_t)(body_len + 1));
+    memcpy(body, body_start, (size_t)(body_len));
     body[body_len] = '\0';
 
     const char *plugin_name = NULL;
@@ -990,9 +990,19 @@ ASTNode *parse_macro_call(ParserContext *ctx, Lexer *l, char *macro_name)
     found->fn(body, &api);
 
     long len = ftell(capture);
+    if (len < 0)
+    {
+        fclose(capture);
+        return NULL;
+    }
+    if (len < 0)
+    {
+        fclose(capture);
+        return NULL;
+    }
     rewind(capture);
-    char *expanded_code = xmalloc(len + 1);
-    fread(expanded_code, 1, len, capture);
+    char *expanded_code = xmalloc((size_t)(len + 1));
+    fread(expanded_code, 1, (size_t)(len), capture);
     expanded_code[len] = 0;
     fclose(capture);
     if (ctx->config->mode_lsp)
@@ -1049,12 +1059,12 @@ ASTNode *parse_comptime_body(ParserContext *ctx, Lexer *l)
         }
     }
     ptrdiff_t len = (l->src + l->pos - 1) - start;
-    char *code = xmalloc(len + 1);
-    strncpy(code, start, len);
+    char *code = xmalloc((size_t)(len + 1));
+    strncpy(code, start, (size_t)(len));
     code[len] = 0;
 
     size_t wrapped_len = (size_t)len + 4;
-    char *wrapped = xmalloc(wrapped_len + 1);
+    char *wrapped = xmalloc((size_t)(wrapped_len + 1));
     sprintf(wrapped, "{ %s }", code); /* safe */
     zfree(code);
 
@@ -1108,12 +1118,12 @@ ASTNode *parse_plugin(ParserContext *ctx, Lexer *l, Token tok)
             break;
         }
 
-        if (body_len + t.len + 2 < 8192)
+        if ((size_t)((size_t)(body_len) + t.len) + 2 < 8192)
         {
             strncat(body, t.start, t.len);
-            body[body_len + t.len] = ' ';
-            body[body_len + t.len + 1] = '\0';
-            body_len += t.len + 1;
+            body[(size_t)((size_t)(body_len) + t.len)] = ' ';
+            body[(size_t)((size_t)(body_len) + t.len) + 1] = '\0';
+            body_len += (int)(t.len) + 1;
         }
 
         lexer_next(l);

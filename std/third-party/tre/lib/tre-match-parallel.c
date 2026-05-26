@@ -166,12 +166,12 @@ reg_errcode_t tre_tnfa_run_parallel(const tre_tnfa_t *tnfa, const void *string, 
         size_t tbytes, rbytes, pbytes, xbytes, total_bytes;
         char *tmp_buf;
         /* Compute the length of the block we need. */
-        tbytes = sizeof(*tmp_tags) * num_tags;
-        rbytes = sizeof(*reach_next) * (tnfa->num_states + 1);
-        pbytes = sizeof(*reach_pos) * tnfa->num_states;
-        xbytes = sizeof(int) * num_tags;
+        tbytes = (size_t)(sizeof(*tmp_tags) * (size_t)(num_tags));
+        rbytes = (size_t)(sizeof(*reach_next) * (size_t)(tnfa->num_states + 1));
+        pbytes = (size_t)(sizeof(*reach_pos) * (size_t)(tnfa->num_states));
+        xbytes = (size_t)(sizeof(int) * (size_t)(num_tags));
         total_bytes = (sizeof(long) - 1) * 4 /* for alignment paddings */
-                      + (rbytes + xbytes * tnfa->num_states) * 2 + tbytes + pbytes;
+                      + (rbytes + (size_t)(xbytes) * (size_t)(tnfa->num_states)) * 2 + tbytes + pbytes;
 
         /* Allocate the memory. */
 #ifdef TRE_USE_ALLOCA

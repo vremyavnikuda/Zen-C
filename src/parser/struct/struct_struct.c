@@ -37,7 +37,7 @@ ASTNode *parse_struct(ParserContext *ctx, Lexer *l, int is_union, int is_opaque,
         {
             Token g = lexer_next(l);
             check_identifier(ctx, g);
-            gps = realloc(gps, sizeof(char *) * (gp_count + 1));
+            gps = realloc(gps, sizeof(char *) * (size_t)(gp_count + 1));
             gps[gp_count++] = token_strdup(g);
 
             Token next = lexer_peek(l);
@@ -262,7 +262,7 @@ ASTNode *parse_struct(ParserContext *ctx, Lexer *l, int is_union, int is_opaque,
                     return NULL;
                     return NULL;
                 }
-                f->field.bit_width = atoi(token_strdup(width_tok));
+                f->field.bit_width = (int)strtol(token_strdup(width_tok), NULL, 10);
             }
 
             if (!h)
@@ -325,7 +325,7 @@ ASTNode *parse_struct(ParserContext *ctx, Lexer *l, int is_union, int is_opaque,
     {
         node->type_info->kind = TYPE_GENERIC;
         node->type_info->arg_count = gp_count;
-        node->type_info->args = xmalloc(sizeof(Type *) * gp_count);
+        node->type_info->args = xmalloc(sizeof(Type *) * (size_t)(gp_count));
         for (int i = 0; i < gp_count; i++)
         {
             node->type_info->args[i] = type_new(TYPE_GENERIC);

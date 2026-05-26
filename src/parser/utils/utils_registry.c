@@ -25,7 +25,8 @@ void struct_hash_insert(ParserContext *ctx, const char *name, ASTNode *node)
     unsigned int idx = struct_name_hash(name) & (STRUCT_HASH_SIZE - 1);
     for (int i = 0; i < STRUCT_HASH_SIZE; i++)
     {
-        unsigned int slot = (idx + i) & (STRUCT_HASH_SIZE - 1);
+        unsigned int slot =
+            ((unsigned)(idx) + (unsigned)(i) + STRUCT_HASH_SIZE) & (STRUCT_HASH_SIZE - 1U);
         if (!ctx->struct_hash[slot].name[0] || strcmp(ctx->struct_hash[slot].name, name) == 0)
         {
             strncpy(ctx->struct_hash[slot].name, name, sizeof(ctx->struct_hash[slot].name) - 1);
@@ -41,7 +42,8 @@ static ASTNode *struct_hash_lookup(ParserContext *ctx, const char *name)
     unsigned int idx = struct_name_hash(name) & (STRUCT_HASH_SIZE - 1);
     for (int i = 0; i < STRUCT_HASH_SIZE; i++)
     {
-        unsigned int slot = (idx + i) & (STRUCT_HASH_SIZE - 1);
+        unsigned int slot =
+            ((unsigned)(idx) + (unsigned)(i) + STRUCT_HASH_SIZE) & (STRUCT_HASH_SIZE - 1U);
         if (!ctx->struct_hash[slot].name[0])
         {
             return NULL;
@@ -687,7 +689,7 @@ void re_export_wildcard_symbols(ParserContext *ctx, const char *module_base)
     ZenSymbol *sym = ctx->global_scope->symbols;
     while (sym)
     {
-        if (sym->name && strncmp(sym->name, prefix, prefix_len) == 0)
+        if (sym->name && strncmp(sym->name, prefix, (size_t)(prefix_len)) == 0)
         {
             const char *bare_name = sym->name + prefix_len;
             if (!*bare_name)
@@ -721,8 +723,8 @@ char *extract_module_name(const char *path)
     const char *base = slash ? slash + 1 : path;
     const char *dot = strrchr(base, '.');
     int len = dot ? (int)(dot - base) : (int)strlen(base);
-    char *name = xmalloc(len + 1);
-    strncpy(name, base, len);
+    char *name = xmalloc((size_t)(len + 1));
+    strncpy(name, base, (size_t)(len));
     name[len] = 0;
 
     for (int i = 0; i < len; i++)
@@ -781,7 +783,7 @@ int check_impl(ParserContext *ctx, const char *trait, const char *strct)
         {
             *ptr2 = 0;
             size_t blen = strlen(base_reg);
-            if (strncmp(strct, base_reg, blen) == 0 && strct[blen] == '_')
+            if (strncmp(strct, base_reg, (size_t)(blen)) == 0 && strct[blen] == '_')
             {
                 if (strcmp(r->trait, trait) == 0)
                 {

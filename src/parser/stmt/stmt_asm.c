@@ -90,9 +90,9 @@ ASTNode *parse_asm(ParserContext *ctx, Lexer *l)
         if (inner_t.type == TOK_STRING)
         {
             lexer_next(l);
-            int str_len = inner_t.len - 2;
+            int str_len = (int)(inner_t.len) - 2;
             size_t current_len = strlen(code);
-            size_t needed = current_len + str_len + 5;
+            size_t needed = current_len + (size_t)(str_len) + 5;
             if (needed >= code_cap)
             {
                 code_cap = code_cap * 2 + needed;
@@ -103,7 +103,7 @@ ASTNode *parse_asm(ParserContext *ctx, Lexer *l)
             {
                 strcat(code, "\n");
             }
-            strncat(code, inner_t.start + 1, str_len);
+            strncat(code, inner_t.start + 1, (size_t)(str_len));
         }
         else if (inner_t.type == TOK_IDENT)
         {
@@ -413,8 +413,8 @@ ASTNode *parse_asm(ParserContext *ctx, Lexer *l)
                 lexer_next(l);
 
                 char *c = xmalloc(clob.len);
-                strncpy(c, clob.start + 1, clob.len - 2);
-                c[clob.len - 2] = 0;
+                strncpy(c, clob.start + 1, (size_t)((int)(clob.len) - 2));
+                c[(int)(clob.len) - 2] = 0;
                 if (num_clobbers >= 16)
                 {
                     zpanic_at(lexer_peek(l), "Too many asm clobbers (max 16)");

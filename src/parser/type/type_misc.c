@@ -28,7 +28,7 @@ char *parse_array_literal(ParserContext *ctx, Lexer *l, const char *st)
     (void)ctx;
     lexer_next(l);
     size_t cap = 128;
-    char *c = xmalloc(cap);
+    char *c = xmalloc((size_t)(cap));
     c[0] = 0;
     int n = 0;
 
@@ -75,7 +75,7 @@ char *parse_array_literal(ParserContext *ctx, Lexer *l, const char *st)
         }
 
         ptrdiff_t len = (l->src + l->pos) - s;
-        if (strlen(c) + len + 5 > cap)
+        if (strlen(c) + (size_t)(len) + 5 > cap)
         {
             cap *= 2;
             c = xrealloc(c, cap);
@@ -84,7 +84,7 @@ char *parse_array_literal(ParserContext *ctx, Lexer *l, const char *st)
         {
             strcat(c, ", ");
         }
-        strncat(c, s, len);
+        strncat(c, s, (size_t)(len));
         n++;
     }
 
@@ -101,7 +101,7 @@ char *parse_array_literal(ParserContext *ctx, Lexer *l, const char *st)
     int in_func = (ctx->current_scope != ctx->global_scope);
     size_t st_len = st ? strlen(st) : 0;
     size_t o_sz = strlen(c) + st_len + strlen(rt) + 256;
-    char *o = xmalloc(o_sz);
+    char *o = xmalloc((size_t)(o_sz));
     if (st)
     {
         if (ctx->config->use_cpp && in_func)
@@ -143,7 +143,7 @@ char *parse_tuple_literal(ParserContext *ctx, Lexer *l, const char *tn)
     (void)ctx; // suppress unused parameter warning
     lexer_next(l);
     size_t cap = 128;
-    char *c = xmalloc(cap);
+    char *c = xmalloc((size_t)(cap));
     c[0] = 0;
 
     while (1)
@@ -189,7 +189,7 @@ char *parse_tuple_literal(ParserContext *ctx, Lexer *l, const char *tn)
         }
 
         ptrdiff_t len = (l->src + l->pos) - s;
-        if (strlen(c) + len + 5 > cap)
+        if (strlen(c) + (size_t)(len) + 5 > cap)
         {
             cap *= 2;
             c = xrealloc(c, cap);
@@ -198,11 +198,11 @@ char *parse_tuple_literal(ParserContext *ctx, Lexer *l, const char *tn)
         {
             strcat(c, ", ");
         }
-        strncat(c, s, len);
+        strncat(c, s, (size_t)(len));
     }
 
     size_t o_sz = strlen(c) + strlen(tn) + 128;
-    char *o = xmalloc(o_sz);
+    char *o = xmalloc((size_t)(o_sz));
     snprintf(o, o_sz, "(%s){%s}", tn, c);
     zfree(c);
     return o;
@@ -241,13 +241,23 @@ ASTNode *parse_embed(ParserContext *ctx, Lexer *l)
     }
     fseek(f, 0, SEEK_END);
     long len = ftell(f);
+    if (len < 0)
+    {
+        fclose(f);
+        return NULL;
+    }
+    if (len < 0)
+    {
+        fclose(f);
+        return NULL;
+    }
     rewind(f);
-    unsigned char *b = xmalloc(len);
-    fread(b, 1, len, f);
+    unsigned char *b = xmalloc((size_t)(len));
+    fread(b, 1, (size_t)(len), f);
     fclose(f);
 
-    size_t oc = len * 6 + 256;
-    char *o = xmalloc(oc);
+    size_t oc = (size_t)(len) * 6 + 256;
+    char *o = xmalloc((size_t)(oc));
 
     int in_func = (ctx->current_scope != ctx->global_scope);
     int use_cpp_stmt = (ctx->config->use_cpp && in_func);
@@ -353,13 +363,13 @@ ASTNode *parse_embed(ParserContext *ctx, Lexer *l)
             // Hex escape for string
             int w = snprintf(p, oc - cur_len, "\\x%02X", b[i]);
             p += w;
-            cur_len += w;
+            cur_len += (size_t)(w);
         }
         else
         {
             int w = snprintf(p, oc - cur_len, "0x%02X,", b[i]);
             p += w;
-            cur_len += w;
+            cur_len += (size_t)(w);
         }
     }
 

@@ -768,7 +768,7 @@ void handle_expr_call(ParserContext *ctx, ASTNode *node)
                     {
                         prefix_len = 255;
                     }
-                    strncpy(prefix, base, prefix_len);
+                    strncpy(prefix, base, (size_t)(prefix_len));
                     prefix[prefix_len] = 0;
 
                     char *p_end = prefix + strlen(prefix);
@@ -818,7 +818,7 @@ void handle_expr_call(ParserContext *ctx, ASTNode *node)
                         {
                             p_len = 255;
                         }
-                        strncpy(prefix, type, p_len);
+                        strncpy(prefix, type, (size_t)(p_len));
                         prefix[p_len] = 0;
 
                         char *p_end = prefix + strlen(prefix);
@@ -1094,10 +1094,10 @@ skip_method_mangling:
             strstr(name, "__") == NULL)
         {
             char base[MAX_TYPE_NAME_LEN];
-            size_t len = underscore - name;
+            size_t len = (size_t)(underscore - name);
             if (len < sizeof(base))
             {
-                strncpy(base, name, len);
+                strncpy(base, name, (size_t)(len));
                 base[len] = 0;
                 ASTNode *def = find_struct_def(ctx, base);
                 int is_common_enum =

@@ -40,8 +40,8 @@ char *parse_condition_raw(ParserContext *ctx, Lexer *l)
         }
         const char *cs = s + 1;
         ptrdiff_t len = t.start - cs;
-        char *c = xmalloc(len + 1);
-        strncpy(c, cs, len);
+        char *c = xmalloc((size_t)(len + 1));
+        strncpy(c, cs, (size_t)(len));
         c[len] = 0;
         return c;
     }
@@ -64,8 +64,8 @@ char *parse_condition_raw(ParserContext *ctx, Lexer *l)
             return NULL;
             return NULL;
         }
-        char *c = xmalloc(len + 1);
-        strncpy(c, start, len);
+        char *c = xmalloc((size_t)(len + 1));
+        strncpy(c, start, (size_t)(len));
         c[len] = 0;
         return c;
     }
@@ -584,15 +584,15 @@ char *parse_and_convert_args(ParserContext *ctx, Lexer *l, char ***defaults_out,
     }
 
     size_t buf_size = 8192;
-    char *buf = xmalloc(buf_size);
+    char *buf = xmalloc((size_t)(buf_size));
     buf[0] = 0;
     int count = 0;
     int max_args = 16;
-    char **defaults = xcalloc(max_args, sizeof(char *));
-    ASTNode **default_values = xcalloc(max_args, sizeof(ASTNode *));
-    Type **types = xcalloc(max_args, sizeof(Type *));
-    char **names = xcalloc(max_args, sizeof(char *));
-    char **ctype_overrides = xcalloc(max_args, sizeof(char *));
+    char **defaults = xcalloc((size_t)(max_args), sizeof(char *));
+    ASTNode **default_values = xcalloc((size_t)(max_args), sizeof(ASTNode *));
+    Type **types = xcalloc((size_t)(max_args), sizeof(Type *));
+    char **names = xcalloc((size_t)(max_args), sizeof(char *));
+    char **ctype_overrides = xcalloc((size_t)(max_args), sizeof(char *));
 
     // Initial 16 entries already zeroed by xcalloc
 
@@ -607,16 +607,18 @@ char *parse_and_convert_args(ParserContext *ctx, Lexer *l, char ***defaults_out,
             if (count >= max_args)
             {
                 int new_max = max_args * 2;
-                defaults = xrealloc(defaults, sizeof(char *) * new_max);
-                memset(defaults + max_args, 0, sizeof(char *) * (new_max - max_args));
-                default_values = xrealloc(default_values, sizeof(ASTNode *) * new_max);
-                memset(default_values + max_args, 0, sizeof(ASTNode *) * (new_max - max_args));
-                types = xrealloc(types, sizeof(Type *) * new_max);
-                memset(types + max_args, 0, sizeof(Type *) * (new_max - max_args));
-                names = xrealloc(names, sizeof(char *) * new_max);
-                memset(names + max_args, 0, sizeof(char *) * (new_max - max_args));
-                ctype_overrides = xrealloc(ctype_overrides, sizeof(char *) * new_max);
-                memset(ctype_overrides + max_args, 0, sizeof(char *) * (new_max - max_args));
+                defaults = xrealloc(defaults, sizeof(char *) * (size_t)(new_max));
+                memset(defaults + max_args, 0, sizeof(char *) * (size_t)(new_max - max_args));
+                default_values = xrealloc(default_values, sizeof(ASTNode *) * (size_t)(new_max));
+                memset(default_values + max_args, 0,
+                       sizeof(ASTNode *) * (size_t)(new_max - max_args));
+                types = xrealloc(types, sizeof(Type *) * (size_t)(new_max));
+                memset(types + max_args, 0, sizeof(Type *) * (size_t)(new_max - max_args));
+                names = xrealloc(names, sizeof(char *) * (size_t)(new_max));
+                memset(names + max_args, 0, sizeof(char *) * (size_t)(new_max - max_args));
+                ctype_overrides = xrealloc(ctype_overrides, sizeof(char *) * (size_t)(new_max));
+                memset(ctype_overrides + max_args, 0,
+                       sizeof(char *) * (size_t)(new_max - max_args));
                 max_args = new_max;
             }
 
@@ -791,7 +793,7 @@ char *parse_and_convert_args(ParserContext *ctx, Lexer *l, char ***defaults_out,
                 {
                     // Inject name into function pointer: int (*)(int) -> int (*name)(int)
                     ptrdiff_t prefix_len = fn_ptr - type_str;
-                    strncat(buf, type_str, prefix_len);
+                    strncat(buf, type_str, (size_t)(prefix_len));
                     strcat(buf, " (*");
                     strcat(buf, name);
                     strcat(buf, ")");

@@ -199,7 +199,7 @@ ASTNode *parse_enum(ParserContext *ctx, Lexer *l, const char *link_name, int is_
             if (lexer_peek(l).type == TOK_OP && *lexer_peek(l).start == '=')
             {
                 lexer_next(l);
-                va->variant.tag_id = atoi(lexer_next(l).start);
+                va->variant.tag_id = (int)strtol(lexer_next(l).start, NULL, 10);
                 v = va->variant.tag_id + 1;
             }
 
