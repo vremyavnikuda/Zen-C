@@ -187,7 +187,7 @@ static ASTNode *parse_expr_prec_impl(ParserContext *ctx, Lexer *l, Precedence mi
                 }
 
                 char *final_code = xmalloc(strlen(print_code) + 64);
-                sprintf(final_code, "%s readln(); })", print_code); /* safe */
+                snprintf(final_code, strlen(print_code) + 64, "%s readln(); })", print_code);
                 zfree(print_code);
 
                 ASTNode *n = ast_create(NODE_RAW_STMT);

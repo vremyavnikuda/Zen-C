@@ -392,7 +392,12 @@ char *load_file(const char *fn, const char *relative_to)
     }
     rewind(f);
     char *b = xmalloc((size_t)(l + 1));
-    fread(b, 1, (size_t)(l), f);
+    if (fread(b, 1, (size_t)(l), f) != (size_t)(l))
+    {
+        zfree(b);
+        fclose(f);
+        return NULL;
+    }
     b[l] = 0;
     fclose(f);
     return b;

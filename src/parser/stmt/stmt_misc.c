@@ -65,6 +65,11 @@ static void append_to_gen_fmt(char **gen, size_t *cap, const char *fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
+    if (!fmt)
+    {
+        va_end(args);
+        return;
+    }
     int size = vsnprintf(NULL, 0, fmt, args);
     va_end(args);
 
@@ -1002,7 +1007,13 @@ ASTNode *parse_macro_call(ParserContext *ctx, Lexer *l, char *macro_name)
     }
     rewind(capture);
     char *expanded_code = xmalloc((size_t)(len + 1));
-    fread(expanded_code, 1, (size_t)(len), capture);
+    size_t nread = fread(expanded_code, 1, (size_t)(len), capture);
+    if (nread != (size_t)(len))
+    {
+        zfree(expanded_code);
+        fclose(capture);
+        return NULL;
+    }
     expanded_code[len] = 0;
     fclose(capture);
     if (ctx->config->mode_lsp)

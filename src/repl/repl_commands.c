@@ -295,7 +295,12 @@ static int cmd_edit(ReplState *state, const char *args)
                     char *buffer = malloc((size_t)(length + 1));
                     if (buffer)
                     {
-                        fread(buffer, 1, (size_t)(length), fr);
+                        size_t nread = fread(buffer, 1, (size_t)(length), fr);
+                        if (nread != (size_t)(length))
+                        {
+                            free(buffer);
+                            return REPL_HANDLED;
+                        }
                         buffer[length] = 0;
 
                         while (length > 0 && buffer[length - 1] == '\n')
@@ -365,7 +370,12 @@ static int cmd_edit(ReplState *state, const char *args)
                 char *buffer = malloc((size_t)(length + 1));
                 if (buffer)
                 {
-                    fread(buffer, 1, (size_t)(length), fr);
+                    size_t nread = fread(buffer, 1, (size_t)(length), fr);
+                    if (nread != (size_t)(length))
+                    {
+                        free(buffer);
+                        return REPL_HANDLED;
+                    }
                     buffer[length] = 0;
 
                     while (length > 0 && buffer[length - 1] == '\n')

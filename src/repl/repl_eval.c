@@ -211,8 +211,16 @@ void repl_load_docs(ReplState *state)
     char *data = malloc((size_t)(len + 1));
     if (data)
     {
-        fread(data, 1, (size_t)(len), f);
-        data[len] = 0;
+        size_t nread = fread(data, 1, (size_t)(len), f);
+        if (nread != (size_t)(len))
+        {
+            free(data);
+            data = NULL;
+        }
+        else
+        {
+            data[len] = 0;
+        }
     }
     fclose(f);
     if (!data)

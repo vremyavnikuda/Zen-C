@@ -617,7 +617,7 @@ static char *type_to_string_impl(Type *t)
         char *p = res + strlen(res);
         for (int i = 0; i < dims_count; i++)
         {
-            sprintf(p, "[%d]", dims[i]); /* TODO: check buffer size */
+            snprintf(p, 20, "[%d]", dims[i]);
             p += strlen(p);
         }
 
@@ -954,7 +954,7 @@ static char *type_to_c_string_impl(Type *t)
         char *p = res + strlen(res);
         for (int i = 0; i < dims_count; i++)
         {
-            sprintf(p, "[%d]", dims[i]); /* TODO: check buffer size */
+            snprintf(p, 20, "[%d]", dims[i]);
             p += strlen(p);
         }
 

@@ -77,7 +77,13 @@ static int load_config_file(const char *path, CompilerConfig *cfg)
         return 0;
     }
 
-    fread(data, 1, (size_t)(length), f);
+    size_t nread = fread(data, 1, (size_t)(length), f);
+    if (nread != (size_t)(length))
+    {
+        free(data);
+        fclose(f);
+        return 0;
+    }
     data[length] = '\0';
     fclose(f);
 

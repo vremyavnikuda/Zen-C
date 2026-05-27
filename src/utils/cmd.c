@@ -421,6 +421,11 @@ void cmd_add_fmt(CmdBuilder *cmd, const char *fmt, ...)
 {
     va_list args;
 
+    if (!fmt)
+    {
+        return;
+    }
+
     // First pass to get size
     va_start(args, fmt);
     int size = vsnprintf(NULL, 0, fmt, args);
@@ -486,6 +491,11 @@ void arg_list_add_fmt(ArgList *list, const char *fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
+    if (!fmt)
+    {
+        va_end(args);
+        return;
+    }
     int size = vsnprintf(NULL, 0, fmt, args);
     va_end(args);
 
