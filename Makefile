@@ -70,6 +70,14 @@ else
 CFLAGS += -Wduplicated-cond -Wlogical-op -Wformat-signedness -Wunsafe-loop-optimizations -Wsuggest-attribute=noreturn -Wsuggest-attribute=const
 endif
 
+# TCC only supports a subset of -W flags; build a simplified CFLAGS to avoid unknown-flag errors
+ifeq ($(findstring tcc,$(CC)),tcc)
+TCC_BASE = -std=$(C_STD) -Wall -Wextra -Werror -g -DZC_ALLOW_INTERNAL -DZC_HAS_JIT
+TCC_DEFS = $(filter -DZC_% -DZEN_% -DHAS_%,$(DEFINES))
+TCC_INCS = -I/usr/local/include -I./src -I./src/ast -I./src/parser -I./src/codegen -I./plugins -I./src/zen -I./src/utils -I./src/lexer -I./src/analysis -I./src/lsp -I./src/diagnostics -I./std/third-party/tre/include
+CFLAGS = $(TCC_BASE) $(TCC_DEFS) $(TCC_INCS)
+endif
+
 # Toggle plugins
 ifeq ($(NO_PLUGINS), 1)
     CFLAGS += -DZC_NO_PLUGINS

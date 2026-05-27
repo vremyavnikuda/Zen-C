@@ -542,6 +542,7 @@ int z_run_command(char *const argv[])
         return -1;
     }
 #endif
+    return -1;
 }
 
 #if !ZC_OS_WINDOWS
@@ -666,4 +667,5 @@ int z_run_command_capture(char *const argv[], char *buffer, size_t size)
         return -1;
     }
 #endif
+    return -1;
 }

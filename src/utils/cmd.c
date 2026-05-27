@@ -285,7 +285,10 @@ void build_compile_arg_list(ArgList *list, const char *outfile, const char *temp
     {
         char abs_root[MAX_PATH_LEN];
         z_get_absolute_path(cfg->root_path, abs_root, sizeof(abs_root));
-        arg_list_add_fmt(list, "-I%s", abs_root);
+        if (abs_root[0])
+        {
+            arg_list_add_fmt(list, "-I%s", abs_root);
+        }
 
         char tre_path[MAX_PATH_LEN + 128];
         snprintf(tre_path, sizeof(tre_path), "%s/std/third-party/tre/include", abs_root);
@@ -344,7 +347,10 @@ void build_compile_arg_list(ArgList *list, const char *outfile, const char *temp
     {
         char abs_inc[MAX_PATH_LEN];
         z_get_absolute_path(cfg->include_paths.data[i], abs_inc, sizeof(abs_inc));
-        arg_list_add_fmt(list, "-I%s", abs_inc);
+        if (abs_inc[0])
+        {
+            arg_list_add_fmt(list, "-I%s", abs_inc);
+        }
     }
 
     // Input directory (to resolve relative includes in raw blocks)
@@ -352,12 +358,16 @@ void build_compile_arg_list(ArgList *list, const char *outfile, const char *temp
     {
         char abs_input_dir[MAX_PATH_LEN];
         z_get_absolute_path(cfg->input_dir, abs_input_dir, sizeof(abs_input_dir));
-        arg_list_add_fmt(list, "-I%s", abs_input_dir);
+        if (abs_input_dir[0])
+        {
+            arg_list_add_fmt(list, "-I%s", abs_input_dir);
+        }
 
         // Only use -iquote for GCC, Clang, and Emscripten (TCC does not support it)
-        if (z_path_match_compiler(cfg->cc, "gcc") || z_path_match_compiler(cfg->cc, "g++") ||
-            z_path_match_compiler(cfg->cc, "clang") || z_path_match_compiler(cfg->cc, "emcc") ||
-            z_path_match_compiler(cfg->cc, "filcc"))
+        if (abs_input_dir[0] &&
+            (z_path_match_compiler(cfg->cc, "gcc") || z_path_match_compiler(cfg->cc, "g++") ||
+             z_path_match_compiler(cfg->cc, "clang") || z_path_match_compiler(cfg->cc, "emcc") ||
+             z_path_match_compiler(cfg->cc, "filcc")))
         {
             arg_list_add(list, "-iquote");
             arg_list_add(list, abs_input_dir);
@@ -459,7 +469,7 @@ void arg_list_init(ArgList *list)
 
 void arg_list_add(ArgList *list, const char *arg)
 {
-    if (!arg)
+    if (!arg || !arg[0])
     {
         return;
     }
