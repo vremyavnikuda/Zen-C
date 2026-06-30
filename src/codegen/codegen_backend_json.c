@@ -245,7 +245,7 @@ static void json_emit_callee(ParserContext *ctx, ASTNode *callee)
     {
         name = callee->var_ref.name;
         // Skip mangled prefixes like Vec__int32_t__push -> push
-        const char *last_underscore = strrchr(name, '_');
+        const char *last_underscore = (char *)strrchr(name, '_');
         if (last_underscore && last_underscore > name && *(last_underscore - 1) == '_')
         {
             name = last_underscore + 1;

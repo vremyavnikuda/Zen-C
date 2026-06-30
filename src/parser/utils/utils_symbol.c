@@ -261,7 +261,7 @@ int is_generic_dependent_str(ParserContext *ctx, const char *type_str)
     for (int i = 0; i < ctx->known_generics_count; i++)
     {
         const char *g = ctx->known_generics[i];
-        const char *p = strstr(type_str, g);
+        const char *p = (char *)strstr(type_str, g);
         while (p)
         {
             int valid = 1;
@@ -342,7 +342,7 @@ EnumVariantReg *find_enum_variant(ParserContext *ctx, const char *name)
 {
     char *ename = NULL;
     const char *vname = name;
-    const char *sep = strstr(name, "::");
+    const char *sep = (char *)strstr(name, "::");
     if (!sep)
     {
         sep = strstr(name, "__");

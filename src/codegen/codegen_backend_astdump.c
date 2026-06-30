@@ -152,7 +152,7 @@ static void emit_label(ParserContext *ctx, ASTNode *node)
         if (node->import_stmt.path)
         {
             const char *p = node->import_stmt.path;
-            const char *last = strrchr(p, '/');
+            const char *last = (char *)strrchr(p, '/');
             emitter_printf(&ctx->cg.emitter, " '%s'", last ? last + 1 : p);
         }
         break;
@@ -181,7 +181,7 @@ static void emit_label(ParserContext *ctx, ASTNode *node)
         {
             const char *fn = node->call.callee->var_ref.name;
             // Skip mangled Vec__int32_t__new prefix, show just the method name
-            const char *method = strstr(fn, "__") ? strrchr(fn, '_') + 1 : fn;
+            const char *method = (char *)strstr(fn, "__") ? strrchr(fn, '_') + 1 : fn;
             if (method && method[0] == '_')
             {
                 method = fn; // fallback

@@ -53,7 +53,7 @@ void emit_source_mapping(ParserContext *ctx, ASTNode *node)
     {
         zwarn_at(node->token,
                  "Encountered source mapping issue for node type %i, please report this issue.",
-                 node->type);
+                 (int)node->type);
         return;
     }
 

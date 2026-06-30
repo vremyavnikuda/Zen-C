@@ -61,14 +61,18 @@ CFLAGS = -std=$(C_STD) -g -Wall -Wextra -Wshadow -Wformat=2 -Wmissing-prototypes
 obj/std/third-party/tre/%.o: CFLAGS += -Wno-sign-conversion -Wno-switch-default -Wno-cast-align -Wno-implicit-fallthrough -Wno-redundant-decls
 
 # Detect Clang by macro (works even when CC=cc on macOS, or CC=clang on Linux)
-CC_IS_CLANG := $(shell echo 'int x = __clang__;' | $(CC) -x c - -c -o /dev/null 2>/dev/null && echo 1 || echo 0)
+# Uses recursive = so it re-evaluates with target-specific CC overrides (e.g. msan: CC=clang)
+# Fast path: skip shell probe when $(CC) explicitly contains "clang"
+CC_IS_CLANG = $(if $(findstring clang,$(CC)),1,$(shell echo 'int x = __clang__;' | $(CC) -x c - -c -o /dev/null 2>/dev/null && echo 1 || echo 0))
 
-# Clang's -Wformat=2 includes -Wformat-nonliteral which is noisy with emitter code
-ifeq ($(CC_IS_CLANG),1)
-CFLAGS += -Wno-format-nonliteral -Wassign-enum -Wcomma -Wsometimes-uninitialized -Wloop-analysis -Wsizeof-array-div
-else
-CFLAGS += -Wduplicated-cond -Wlogical-op -Wformat-signedness -Wunsafe-loop-optimizations -Wsuggest-attribute=noreturn -Wsuggest-attribute=const
-endif
+# Flags only GCC supports (filtered out when compiling with clang)
+GCC_WARN_FLAGS = -Wduplicated-cond -Wlogical-op -Wformat-signedness -Wunsafe-loop-optimizations -Wsuggest-attribute=noreturn -Wsuggest-attribute=const
+
+# Clang-specific flags (added back when forcing clang for e.g. fuzz targets)
+CLANG_WARN_FLAGS = -Wno-format-nonliteral -Wassign-enum -Wcomma -Wsometimes-uninitialized -Wloop-analysis -Wsizeof-array-div
+
+# Deferred $(if ...) evaluated at CFLAGS expansion time (respects target-specific CC overrides)
+CFLAGS += $(if $(filter 1,$(CC_IS_CLANG)),$(CLANG_WARN_FLAGS),$(GCC_WARN_FLAGS))
 
 # TCC only supports a subset of -W flags; build a simplified CFLAGS to avoid unknown-flag errors
 ifeq ($(findstring tcc,$(CC)),tcc)
@@ -551,7 +555,7 @@ msan: LIBS += -fsanitize=memory
 msan: $(TARGET)
 
 # GCC Static Analyzer (slow, ~5x build time)
-analyzer: CFLAGS += -fanalyzer
+analyzer: CFLAGS += -fanalyzer -Wno-analyzer-infinite-recursion
 analyzer: $(TARGET) $(PLUGINS)
 
 # Code coverage (GCC only, incompatible with sanitizers)
@@ -607,7 +611,8 @@ fuzz-cmplog-build:
 # LibFuzzer targets
 fuzz-libfuzzer-build:
 	@$(MKDIR) $(OBJ_DIR)/fuzz-libfuzzer
-	clang $(filter-out -Wduplicated-cond -Wlogical-op,$(CFLAGS)) \
+	clang $(filter-out $(GCC_WARN_FLAGS),$(CFLAGS)) $(CLANG_WARN_FLAGS) \
+	      -Wno-sign-conversion -Wno-switch-default -Wno-cast-align -Wno-implicit-fallthrough -Wno-redundant-decls \
 	      -fsanitize=fuzzer,address,undefined \
 	      $(filter-out src/main.c,$(SRCS)) fuzz/harness.c -o zc-fuzz-libfuzzer $(LIBS)
 	@echo "=> LibFuzzer target built: zc-fuzz-libfuzzer"

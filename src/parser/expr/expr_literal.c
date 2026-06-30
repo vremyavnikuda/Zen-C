@@ -937,7 +937,7 @@ ASTNode *parse_intrinsic(ParserContext *ctx, Lexer *l)
     }
     else
     {
-        zpanic_at(ident, "Unknown intrinsic @%.*s", ident.len, ident.start);
+        zpanic_at(ident, "Unknown intrinsic @%.*s", (int)ident.len, ident.start);
     }
 
     Token lparen = lexer_next(l);

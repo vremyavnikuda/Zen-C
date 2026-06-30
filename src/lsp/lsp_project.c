@@ -99,7 +99,7 @@ void lsp_default_on_error(void *data, Token t, const char *msg)
 static void scan_file(const char *path)
 {
     // Skip if not .zc
-    const char *ext = strrchr(path, '.');
+    const char *ext = (char *)strrchr(path, '.');
     if (!ext || strcmp(ext, ".zc") != 0)
     {
         return;

@@ -7,6 +7,7 @@
 #define CMD_H
 
 #include <stddef.h>
+#include "../compat/c23_compat.h"
 
 typedef struct CompilerConfig CompilerConfig;
 
@@ -43,7 +44,7 @@ void cmd_add(CmdBuilder *cmd, const char *str);
  * @param fmt The format string
  * @param ... The arguments to format
  */
-void cmd_add_fmt(CmdBuilder *cmd, const char *fmt, ...);
+ZEN_FORMAT_PRINTF(2, 3) void cmd_add_fmt(CmdBuilder *cmd, const char *fmt, ...);
 
 /**
  * @brief Free the command builder
@@ -93,7 +94,7 @@ void arg_list_add(ArgList *list, const char *arg);
  * @param fmt The format string
  * @param ... The arguments to format
  */
-void arg_list_add_fmt(ArgList *list, const char *fmt, ...);
+ZEN_FORMAT_PRINTF(2, 3) void arg_list_add_fmt(ArgList *list, const char *fmt, ...);
 
 /**
  * @brief Free the argument list

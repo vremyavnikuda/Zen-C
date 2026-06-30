@@ -730,7 +730,7 @@ void handle_expr_call(ParserContext *ctx, ASTNode *node)
         if (type)
         {
             char *clean = xstrdup(type);
-            char *ptr = strchr(clean, '*');
+            char *ptr = (char *)strchr(clean, '*');
             if (ptr)
             {
                 *ptr = '\0';
@@ -756,10 +756,10 @@ void handle_expr_call(ParserContext *ctx, ASTNode *node)
             char *mangled_base = (char *)normalized;
             char base_buf[MAX_ERROR_MSG_LEN];
 
-            char *lt = strchr(base, '<');
+            char *lt = (char *)strchr(base, '<');
             if (lt)
             {
-                char *gt = strrchr(base, '>');
+                char *gt = (char *)strrchr(base, '>');
                 if (gt)
                 {
                     ptrdiff_t prefix_len = lt - base;
@@ -778,7 +778,7 @@ void handle_expr_call(ParserContext *ctx, ASTNode *node)
                     }
 
                     char *args_ptr = xstrdup(lt + 1);
-                    char *args_end = strrchr(args_ptr, '>');
+                    char *args_end = (char *)strrchr(args_ptr, '>');
                     if (args_end)
                     {
                         *args_end = 0;
@@ -805,11 +805,11 @@ void handle_expr_call(ParserContext *ctx, ASTNode *node)
                 }
 
                 char type_buf[MAX_ERROR_MSG_LEN];
-                char *t_lt = strchr(type, '<');
+                char *t_lt = (char *)strchr(type, '<');
 
                 if (t_lt)
                 {
-                    char *t_gt = strrchr(type, '>');
+                    char *t_gt = (char *)strrchr(type, '>');
                     if (t_gt)
                     {
                         ptrdiff_t p_len = t_lt - type;
@@ -828,7 +828,7 @@ void handle_expr_call(ParserContext *ctx, ASTNode *node)
                         }
 
                         char *args_ptr = xstrdup(t_lt + 1);
-                        char *args_end = strrchr(args_ptr, '>');
+                        char *args_end = (char *)strrchr(args_ptr, '>');
                         if (args_end)
                         {
                             *args_end = 0;
@@ -1089,7 +1089,7 @@ skip_method_mangling:
     else if (node->call.callee->type == NODE_EXPR_VAR)
     {
         char *name = node->call.callee->var_ref.name;
-        char *underscore = strchr(name, '_');
+        char *underscore = (char *)strchr(name, '_');
         if (underscore && underscore != name && *(underscore + 1) != '_' &&
             strstr(name, "__") == NULL)
         {

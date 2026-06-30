@@ -1312,7 +1312,7 @@ void misra_check_shadowing(ParserContext *ctx, const char *name, Token loc)
         snprintf(msg, sizeof(msg),
                  "MISRA Rule Zen 1.8: Identifier '%s' shadows an existing symbol in an outer scope",
                  name);
-        zerror_at(loc, msg);
+        zerror_at(loc, "%s", msg);
     }
 }
 
@@ -1326,7 +1326,7 @@ void misra_check_double_initialization(struct ParserContext *ctx, const char *fi
     char msg[256];
     snprintf(msg, sizeof(msg), "MISRA Rule 9.4: Re-initialization of struct field '%s'",
              field_name);
-    zerror_at(token, msg);
+    zerror_at(token, "%s", msg);
 }
 
 void misra_check_reserved_identifier(struct ParserContext *ctx, const char *name, Token token)
@@ -1517,7 +1517,7 @@ void misra_check_banned_function(struct ParserContext *ctx, const char *name, To
             char msg[128];
             snprintf(msg, sizeof(msg), "MISRA %s: Use of banned standard library function '%s'",
                      banned_funcs[i].rule, name);
-            zerror_at(tok, msg);
+            zerror_at(tok, "%s", msg);
             return;
         }
     }
@@ -1611,7 +1611,7 @@ void misra_check_typographic_ambiguity(struct ParserContext *ctx, const char *ne
                         msg, sizeof(msg),
                         "MISRA Dir 4.5: identifier '%s' is typographically ambiguous with '%s'",
                         new_name, sym->name);
-                    zerror_at(loc, msg);
+                    zerror_at(loc, "%s", msg);
                     return; // Warn once
                 }
             }

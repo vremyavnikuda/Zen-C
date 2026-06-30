@@ -392,11 +392,11 @@ static ASTNode *parse_expr_prec_impl(ParserContext *ctx, Lexer *l, Precedence mi
                     if (var_type)
                     {
                         // Extract T from Async<T>
-                        char *start = strchr(var_type, '<');
+                        char *start = (char *)strchr(var_type, '<');
                         if (start)
                         {
                             start++; // Skip <
-                            char *end = strrchr(var_type, '>');
+                            char *end = (char *)strrchr(var_type, '>');
                             if (end && end > start)
                             {
                                 ptrdiff_t len = end - start;
@@ -1980,7 +1980,7 @@ static ASTNode *parse_expr_prec_impl(ParserContext *ctx, Lexer *l, Precedence mi
                                                            all_unmangled);
                         if (mn)
                         {
-                            char *p = strstr(mn, "__");
+                            char *p = (char *)strstr(mn, "__");
                             if (p)
                             {
                                 zfree(node->member.field);

@@ -165,7 +165,7 @@ static void emit_protos_internal(ParserContext *ctx, ASTNode *node, VisitedModul
 
         if (f->type == NODE_FUNCTION)
         {
-            if (ctx->config->use_cpp && f->func.name && !f->func.body)
+            if (f->func.name && !f->func.body)
             {
                 if (strncmp(f->func.name, "_z_", 3) == 0 || strncmp(f->func.name, "_time_", 6) == 0)
                 {
@@ -222,7 +222,7 @@ static void emit_protos_internal(ParserContext *ctx, ASTNode *node, VisitedModul
                     {
                         tok++;
                     }
-                    char *last_space = strrchr(tok, ' ');
+                    char *last_space = (char *)strrchr(tok, ' ');
                     if (last_space)
                     {
                         *last_space = 0;
@@ -733,7 +733,7 @@ static void emit_mangled_pointer_typedefs(ParserContext *ctx)
     {
         if (ifn->type == NODE_FUNCTION && ifn->func.name && strstr(ifn->func.name, "__"))
         {
-            char *mangled_part = strstr(ifn->func.name, "__") + 2;
+            char *mangled_part = (char *)strstr(ifn->func.name, "__") + 2;
             if (strstr(mangled_part, "Ptr"))
             {
                 // This is more complex because we need the original type.

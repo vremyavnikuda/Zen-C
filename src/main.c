@@ -100,7 +100,7 @@ int main(int argc, char **argv)
             }
 
             // Try parent
-            char *last_slash = strrchr(current_root, '/');
+            char *last_slash = (char *)strrchr(current_root, '/');
             if (last_slash && last_slash != current_root)
             {
                 *last_slash = '\0';
@@ -532,7 +532,7 @@ int main(int argc, char **argv)
             if (def)
             {
                 char *name = xstrdup(def);
-                char *eq = strchr(name, '=');
+                char *eq = (char *)strchr(name, '=');
                 if (eq)
                 {
                     *eq = '\0';

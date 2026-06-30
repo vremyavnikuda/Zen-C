@@ -118,17 +118,17 @@ void parser_audit_preprocessor(ParserContext *ctx, Token tok)
                     strncpy(expr_buf, expr_start, (size_t)(expr_len));
                     expr_buf[expr_len] = 0;
 
-                    char *comment = strstr(expr_buf, "//");
+                    char *comment = (char *)strstr(expr_buf, "//");
                     if (comment)
                     {
                         *comment = 0;
                     }
-                    char *nl = strchr(expr_buf, '\n');
+                    char *nl = (char *)strchr(expr_buf, '\n');
                     if (nl)
                     {
                         *nl = 0;
                     }
-                    char *cr = strchr(expr_buf, '\r');
+                    char *cr = (char *)strchr(expr_buf, '\r');
                     if (cr)
                     {
                         *cr = 0;

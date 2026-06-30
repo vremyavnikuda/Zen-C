@@ -30,10 +30,10 @@ static char *replace_in_string(const char *src, const char *old_w, const char *n
 
         while (*p_ptr && *c_ptr)
         {
-            char *p_end = strchr(p_ptr, ',');
+            char *p_end = (char *)strchr(p_ptr, ',');
             int p_len = p_end ? (int)(p_end - p_ptr) : (int)strlen(p_ptr);
 
-            char *c_end = strchr(c_ptr, ',');
+            char *c_end = (char *)strchr(c_ptr, ',');
             int c_len = c_end ? (int)(c_end - c_ptr) : (int)strlen(c_ptr);
 
             char *curr_p = xmalloc((size_t)(p_len + 1));
@@ -291,6 +291,11 @@ char *replace_type_str(const char *src, const char *param, const char *concrete,
         strncpy(base, src, slen - 1);
         base[slen - 1] = 0;
         char *nb = replace_type_str(base, param, concrete, old_struct, new_struct);
+        if (!nb)
+        {
+            zfree(base);
+            return NULL;
+        }
         char *res = xmalloc(strlen(nb) + 2);
         sprintf(res, "%s*", nb); /* safe */
         zfree(base);
@@ -315,6 +320,10 @@ char *replace_type_str(const char *src, const char *param, const char *concrete,
     }
 
     // Case 3b: Base struct replacement (e.g. Vec -> Vec__int32_t)
+    if (!res)
+    {
+        return NULL;
+    }
     if (old_struct && new_struct && strstr(res, old_struct))
     {
         char *tmp = replace_in_string(res, old_struct, new_struct);
@@ -331,9 +340,9 @@ char *replace_type_str(const char *src, const char *param, const char *concrete,
         char *c_ptr = (char *)concrete;
         while (*p_ptr && *c_ptr)
         {
-            char *p_end = strchr(p_ptr, ',');
+            char *p_end = (char *)strchr(p_ptr, ',');
             int p_len = p_end ? (int)(p_end - p_ptr) : (int)strlen(p_ptr);
-            char *c_end = strchr(c_ptr, ',');
+            char *c_end = (char *)strchr(c_ptr, ',');
             int c_len = c_end ? (int)(c_end - c_ptr) : (int)strlen(c_ptr);
 
             char *p_part = xmalloc((size_t)(p_len + 1));
@@ -554,9 +563,9 @@ Type *replace_type_formal(Type *t, const char *p, const char *c, const char *os,
             char *c_ptr = (char *)c;
             while (*p_ptr && *c_ptr)
             {
-                char *p_end = strchr(p_ptr, ',');
+                char *p_end = (char *)strchr(p_ptr, ',');
                 int p_len = p_end ? (int)(p_end - p_ptr) : (int)strlen(p_ptr);
-                char *c_end = strchr(c_ptr, ',');
+                char *c_end = (char *)strchr(c_ptr, ',');
                 int c_len = c_end ? (int)(c_end - c_ptr) : (int)strlen(c_ptr);
 
                 if ((int)strlen(t->name) == p_len && strncmp(t->name, p_ptr, (size_t)(p_len)) == 0)
@@ -614,7 +623,7 @@ Type *replace_type_formal(Type *t, const char *p, const char *c, const char *os,
             const char *p_ptr = p;
             while (p_ptr && *p_ptr)
             {
-                const char *p_next = strchr(p_ptr, ',');
+                const char *p_next = (char *)strchr(p_ptr, ',');
                 int sub_len = p_next ? (int)(p_next - p_ptr) : (int)strlen(p_ptr);
                 char *sub = xmalloc((size_t)(sub_len + 1));
                 strncpy(sub, p_ptr, (size_t)(sub_len));
@@ -650,7 +659,7 @@ Type *replace_type_formal(Type *t, const char *p, const char *c, const char *os,
             else if (nlen > slen)
             {
                 // Try matching with Ptr suffix
-                const char *p_match = strstr(t->name, p_suffix);
+                const char *p_match = (char *)strstr(t->name, p_suffix);
                 while (p_match)
                 {
                     const char *after = p_match + slen;
@@ -690,7 +699,7 @@ Type *replace_type_formal(Type *t, const char *p, const char *c, const char *os,
                 const char *c_ptr = c;
                 while (c_ptr && *c_ptr)
                 {
-                    const char *c_next = strchr(c_ptr, ',');
+                    const char *c_next = (char *)strchr(c_ptr, ',');
                     int sub_len = c_next ? (int)(c_next - c_ptr) : (int)strlen(c_ptr);
 
                     char *sub = xmalloc((size_t)(sub_len + 1));
@@ -811,9 +820,9 @@ ASTNode *copy_ast_replacing(ASTNode *n, const char *p, const char *c, const char
             char *c_ptr = (char *)c;
             while (*p_ptr && *c_ptr)
             {
-                char *p_end = strchr(p_ptr, ',');
+                char *p_end = (char *)strchr(p_ptr, ',');
                 int p_len = p_end ? (int)(p_end - p_ptr) : (int)strlen(p_ptr);
-                char *c_end = strchr(c_ptr, ',');
+                char *c_end = (char *)strchr(c_ptr, ',');
                 int c_len = c_end ? (int)(c_end - c_ptr) : (int)strlen(c_ptr);
 
                 char *p_part = xmalloc((size_t)(p_len + 1));
@@ -942,9 +951,9 @@ ASTNode *copy_ast_replacing(ASTNode *n, const char *p, const char *c, const char
             char *c_ptr = (char *)c;
             while (*p_ptr && *c_ptr)
             {
-                char *p_end = strchr(p_ptr, ',');
+                char *p_end = (char *)strchr(p_ptr, ',');
                 int p_len = p_end ? (int)(p_end - p_ptr) : (int)strlen(p_ptr);
-                char *c_end = strchr(c_ptr, ',');
+                char *c_end = (char *)strchr(c_ptr, ',');
                 int c_len = c_end ? (int)(c_end - c_ptr) : (int)strlen(c_ptr);
 
                 char *p_part = xmalloc((size_t)(p_len + 1));
@@ -1045,9 +1054,9 @@ ASTNode *copy_ast_replacing(ASTNode *n, const char *p, const char *c, const char
             char *c_ptr = (char *)c;
             while (*p_ptr && *c_ptr)
             {
-                char *p_end = strchr(p_ptr, ',');
+                char *p_end = (char *)strchr(p_ptr, ',');
                 int p_len = p_end ? (int)(p_end - p_ptr) : (int)strlen(p_ptr);
-                char *c_end = strchr(c_ptr, ',');
+                char *c_end = (char *)strchr(c_ptr, ',');
                 int c_len = c_end ? (int)(c_end - c_ptr) : (int)strlen(c_ptr);
 
                 char *p_part = xmalloc((size_t)(p_len + 1));
@@ -1221,9 +1230,9 @@ ASTNode *copy_ast_replacing(ASTNode *n, const char *p, const char *c, const char
                 char *c_ptr = (char *)c;
                 while (*p_ptr && *c_ptr)
                 {
-                    char *p_end = strchr(p_ptr, ',');
+                    char *p_end = (char *)strchr(p_ptr, ',');
                     int p_len = p_end ? (int)(p_end - p_ptr) : (int)strlen(p_ptr);
-                    char *c_end = strchr(c_ptr, ',');
+                    char *c_end = (char *)strchr(c_ptr, ',');
                     int c_len = c_end ? (int)(c_end - c_ptr) : (int)strlen(c_ptr);
 
                     char *p_part = xmalloc((size_t)(p_len + 1));
@@ -1274,7 +1283,7 @@ ASTNode *copy_ast_replacing(ASTNode *n, const char *p, const char *c, const char
                 char *s2 = replace_in_string(s1, os, ns);
                 zfree(s1);
                 s1 = s2;
-                char *colons = strstr(s1, "::");
+                char *colons = (char *)strstr(s1, "::");
                 if (colons)
                 {
                     colons[0] = '_';

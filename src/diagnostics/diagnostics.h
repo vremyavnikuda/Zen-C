@@ -15,6 +15,7 @@
 
 #include "token.h"
 #include <stdarg.h>
+#include "../compat/c23_compat.h"
 
 // Forward declaration
 struct ParserContext;
@@ -34,7 +35,7 @@ void zfatal(const char *fmt, ...);
 /**
  * @brief Fatal error with token location (exits unless fault-tolerant).
  */
-void zpanic_at(Token t, const char *fmt, ...);
+ZEN_FORMAT_PRINTF(2, 3) void zpanic_at(Token t, const char *fmt, ...);
 void zpanic_at_diag(int diag_id, Token t, const char *fmt, ...);
 
 /**
@@ -51,7 +52,7 @@ void zpanic_with_hints(Token t, const char *msg, const char *const *hints);
  * @brief Non-fatal error with token location (does not exit).
  * Used for semantic analysis to report multiple errors.
  */
-void zerror_at(Token t, const char *fmt, ...);
+ZEN_FORMAT_PRINTF(2, 3) void zerror_at(Token t, const char *fmt, ...);
 
 /**
  * @brief Non-fatal error with suggestion (does not exit).
@@ -68,13 +69,13 @@ void zerror_with_hints(Token t, const char *msg, const char *const *hints);
 /**
  * @brief Non-fatal warning.
  */
-void zwarn(const char *fmt, ...);
+ZEN_FORMAT_PRINTF(1, 2) void zwarn(const char *fmt, ...);
 
 /**
  * @brief Non-fatal warning with token location.
  */
-void zwarn_at(Token t, const char *fmt, ...);
-void zwarn_at_diag(int diag_id, Token t, const char *fmt, ...);
+ZEN_FORMAT_PRINTF(2, 3) void zwarn_at(Token t, const char *fmt, ...);
+ZEN_FORMAT_PRINTF(3, 4) void zwarn_at_diag(int diag_id, Token t, const char *fmt, ...);
 
 /**
  * @brief Non-fatal warning with suggestion.

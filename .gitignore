@@ -2,12 +2,16 @@
 *.o
 *.so
 *.a
+*.d
 zc
 zc-fuzz
 zc-fuzz-cmplog
 zc-fuzz-libfuzzer
 zc-fuzz-harness
 zencraft_bin
+
+# Build output directories
+obj/
 
 # Generated files
 out.c
@@ -17,6 +21,7 @@ out.cu
 
 # Test artifacts
 test_out_*
+test_def_const_*
 rule_*
 *_suite.c
 *_suite.cpp
@@ -37,6 +42,8 @@ make_warning.log
 crash-*
 leak-*
 timeout-*
+fuzz/corpus/
+fuzz/out/
 
 # Coverage
 *.gcda

@@ -186,7 +186,7 @@ static void codegen_var_expr(ParserContext *ctx, ASTNode *node)
     }
 
     // Check for static method call pattern: Type::method or Type__method
-    char *sep = strstr(node->var_ref.name, "::");
+    char *sep = (char *)strstr(node->var_ref.name, "::");
     int sep_len = 2;
     if (!sep)
     {
@@ -265,7 +265,7 @@ static void codegen_var_expr(ParserContext *ctx, ASTNode *node)
 
     // Check for legacy Enum_Variant patterns (single underscore)
     // Avoid double-mangling if it already has double underscores (generics)
-    char *underscore = strchr(node->var_ref.name, '_');
+    char *underscore = (char *)strchr(node->var_ref.name, '_');
     if (underscore && underscore != node->var_ref.name && *(underscore + 1) != '_' &&
         strstr(node->var_ref.name, "__") == NULL)
     {

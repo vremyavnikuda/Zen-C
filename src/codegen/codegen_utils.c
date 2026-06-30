@@ -66,29 +66,29 @@ int is_enum_type_name(ParserContext *ctx, const char *name)
 // Helper to emit C declaration (handle arrays, function pointers correctly)
 static void emit_c_decl(ParserContext *ctx, const char *type_str, const char *name)
 {
-    char *bracket = strchr(type_str, '[');
-    char *generic = strchr(type_str, '<');
-    char *fn_ptr = strstr(type_str, "(*");
+    char *bracket = (char *)strchr(type_str, '[');
+    char *generic = (char *)strchr(type_str, '<');
+    char *fn_ptr = (char *)strstr(type_str, "(*");
 
     if (fn_ptr)
     {
-        char *end_paren = strchr(fn_ptr, ')');
+        char *end_paren = (char *)strchr(fn_ptr, ')');
         if (end_paren)
         {
             ptrdiff_t prefix_len = end_paren - type_str;
-            EMIT(ctx, "%.*s%s%s", prefix_len, type_str, name, end_paren);
+            EMIT(ctx, "%.*s%s%s", (int)prefix_len, type_str, name, end_paren);
         }
         else
         {
             // Fallback if malformed (shouldn't happen)
             ptrdiff_t prefix_len = fn_ptr - type_str + 2;
-            EMIT(ctx, "%.*s%s%s", prefix_len, type_str, name, fn_ptr + 2);
+            EMIT(ctx, "%.*s%s%s", (int)prefix_len, type_str, name, fn_ptr + 2);
         }
     }
     else if (generic && (!bracket || generic < bracket))
     {
         char mangled_candidate[MAX_MANGLED_NAME_LEN];
-        char *gt = strchr(generic, '>');
+        char *gt = (char *)strchr(generic, '>');
         int success = 0;
 
         if (gt)
@@ -113,7 +113,7 @@ static void emit_c_decl(ParserContext *ctx, const char *type_str, const char *na
         if (!success)
         {
             ptrdiff_t base_len = generic - type_str;
-            EMIT(ctx, "%.*s %s", base_len, type_str, name);
+            EMIT(ctx, "%.*s %s", (int)base_len, type_str, name);
         }
         else if (gt[1] == '*')
         {
@@ -242,12 +242,12 @@ void emit_func_signature(ParserContext *ctx, ASTNode *func, const char *name_ove
             ret_str = xstrdup("void");
         }
 
-        char *fn_ptr = strstr(ret_str, "(*)");
+        char *fn_ptr = (char *)strstr(ret_str, "(*)");
 
         if (fn_ptr)
         {
             ptrdiff_t prefix_len = fn_ptr - ret_str + 2; // Include "(*"
-            EMIT(ctx, "%.*s%s(", prefix_len, ret_str, final_name);
+            EMIT(ctx, "%.*s%s(", (int)prefix_len, ret_str, final_name);
             ret_suffix = xstrdup(fn_ptr + 2);
         }
         else

@@ -172,7 +172,7 @@ int driver_compile(ZenCompiler *compiler)
             char *real_path = realpath(extra_path, NULL);
             const char *path = real_path ? real_path : extra_path;
 
-            const char *ext = strrchr(path, '.');
+            const char *ext = (char *)strrchr(path, '.');
             if (ext && ZC_IS_BACKEND_EXT(ext))
             {
                 zvec_push_Str(&compiler->config.c_files, xstrdup(path));

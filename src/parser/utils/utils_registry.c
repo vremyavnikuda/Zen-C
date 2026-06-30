@@ -682,15 +682,15 @@ void re_export_wildcard_symbols(ParserContext *ctx, const char *module_base)
 
 char *extract_module_name(const char *path)
 {
-    const char *slash = strrchr(path, '/');
-    const char *backslash = strrchr(path, '\\');
+    const char *slash = (char *)strrchr(path, '/');
+    const char *backslash = (char *)strrchr(path, '\\');
     if (backslash && (!slash || backslash > slash))
     {
         slash = backslash;
     }
 
     const char *base = slash ? slash + 1 : path;
-    const char *dot = strrchr(base, '.');
+    const char *dot = (char *)strrchr(base, '.');
     int len = dot ? (int)(dot - base) : (int)strlen(base);
     char *name = xmalloc((size_t)(len + 1));
     strncpy(name, base, (size_t)(len));
@@ -747,7 +747,7 @@ int check_impl(ParserContext *ctx, const char *trait, const char *strct)
     while (r)
     {
         char *base_reg = xstrdup(r->strct);
-        char *ptr2 = strchr(base_reg, '<');
+        char *ptr2 = (char *)strchr(base_reg, '<');
         if (ptr2)
         {
             *ptr2 = 0;

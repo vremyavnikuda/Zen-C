@@ -19,7 +19,7 @@ void register_plugin(ParserContext *ctx, const char *name, const char *alias)
         plugin = ctx->hook_find_plugin ? (ZPlugin *)ctx->hook_find_plugin(name) : NULL;
         if (!plugin && strchr(name, '/'))
         {
-            const char *last_slash = strrchr(name, '/');
+            const char *last_slash = (char *)strrchr(name, '/');
             plugin =
                 ctx->hook_find_plugin ? (ZPlugin *)ctx->hook_find_plugin(last_slash + 1) : NULL;
         }
@@ -46,7 +46,7 @@ void register_plugin(ParserContext *ctx, const char *name, const char *alias)
 
             if (!plugin && strchr(name, '/'))
             {
-                const char *last_slash = strrchr(name, '/');
+                const char *last_slash = (char *)strrchr(name, '/');
                 snprintf(path, sizeof(path), ZEN_SHARE_DIR "/plugins/%s%s", last_slash + 1,
                          z_get_plugin_ext());
                 plugin = zptr_load_plugin(path);

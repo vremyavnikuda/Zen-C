@@ -163,8 +163,8 @@ void z_get_executable_path(char *buffer, size_t size)
 #endif
 
     // Strip the executable filename to get the directory
-    char *last_slash = strrchr(buffer, '/');
-    char *last_bslash = strrchr(buffer, '\\');
+    char *last_slash = (char *)strrchr(buffer, '/');
+    char *last_bslash = (char *)strrchr(buffer, '\\');
     char *last_sep = last_slash > last_bslash ? last_slash : last_bslash;
     if (last_sep)
     {
@@ -205,7 +205,7 @@ void z_get_absolute_path(const char *path, char *buffer, size_t size)
             {
                 char exe_dir[MAX_PATH_SIZE];
                 strncpy(exe_dir, exe_path, sizeof(exe_dir) - 1);
-                char *last_slash = strrchr(exe_dir, '/');
+                char *last_slash = (char *)strrchr(exe_dir, '/');
                 if (last_slash)
                 {
                     *last_slash = '\0';

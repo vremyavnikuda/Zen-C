@@ -61,7 +61,7 @@ static void append_to_gen(char **gen, size_t *cap, const char *s)
     strcat(*gen, s);
 }
 
-static void append_to_gen_fmt(char **gen, size_t *cap, const char *fmt, ...)
+static ZEN_FORMAT_PRINTF(3, 4) void append_to_gen_fmt(char **gen, size_t *cap, const char *fmt, ...)
 {
     va_list args;
     va_start(args, fmt);

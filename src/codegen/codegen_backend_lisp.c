@@ -162,7 +162,7 @@ static void lisp_get_struct_field_info(ParserContext *ctx, const char *type_str,
     {
         sname += 7;
     }
-    char *star = strchr(sname, '*');
+    char *star = (char *)strchr(sname, '*');
     if (star)
     {
         *star = '\0';
@@ -1012,7 +1012,7 @@ static void lemit_stmt(ParserContext *ctx, ASTNode *node, int depth, int *first)
                                 {
                                     if (*rp == '\\' && *(rp + 1) == 'n')
                                     {
-                                        emitter_printf(&ctx->cg.emitter, "~%");
+                                        emitter_printf(&ctx->cg.emitter, "~%%");
                                         rp += 2;
                                     }
                                     else
@@ -1116,7 +1116,7 @@ static void lemit_stmt(ParserContext *ctx, ASTNode *node, int depth, int *first)
         break;
 
     default:
-        emitter_printf(&ctx->cg.emitter, "; unhandled stmt %d", node->type);
+        emitter_printf(&ctx->cg.emitter, "; unhandled stmt %d", (int)node->type);
         break;
     }
 }
@@ -1519,7 +1519,7 @@ static void lemit_program(ParserContext *ctx, ASTNode *root)
             {
                 // Map Zen stdlib imports to native Lisp modules
                 const char *path = c->import_stmt.path;
-                const char *fname = strrchr(path, '/');
+                const char *fname = (char *)strrchr(path, '/');
                 fname = fname ? fname + 1 : path;
                 if (strcmp(fname, "vec.zc") == 0)
                 {

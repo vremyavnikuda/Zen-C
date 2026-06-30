@@ -387,7 +387,7 @@ void codegen_node_single(ParserContext *ctx, ASTNode *node)
             if (*p == '{')
             {
                 // Find matching }
-                char *end = strchr(p + 1, '}');
+                char *end = (char *)strchr(p + 1, '}');
                 if (end)
                 {
                     // Extract variable name

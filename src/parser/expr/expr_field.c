@@ -197,7 +197,7 @@ char *resolve_struct_name_from_type(ParserContext *ctx, Type *t, int *is_ptr_out
     if (alias_target)
     {
         char *tpl = xstrdup(alias_target);
-        char *args_ptr = strchr(tpl, '<');
+        char *args_ptr = (char *)strchr(tpl, '<');
         if (args_ptr)
         {
             *args_ptr = '\0';

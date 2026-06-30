@@ -5,6 +5,7 @@
 
 #include <stdio.h>
 #include <stdarg.h>
+#include "../compat/c23_compat.h"
 
 enum
 {
@@ -58,8 +59,8 @@ typedef struct Emitter
 
 void emitter_init_file(Emitter *e, FILE *file);
 void emitter_init_buffer(Emitter *e);
-void emitter_printf(Emitter *e, const char *fmt, ...);
-void emitter_vprintf(Emitter *e, const char *fmt, va_list args);
+ZEN_FORMAT_PRINTF(2, 3) void emitter_printf(Emitter *e, const char *fmt, ...);
+ZEN_FORMAT_PRINTF(2, 0) void emitter_vprintf(Emitter *e, const char *fmt, va_list args);
 void emitter_puts(Emitter *e, const char *s);
 void emitter_putc(Emitter *e, char c);
 void emitter_write(Emitter *e, const void *ptr, size_t size);

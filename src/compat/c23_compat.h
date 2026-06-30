@@ -91,6 +91,15 @@
 #define ZEN_PURE
 #endif
 
+// format(printf) — GCC/Clang attribute for printf-like functions
+// Uses __printf__ to avoid expansion of #define printf zprintf in colors.h
+#if defined(__GNUC__) || defined(__clang__)
+#define ZEN_FORMAT_PRINTF(fmt_arg, first_vararg)                                                   \
+    __attribute__((format(__printf__, fmt_arg, first_vararg)))
+#else
+#define ZEN_FORMAT_PRINTF(fmt_arg, first_vararg)
+#endif
+
 // unreachable() — C23 standard macro
 #if ZEN_C23
 // Use the standard macro (defined in <stddef.h> in C23)

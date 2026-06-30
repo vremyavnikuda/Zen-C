@@ -29,7 +29,7 @@ void zptr_plugin_mgr_init(void)
 }
 
 // Diagnostic wrappers for plugins
-static void plugin_error(const ZApi *api, const char *fmt, ...)
+static ZEN_FORMAT_PRINTF(2, 3) void plugin_error(const ZApi *api, const char *fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
@@ -45,7 +45,7 @@ static void plugin_error(const ZApi *api, const char *fmt, ...)
     zerror_at(t, "%s", msg);
 }
 
-static void plugin_warn(const ZApi *api, const char *fmt, ...)
+static ZEN_FORMAT_PRINTF(2, 3) void plugin_warn(const ZApi *api, const char *fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
@@ -61,7 +61,7 @@ static void plugin_warn(const ZApi *api, const char *fmt, ...)
     zwarn_at(t, "%s", msg);
 }
 
-static void plugin_note(const ZApi *api, const char *fmt, ...)
+static ZEN_FORMAT_PRINTF(2, 3) void plugin_note(const ZApi *api, const char *fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
@@ -138,7 +138,7 @@ ZPlugin *zptr_load_plugin(const char *path)
         char name[256];
         strncpy(name, name_start, sizeof(name) - 1);
         name[sizeof(name) - 1] = '\0';
-        char *dot = strchr(name, '.');
+        char *dot = (char *)strchr(name, '.');
         if (dot)
         {
             *dot = '\0';

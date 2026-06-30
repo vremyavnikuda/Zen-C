@@ -177,7 +177,7 @@ static void maybe_lock_std_root(CompilerConfig *cfg, const char *resolved)
     {
         return;
     }
-    char *std_pos = strstr(resolved, "/std/");
+    char *std_pos = (char *)strstr(resolved, "/std/");
     if (!std_pos)
     {
         return;
@@ -439,7 +439,7 @@ static void expand_env_vars(char *dest, size_t dest_size, const char *src)
     {
         if (*s == '$' && *(s + 1) == '{')
         {
-            const char *end = strchr(s + 2, '}');
+            const char *end = (char *)strchr(s + 2, '}');
             if (end)
             {
                 char var_name[MAX_VAR_NAME_LEN];
@@ -541,7 +541,7 @@ void scan_build_directives(ParserContext *ctx, const char *src)
             expand_env_vars(line, sizeof(line), raw_line);
 
             char *directive = line;
-            char *colon = strchr(line, ':');
+            char *colon = (char *)strchr(line, ':');
             if (colon)
             {
                 *colon = 0; // split the string temporarily
@@ -748,7 +748,7 @@ void scan_build_directives(ParserContext *ctx, const char *src)
                     append_flag(g_cflags, sizeof(g_cflags), "-D", def_val);
 
                     char *name = xstrdup(def_val);
-                    char *eq = strchr(name, '=');
+                    char *eq = (char *)strchr(name, '=');
                     if (eq)
                     {
                         *eq = '\0';
@@ -925,8 +925,8 @@ char *z_basename(const char *path)
     {
         return NULL;
     }
-    const char *last_slash = strrchr(path, '/');
-    const char *last_bslash = strrchr(path, '\\');
+    const char *last_slash = (char *)strrchr(path, '/');
+    const char *last_bslash = (char *)strrchr(path, '\\');
     const char *last_sep = last_slash > last_bslash ? last_slash : last_bslash;
     if (last_sep)
     {
@@ -946,7 +946,7 @@ char *z_strip_ext(const char *filename)
     {
         return NULL;
     }
-    char *last_dot = strrchr(res, '.');
+    char *last_dot = (char *)strrchr(res, '.');
     if (last_dot)
     {
         *last_dot = '\0';

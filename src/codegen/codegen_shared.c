@@ -14,7 +14,7 @@ char *strip_template_suffix(const char *name)
     {
         return NULL;
     }
-    char *lt = strchr(name, '<');
+    char *lt = (char *)strchr(name, '<');
     if (lt)
     {
         ptrdiff_t len = lt - name;
@@ -43,8 +43,8 @@ char *extract_call_args(const char *args)
         {
             p++;
         }
-        char *last_space = strrchr(p, ' ');
-        char *ptr_star = strrchr(p, '*');
+        char *last_space = (char *)strrchr(p, ' ');
+        char *ptr_star = (char *)strrchr(p, '*');
 
         char *name = p;
         if (last_space)
@@ -70,7 +70,7 @@ char *extract_call_args(const char *args)
 
 const char *parse_original_method_name(const char *mangled)
 {
-    const char *sep = strstr(mangled, "__");
+    const char *sep = (char *)strstr(mangled, "__");
     if (!sep)
     {
         return mangled;
@@ -98,7 +98,7 @@ char *replace_string_type(const char *args)
     const char *p = args;
     while (*p)
     {
-        const char *match = strstr(p, "string");
+        const char *match = (char *)strstr(p, "string");
         if (match)
         {
             size_t prefix_len = (size_t)(match - p);

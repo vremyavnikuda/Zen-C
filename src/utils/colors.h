@@ -8,6 +8,7 @@
 
 #include <stdio.h>
 #include <stdarg.h>
+#include "../compat/c23_compat.h"
 
 // ** ANSI COLORS **
 #define COLOR_RESET "\033[0m"     ///< Reset color.
@@ -21,7 +22,7 @@
 int zprintf(const char *format, ...);
 int zvprintf(const char *format, va_list args);
 int zfprintf(FILE *stream, const char *format, ...);
-int zvfprintf(FILE *stream, const char *format, va_list args);
+ZEN_FORMAT_PRINTF(2, 0) int zvfprintf(FILE *stream, const char *format, va_list args);
 
 #ifndef ZEN_DISABLE_COLORS_WRAPPER
 #define printf zprintf

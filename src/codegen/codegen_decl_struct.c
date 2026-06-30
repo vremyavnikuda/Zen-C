@@ -551,7 +551,7 @@ static void emit_trait_wrappers_internal(ParserContext *ctx, ASTNode *node,
                     char *sa = replace_type_str(m->func.args, "Self", node->trait.name, NULL, NULL);
                     if (strstr(sa, "void* self") == sa || strstr(sa, "const void* self") == sa)
                     {
-                        char *comma = strchr(sa, ',');
+                        char *comma = (char *)strchr(sa, ',');
                         if (comma)
                         {
                             EMIT(ctx, ", %s", comma + 1);
@@ -585,7 +585,7 @@ static void emit_trait_wrappers_internal(ParserContext *ctx, ASTNode *node,
                         {
                             if (strstr(call_args, "self") == call_args)
                             {
-                                char *comma = strchr(call_args, ',');
+                                char *comma = (char *)strchr(call_args, ',');
                                 if (comma)
                                 {
                                     EMIT(ctx, ", %s", comma + 1);

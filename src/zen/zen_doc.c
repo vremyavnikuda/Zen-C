@@ -123,11 +123,11 @@ static const char *unmangle_name(const char *name)
     {
         return NULL;
     }
-    const char *last = strstr(name, "__");
+    const char *last = (char *)strstr(name, "__");
     if (last)
     {
         // Find the LAST __
-        const char *next = strstr(last + 2, "__");
+        const char *next = (char *)strstr(last + 2, "__");
         while (next)
         {
             last = next;

@@ -1677,7 +1677,7 @@ void lsp_signature_help(const char *uri, int line, int col, int id)
                         char *p_ptr = params;
                         while (*p_ptr)
                         {
-                            char *p_end = strstr(p_ptr, ", ");
+                            char *p_end = (char *)strstr(p_ptr, ", ");
                             char param_label[MAX_VAR_NAME_LEN];
                             if (p_end)
                             {

@@ -130,9 +130,9 @@ static void emit_type_aliases_internal(ParserContext *ctx, ASTNode *node, Visite
             {
                 if (strstr(c_type_str, "(*)"))
                 {
-                    char *ptr = strstr(c_type_str, "(*)");
+                    char *ptr = (char *)strstr(c_type_str, "(*)");
                     ptrdiff_t prefix_len = ptr - c_type_str;
-                    EMIT(ctx, "typedef %.*s (*%s)%s;\n", prefix_len, c_type_str,
+                    EMIT(ctx, "typedef %.*s (*%s)%s;\n", (int)prefix_len, c_type_str,
                          node->type_alias.alias, ptr + 3);
                 }
                 else
@@ -180,9 +180,9 @@ void emit_global_aliases(ParserContext *ctx)
             {
                 if (strstr(c_type_str, "(*)"))
                 {
-                    char *ptr = strstr(c_type_str, "(*)");
+                    char *ptr = (char *)strstr(c_type_str, "(*)");
                     ptrdiff_t prefix_len = ptr - c_type_str;
-                    EMIT(ctx, "typedef %.*s (*%s)%s;\n", prefix_len, c_type_str, ta->alias,
+                    EMIT(ctx, "typedef %.*s (*%s)%s;\n", (int)prefix_len, c_type_str, ta->alias,
                          ptr + 3);
                 }
                 else

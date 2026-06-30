@@ -48,7 +48,7 @@ static void try_parse_c_function_decl(ParserContext *ctx, const char *line)
         return;
     }
 
-    const char *lparen = strchr(p, '(');
+    const char *lparen = (char *)strchr(p, '(');
     if (!lparen)
     {
         return;
@@ -308,7 +308,7 @@ static void scan_c_header_contents(ParserContext *ctx, const char *path, int dep
                     if (*inc == '"')
                     {
                         inc++;
-                        const char *end_quote = strchr(inc, '"');
+                        const char *end_quote = (char *)strchr(inc, '"');
                         if (end_quote && end_quote > inc)
                         {
                             int inc_len = (int)(end_quote - inc);
@@ -531,7 +531,7 @@ ASTNode *parse_import(ParserContext *ctx, Lexer *l, int is_re_export)
             strncmp(from_tok.start, "from", 4) != 0)
         {
             zpanic_at(from_tok, "Expected 'from' after selective import list, got type=%d",
-                      from_tok.type);
+                      (int)from_tok.type);
             return NULL;
         }
     }
@@ -540,7 +540,7 @@ ASTNode *parse_import(ParserContext *ctx, Lexer *l, int is_re_export)
     if (t.type != TOK_STRING && t.type != TOK_RAW_STRING)
     {
         zpanic_at(t, "Expected string (filename) after 'from' in selective import, got type %d",
-                  t.type);
+                  (int)t.type);
         return NULL;
     }
     char *fn = token_get_string_content(t);

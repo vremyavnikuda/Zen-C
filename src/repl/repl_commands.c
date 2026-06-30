@@ -820,7 +820,7 @@ static int cmd_type(ReplState *state, const char *args)
             int found = 0;
             while (fgets(buf, sizeof(buf), p))
             {
-                char *start = strstr(buf, "from type ");
+                char *start = (char *)strstr(buf, "from type ");
                 char quote = 0;
                 if (!start)
                 {
@@ -829,7 +829,7 @@ static int cmd_type(ReplState *state, const char *args)
 
                 if (start)
                 {
-                    char *q = strchr(start, '\'');
+                    char *q = (char *)strchr(start, '\'');
                     if (!q)
                     {
                         q = strstr(start, "\xe2\x80\x98");

@@ -48,7 +48,7 @@ int is_trait(const char *name)
         base = nb;
     }
 
-    char *p = strchr(base, '*');
+    char *p = (char *)strchr(base, '*');
     if (p)
     {
         *p = '\0';
@@ -74,7 +74,7 @@ int is_trait_ptr(const char *name)
     {
         return 0;
     }
-    const char *p = strchr(name, '*');
+    const char *p = (char *)strchr(name, '*');
     if (!p)
     {
         return 0;
@@ -886,7 +886,7 @@ static char *type_to_c_string_impl(Type *t)
     case TYPE_POINTER:
     {
         char *inner = type_to_c_string(t->inner);
-        char *ptr_token = strstr(inner, "(*");
+        char *ptr_token = (char *)strstr(inner, "(*");
         if (ptr_token)
         {
             long prefix_len = ptr_token - inner + 2; // "void (*"
@@ -1193,7 +1193,7 @@ char *infer_type(ParserContext *ctx, ASTNode *node)
                 snprintf(clean_type, sizeof(clean_type), "%s", target_type);
 
                 // Robustly strip all pointer levels for method lookup
-                char *ptr = strchr(clean_type, '*');
+                char *ptr = (char *)strchr(clean_type, '*');
                 if (ptr)
                 {
                     *ptr = 0;
@@ -1239,11 +1239,11 @@ char *infer_type(ParserContext *ctx, ASTNode *node)
         if (inner_type)
         {
             // Extract T from Result<T> or Option<T>
-            char *start = strchr(inner_type, '<');
+            char *start = (char *)strchr(inner_type, '<');
             if (start)
             {
                 start++; // Skip <
-                char *end = strrchr(inner_type, '>');
+                char *end = (char *)strrchr(inner_type, '>');
                 if (end && end > start)
                 {
                     ptrdiff_t len = end - start;
@@ -1325,7 +1325,7 @@ char *infer_type(ParserContext *ctx, ASTNode *node)
 
         char clean_name[MAX_TYPE_NAME_LEN];
         snprintf(clean_name, sizeof(clean_name), "%s", parent_type);
-        char *ptr = strchr(clean_name, '*');
+        char *ptr = (char *)strchr(clean_name, '*');
         if (ptr)
         {
             *ptr = 0;
@@ -1391,7 +1391,7 @@ char *infer_type(ParserContext *ctx, ASTNode *node)
         if (array_type)
         {
             // If T*, returns T. If T[], returns T.
-            char *ptr = strrchr(array_type, '*');
+            char *ptr = (char *)strrchr(array_type, '*');
             if (ptr)
             {
                 ptrdiff_t len = ptr - array_type;
@@ -1443,7 +1443,7 @@ char *infer_type(ParserContext *ctx, ASTNode *node)
                 {
                     return xstrdup("char");
                 }
-                char *ptr = strchr(inner, '*');
+                char *ptr = (char *)strchr(inner, '*');
                 if (ptr)
                 {
                     // Return base type (naive)
@@ -1465,11 +1465,11 @@ char *infer_type(ParserContext *ctx, ASTNode *node)
         char *op_type = infer_type(ctx, node->unary.operand);
         if (op_type)
         {
-            char *start = strchr(op_type, '<');
+            char *start = (char *)strchr(op_type, '<');
             if (start)
             {
                 start++; // Skip <
-                char *end = strrchr(op_type, '>');
+                char *end = (char *)strrchr(op_type, '>');
                 if (end && end > start)
                 {
                     ptrdiff_t len = end - start;
@@ -1552,7 +1552,7 @@ char *get_field_type_str(ParserContext *ctx, const char *struct_name, const char
     strncpy(clean_name, struct_name, sizeof(clean_name) - 1);
     clean_name[sizeof(clean_name) - 1] = 0;
 
-    char *ptr = strchr(clean_name, '<');
+    char *ptr = (char *)strchr(clean_name, '<');
     if (ptr)
     {
         *ptr = 0;

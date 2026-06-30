@@ -564,10 +564,10 @@ ASTNode *parse_for(ParserContext *ctx, Lexer *l)
                 char *coll_type = infer_type(ctx, start_expr);
                 if (coll_type)
                 {
-                    char *t_start = strchr(coll_type, '<');
+                    char *t_start = (char *)strchr(coll_type, '<');
                     if (t_start)
                     {
-                        char *t_end = strrchr(coll_type, '>');
+                        char *t_end = (char *)strrchr(coll_type, '>');
                         if (t_end)
                         {
                             ptrdiff_t len = t_end - t_start - 1;
@@ -578,11 +578,11 @@ ASTNode *parse_for(ParserContext *ctx, Lexer *l)
                     }
                     else
                     {
-                        char *m_start = strstr(coll_type, "__");
+                        char *m_start = (char *)strstr(coll_type, "__");
                         if (m_start)
                         {
                             m_start += 2;
-                            char *m_end = strchr(m_start, '*');
+                            char *m_end = (char *)strchr(m_start, '*');
                             if (!m_end)
                             {
                                 m_end = m_start + strlen(m_start);
@@ -646,10 +646,10 @@ ASTNode *parse_for(ParserContext *ctx, Lexer *l)
                 if (slice_decl && !u_type)
                 {
                     char *slice_t = slice_decl->var_decl.type_str;
-                    char *start = strchr(slice_t, '<');
+                    char *start = (char *)strchr(slice_t, '<');
                     if (start)
                     {
-                        char *end = strrchr(slice_t, '>');
+                        char *end = (char *)strrchr(slice_t, '>');
                         if (end)
                         {
                             ptrdiff_t len = end - start - 1;

@@ -38,7 +38,7 @@ static void trigger_type_instantiation(ParserContext *ctx, Type *t)
     if (t->name && strchr(t->name, '_'))
     {
         char *type_copy = xstrdup(t->name);
-        char *underscore = strchr(type_copy, '_');
+        char *underscore = (char *)strchr(type_copy, '_');
         if (underscore)
         {
             char *concrete_arg = underscore;
@@ -104,7 +104,7 @@ static void trigger_instantiations(ParserContext *ctx, ASTNode *node)
         {
             // Remove trailing '*' or 'Ptr' if present
             char *type_copy = xstrdup(type_str);
-            char *star = strchr(type_copy, '*');
+            char *star = (char *)strchr(type_copy, '*');
             if (star)
             {
                 *star = '\0';
@@ -119,7 +119,7 @@ static void trigger_instantiations(ParserContext *ctx, ASTNode *node)
                 }
             }
 
-            char *underscore = strchr(type_copy, '_');
+            char *underscore = (char *)strchr(type_copy, '_');
             if (underscore)
             {
                 char *concrete_arg = underscore;
@@ -184,7 +184,7 @@ static void trigger_instantiations(ParserContext *ctx, ASTNode *node)
         if (strchr(name, '_'))
         {
             char *type_copy = xstrdup(name);
-            char *underscore = strchr(type_copy, '_');
+            char *underscore = (char *)strchr(type_copy, '_');
             if (underscore)
             {
                 char *concrete_arg = underscore;
@@ -418,7 +418,7 @@ char *instantiate_function_template(ParserContext *ctx, const char *name, const 
         while (p_ptr && *p_ptr)
         {
             strcat(param_suffix, "__");
-            const char *p_next = strchr(p_ptr, ',');
+            const char *p_next = (char *)strchr(p_ptr, ',');
             int sub_len = p_next ? (int)(p_next - p_ptr) : (int)strlen(p_ptr);
             strncat(param_suffix, p_ptr, (size_t)(sub_len));
             if (p_next)
@@ -469,7 +469,7 @@ char *instantiate_function_template(ParserContext *ctx, const char *name, const 
                 const char *types_ptr = types_src;
                 while (types_ptr && *types_ptr && arg_count < template_param_count)
                 {
-                    const char *types_next = strchr(types_ptr, ',');
+                    const char *types_next = (char *)strchr(types_ptr, ',');
                     int types_len =
                         types_next ? (int)(types_next - types_ptr) : (int)strlen(types_ptr);
 
@@ -595,12 +595,12 @@ static ASTNode *copy_fields_replacing(ParserContext *ctx, ASTNode *fields, const
     {
         // Parse potential generic: e.g. "MapEntry_int" -> instantiate("MapEntry",
         // "int")
-        char *underscore = strrchr(n->field.type, '_');
+        char *underscore = (char *)strrchr(n->field.type, '_');
         if (underscore && underscore > n->field.type)
         {
             // Remove trailing '*' if present
             char *type_copy = xstrdup(n->field.type);
-            char *star = strchr(type_copy, '*');
+            char *star = (char *)strchr(type_copy, '*');
             if (star)
             {
                 *star = '\0';
@@ -731,7 +731,7 @@ void instantiate_methods(ParserContext *ctx, GenericImplTemplate *it,
         }
 
         char *old_sanitized = xstrdup(sanitized);
-        char *double_underscore = strstr(old_sanitized, "__");
+        char *double_underscore = (char *)strstr(old_sanitized, "__");
         if (double_underscore)
         {
             memmove(double_underscore, double_underscore + 1, strlen(double_underscore + 1) + 1);
@@ -823,7 +823,7 @@ void instantiate_methods(ParserContext *ctx, GenericImplTemplate *it,
                     char *clean_arg = xstrdup(type_arg);
                     if (delim == '<')
                     {
-                        char *closer = strrchr(clean_arg, '>');
+                        char *closer = (char *)strrchr(clean_arg, '>');
                         if (closer)
                         {
                             *closer = 0;

@@ -684,7 +684,7 @@ static CValue eval_expr(CInterp *ci, ASTNode *node)
         ci->error_happened = 1;
         return val_null;
     default:
-        zerror_at(node->token, "comptime: unsupported expression type %d", node->type);
+        zerror_at(node->token, "comptime: unsupported expression type %d", (int)node->type);
         ci->error_happened = 1;
         return val_null;
     }

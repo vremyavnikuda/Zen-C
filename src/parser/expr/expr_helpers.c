@@ -278,7 +278,7 @@ ASTNode *transform_to_trait_object(ParserContext *ctx, const char *target_trait,
     }
 
     char *clean_trait = xstrdup(target_trait);
-    char *p = strchr(clean_trait, '*');
+    char *p = (char *)strchr(clean_trait, '*');
     if (p)
     {
         *p = '\0';

@@ -171,7 +171,7 @@ void handle_node_function(ParserContext *ctx, ASTNode *node)
             {
                 token++;
             }
-            char *last_space = strrchr(token, ' ');
+            char *last_space = (char *)strrchr(token, ' ');
             if (last_space)
             {
                 *last_space = 0;

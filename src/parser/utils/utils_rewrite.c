@@ -131,7 +131,7 @@ static MixinResolution resolve_method_from_type_str(ParserContext *ctx, const ch
     int is_ptr = (strchr(ptr_check, '*') != NULL);
     if (is_ptr)
     {
-        char *p = strchr(ptr_check, '*');
+        char *p = (char *)strchr(ptr_check, '*');
         if (p)
         {
             *p = 0;
@@ -204,7 +204,7 @@ char *rewrite_expr_methods(ParserContext *ctx, char *raw)
 
             // Check for field access
             char *base_t = xstrdup(vtype);
-            char *pc = strchr(base_t, '*');
+            char *pc = (char *)strchr(base_t, '*');
             int is_ptr_type = (pc != NULL);
             if (pc)
             {
@@ -656,7 +656,7 @@ char *parse_and_convert_args(ParserContext *ctx, Lexer *l, char ***defaults_out,
                 }
                 else
                 {
-                    zpanic_at(attr, "Unknown parameter attribute @%.*s", attr.len, attr.start);
+                    zpanic_at(attr, "Unknown parameter attribute @%.*s", (int)attr.len, attr.start);
                     return NULL;
                     return NULL;
                 }
@@ -783,7 +783,7 @@ char *parse_and_convert_args(ParserContext *ctx, Lexer *l, char ***defaults_out,
                     buf = xrealloc(buf, buf_size);
                 }
 
-                char *fn_ptr = strstr(type_str, "(*)");
+                char *fn_ptr = (char *)strstr(type_str, "(*)");
                 if (get_inner_type(arg_type)->kind == TYPE_FUNCTION)
                 {
                     strcat(buf, "z_closure_T ");
