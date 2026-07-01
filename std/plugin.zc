@@ -49,6 +49,4 @@ impl ZApi {
     }
 }
 
-@unused fn _z_use_plugin_constants() -> int {
-    return ZEN_PLUGIN_API_VERSION + ZEN_PLUGIN_MAX_NAME;
-}
+

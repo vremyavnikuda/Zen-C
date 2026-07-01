@@ -956,7 +956,7 @@ void handle_node_var_decl(ParserContext *ctx, ASTNode *node)
 
 void handle_node_const(ParserContext *ctx, ASTNode *node)
 {
-    EMIT(ctx, "const ");
+    EMIT(ctx, "__attribute__((unused)) const ");
     if (node->var_decl.type_str)
     {
         EMIT(ctx, "%s %s", node->var_decl.type_str, node->var_decl.name);

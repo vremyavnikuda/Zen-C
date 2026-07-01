@@ -40,7 +40,7 @@ static void emit_globals_internal(ParserContext *ctx, ASTNode *node, VisitedModu
             }
             if (node->type == NODE_CONST)
             {
-                EMIT(ctx, "const ");
+                EMIT(ctx, "__attribute__((unused)) const ");
             }
             if (node->var_decl.type_str)
             {
