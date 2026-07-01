@@ -74,6 +74,8 @@ void register_plugin(ParserContext *ctx, const char *name, const char *alias)
         exit(1); // whitelisted: guarded by is_fault_tolerant above
     }
 
+    zptr_register_plugin(plugin);
+
     ImportedPlugin *p = xmalloc(sizeof(ImportedPlugin));
     p->name = xstrdup(plugin->name);
     p->alias = alias ? xstrdup(alias) : NULL;
