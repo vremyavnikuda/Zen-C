@@ -142,8 +142,15 @@ void emit_globals(ParserContext *ctx, ASTNode *node, VisitedModules **visited)
 }
 
 // Emit function prototypes
+typedef struct EmittedProto
+{
+    char *name;
+    char *cfg;
+    struct EmittedProto *next;
+} EmittedProto;
+
 static void emit_protos_internal(ParserContext *ctx, ASTNode *node, VisitedModules **visited,
-                                 int depth)
+                                 EmittedProto **emitted, int depth)
 {
     if (depth > 1024)
     {
@@ -157,7 +164,7 @@ static void emit_protos_internal(ParserContext *ctx, ASTNode *node, VisitedModul
             if (!is_module_visited(*visited, f->import_stmt.path))
             {
                 mark_module_visited(visited, f->import_stmt.path);
-                emit_protos_internal(ctx, f->import_stmt.module_root, visited, depth + 1);
+                emit_protos_internal(ctx, f->import_stmt.module_root, visited, emitted, depth + 1);
             }
             f = f->next;
             continue;
@@ -262,14 +269,33 @@ static void emit_protos_internal(ParserContext *ctx, ASTNode *node, VisitedModul
                          final_name);
                 }
             }
-            else
+            else if (f->func.name)
             {
-                if (ctx->config->use_cpp && f->func.is_extern)
+                int already_emitted = 0;
+                for (EmittedProto *ep = *emitted; ep; ep = ep->next)
                 {
-                    EMIT(ctx, "extern \"C\" ");
+                    if (strcmp(ep->name, f->func.name) == 0 &&
+                        ((ep->cfg == NULL && f->cfg_condition == NULL) ||
+                         (ep->cfg && f->cfg_condition && strcmp(ep->cfg, f->cfg_condition) == 0)))
+                    {
+                        already_emitted = 1;
+                        break;
+                    }
                 }
-                emit_func_signature(ctx, f, NULL);
-                EMIT(ctx, ";\n");
+                if (!already_emitted)
+                {
+                    EmittedProto *ep = xmalloc(sizeof(EmittedProto));
+                    ep->name = xstrdup(f->func.name);
+                    ep->cfg = f->cfg_condition ? xstrdup(f->cfg_condition) : NULL;
+                    ep->next = *emitted;
+                    *emitted = ep;
+                    if (ctx->config->use_cpp && f->func.is_extern)
+                    {
+                        EMIT(ctx, "extern \"C\" ");
+                    }
+                    emit_func_signature(ctx, f, NULL);
+                    EMIT(ctx, ";\n");
+                }
             }
             if (f->cfg_condition)
             {
@@ -458,7 +484,7 @@ static void emit_protos_internal(ParserContext *ctx, ASTNode *node, VisitedModul
         }
         else if (f->type == NODE_ROOT)
         {
-            emit_protos_internal(ctx, f->root.children, visited, depth + 1);
+            emit_protos_internal(ctx, f->root.children, visited, emitted, depth + 1);
         }
         f = f->next;
     }
@@ -466,14 +492,23 @@ static void emit_protos_internal(ParserContext *ctx, ASTNode *node, VisitedModul
 
 void emit_protos(ParserContext *ctx, ASTNode *node, VisitedModules **visited)
 {
+    EmittedProto *emitted = NULL;
     if (visited)
     {
-        emit_protos_internal(ctx, node, visited, 0);
+        emit_protos_internal(ctx, node, visited, &emitted, 0);
     }
     else
     {
         VisitedModules *local_visited = NULL;
-        emit_protos_internal(ctx, node, &local_visited, 0);
+        emit_protos_internal(ctx, node, &local_visited, &emitted, 0);
+    }
+    while (emitted)
+    {
+        EmittedProto *next = emitted->next;
+        zfree(emitted->name);
+        zfree(emitted->cfg);
+        zfree(emitted);
+        emitted = next;
     }
 }
 
@@ -761,12 +796,13 @@ void print_type_defs(ParserContext *ctx, ASTNode *nodes)
             EMIT(ctx, "static __attribute__((unused)) void _z_vec_push(Vec *v, void *item) { "
                       "if(v->len >= v->cap) { v->cap "
                       "= v->cap?v->cap*2:8; v->data = static_cast<void**>(realloc(v->data, "
-                      "v->cap "
+                      "(size_t)v->cap "
                       "* sizeof(void*))); } v->data[v->len++] = item; }\n");
             EMIT(ctx,
                  "static inline __attribute__((unused)) Vec _z_make_vec(int count, ...) { Vec v = "
                  "{0}; v.cap = (count > 8 ? "
-                 "count : 8); v.data = static_cast<void**>(malloc(v.cap * sizeof(void*))); v.len = "
+                 "count : 8); v.data = static_cast<void**>(malloc((size_t)v.cap * sizeof(void*))); "
+                 "v.len = "
                  "0; va_list args; va_start(args, count); for(int i=0; i<count; i++) { "
                  "v.data[v.len++] = va_arg(args, void*); } va_end(args); return v; }\n");
         }
@@ -774,14 +810,15 @@ void print_type_defs(ParserContext *ctx, ASTNode *nodes)
         {
             EMIT(ctx, "static __attribute__((unused)) void _z_vec_push(Vec *v, void *item) { "
                       "if(v->len >= v->cap) { v->cap "
-                      "= v->cap?v->cap*2:8; v->data = z_realloc(v->data, v->cap * "
+                      "= v->cap?v->cap*2:8; v->data = z_realloc(v->data, (size_t)v->cap * "
                       "sizeof(void*)); "
                       "} v->data[v->len++] = item; }\n");
-            EMIT(ctx, "static inline __attribute__((unused)) Vec _z_make_vec(int count, ...) { Vec "
-                      "v = {0}; v.cap = (count "
-                      "> 8 ? count : 8); v.data = z_malloc(v.cap * sizeof(void*)); v.len = 0; "
-                      "va_list args; va_start(args, count); for(int i=0; i<count; i++) { "
-                      "v.data[v.len++] = va_arg(args, void*); } va_end(args); return v; }\n");
+            EMIT(ctx,
+                 "static inline __attribute__((unused)) Vec _z_make_vec(int count, ...) { Vec "
+                 "v = {0}; v.cap = (count "
+                 "> 8 ? count : 8); v.data = z_malloc((size_t)v.cap * sizeof(void*)); v.len = 0; "
+                 "va_list args; va_start(args, count); for(int i=0; i<count; i++) { "
+                 "v.data[v.len++] = va_arg(args, void*); } va_end(args); return v; }\n");
         }
         EMIT(ctx, "#define Vec_push(v, i) _z_vec_push(&(v), (void*)(uintptr_t)(i))\n");
         EMIT(ctx, "static inline long _z_check_bounds(long index, long limit) { if(index < 0 || "

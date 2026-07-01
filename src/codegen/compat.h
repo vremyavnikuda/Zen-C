@@ -72,7 +72,7 @@ static const char ZC_EXT_SO[] = ".so";
     "    static _Thread_local char buf[41];\n"                                                     \
     "    if (val == 0) return \"0\";\n"                                                            \
     "    int neg = val < 0;\n"                                                                     \
-    "    unsigned __int128 uval = neg ? -val : val;\n"                                             \
+    "    unsigned __int128 uval = (unsigned __int128)(neg ? -val : val);\n"                        \
     "    int i = 39;\n"                                                                            \
     "    buf[40] = 0;\n"                                                                           \
     "    while (uval > 0) { buf[i--] = (char)((uval % 10) + '0'); uval /= 10; }\n"                 \
